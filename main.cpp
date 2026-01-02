@@ -896,7 +896,7 @@ int main() {
     GAME_OVER:
     {
         Rectangle btnOk = {
-            GetScreenWidth()/2 - 200, 800,
+            GetScreenWidth()/2 - 200, 1100,
             400, 80
         };
 
@@ -907,18 +907,47 @@ int main() {
                 best_ai_points = factions[fi].victory_points;
 
         bool victory = (player_points > best_ai_points) && factions[0].count_members;
-
+        if(player_points<0) player_points = -player_points;
         while (true) {
             BeginDrawing();
             ClearBackground(BLACK);
-            const char* title = victory ? "VICTORY" : "DEFEAT";
-            DrawText(
-                title,
-                GetScreenWidth()/2 - MeasureText(title, 96)/2,
-                     120,
-                     96,
-                     victory ? GREEN : RED
-            );
+            const char* title = victory ? "BEST UTOPIA" : "FAILED";
+
+            if(victory) {
+                DrawTexturePro(
+                    tex::sun,
+                    Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
+                    Rectangle{GetScreenWidth()/2-256, 300, 512, 256},
+                    {0,0}, 0, WHITE);
+                DrawText(
+                    title,
+                    GetScreenWidth()/2 - MeasureText(title, 96)/2+70,
+                        620,
+                        96,
+                        victory ? GREEN : RED
+                );
+            }
+            else {
+                DrawTexturePro(
+                    tex::blood,
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-128, 256, 256, 256},
+                    {0,0}, 0, WHITE);
+                DrawTexturePro(
+                    tex::blood,
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-256+32, 256, 256, 256},
+                    {0,0}, 0, WHITE);
+                DrawTexturePro(
+                    tex::blood,
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-32, 256, 256, 256},
+                    {0,0}, 0, WHITE);
+                DrawText(
+                    title,
+                    GetScreenWidth()/2 - MeasureText(title, 96)/2+50,
+                         620,
+                         96,
+                         victory ? GREEN : RED
+                );
+            }
             // --- Score ---
             char score[128];
             snprintf(score, sizeof(score),
@@ -927,8 +956,8 @@ int main() {
                     best_ai_points);
             DrawText(
                 score,
-                GetScreenWidth()/2 - MeasureText(score, 42)/2,
-                     240,
+                GetScreenWidth()/2 - MeasureText(score, 42)/2+40,
+                     740,
                      42,
                      WHITE
             );
@@ -948,7 +977,7 @@ int main() {
                 DrawText(
                     "Was it really worth it?",
                     GetScreenWidth()/2 - MeasureText("Was it really worth it?", 28)/2,
-                    510,
+                    910,
                     28,
                     ORANGE
                 );
@@ -957,7 +986,7 @@ int main() {
                     DrawText(
                         TextFormat("- %s", badTechNames[i]),
                         GetScreenWidth()/2 - 260,
-                        550 + i * 28,
+                        950 + i * 28,
                         24,
                         DARKGRAY
                     );
@@ -1079,8 +1108,8 @@ int main() {
 
             // --- RARE TURN ---
             if (GetRandomValue(0,100) < 6) {
-                if (dir < 2) dir = GetRandomValue(0,1) ? 2 : 3;
-                else         dir = GetRandomValue(0,1) ? 0 : 1;
+                if (dir<2) dir = GetRandomValue(0,1)?2:3;
+                else dir = GetRandomValue(0,1)?0:1;
             }
 
             // --- RARE CROSSROAD (also 2 tiles wide) ---
@@ -1097,13 +1126,10 @@ int main() {
                         C.speed = 0.3f;
                         C.extra_sight = -0.7f;
                     }
-
                     int bpx = 0, bpy = 0;
-                    if (dirX[cd] != 0) bpy = 1;
-                    else               bpx = 1;
-
+                    if(dirX[cd] != 0) bpy = 1;
+                    else bpx = 1;
                     if (GetRandomValue(0,1)) { bpx = -bpx; bpy = -bpy; }
-
                     int bx = cx + bpx;
                     int by = cy + bpy;
 
@@ -1118,13 +1144,10 @@ int main() {
                     }
                 }
             }
-
             x += dirX[dir];
             y += dirY[dir];
         }
     }
-
-
 
 
     int num_decorators = 0;   // track trees
@@ -1405,6 +1428,7 @@ int main() {
     
     while (true) {
         float dt = GetFrameTime();
+        float polution_speedup = 0.f;// just track this for this frame
         game_time += dt;
         if (game_time >= GAME_DURATION) {
             game_time = GAME_DURATION;
@@ -1468,6 +1492,7 @@ int main() {
                 if(u.faction->technology & TECHNOLOGY_AIFARM) {
                     u.faction->industry += 16.f;
                     game_time += dt*0.08f;
+                    polution_speedup += 0.08f;
                 }
                 else u.faction->technology_progress += dt*0.0009f;
             }
@@ -1475,7 +1500,10 @@ int main() {
             if(u.texture==&tex::camp || u.speed) u.faction->count_members += 0.00001f;
             if(u.texture==&tex::oil && u.faction && (u.faction->technology & TECHNOLOGY_REFINERY)) u.faction->industry += 25.f;
             if(u.texture==&tex::field || u.texture==&tex::mine || u.texture==&tex::hide) {
-                if(u.texture==&tex::field && u.faction && (u.faction->technology & TECHNOLOGY_ATMOSPHERE)) game_time -= dt*0.08f;
+                if(u.texture==&tex::field && u.faction && (u.faction->technology & TECHNOLOGY_ATMOSPHERE)) {
+                    game_time -= dt*0.08f;
+                    polution_speedup -= 0.08f;
+                }
                 if(u.texture==&tex::field && u.faction && (u.faction->technology & TECHNOLOGY_FARMING)) u.faction->industry += 6.f;
                 if(u.texture==&tex::hide && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 4.f;
                 if(u.faction) u.faction->industry += u.attack_rate;
@@ -1488,8 +1516,10 @@ int main() {
             if(!u.faction) continue;
             if(u.capturing) continue;
             if(!u.speed) continue;
-            u.faction->count_members += u.max_health/5.f;
-            if(u.faction->technology & TECHNOLOGY_HYPERMAGNET) u.faction->count_members += u.max_health/5.f;
+            if(u.texture!=&tex::bison && u.texture!=&tex::wolf) { // don't count animals for industry needs'
+                u.faction->count_members += u.max_health/5.f;
+                if(u.faction->technology & TECHNOLOGY_HYPERMAGNET) u.faction->count_members += u.max_health/5.f;
+            }
         }
         if(factions[0].count_members==0) {
             goto GAME_OVER;
@@ -1499,6 +1529,8 @@ int main() {
                 factions[i].victory_points += factions[i].industry*0.02f;
                 factions[i].industry *= 0.5f;
             }
+            game_time += dt*(factions[i].industry/500);
+            polution_speedup += factions[i].industry/500;
         }
 
         // process units
@@ -3077,7 +3109,7 @@ int main() {
                 DrawTextureEx(tex::ghost, {unstable.x + ICON_DX, unstable.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_INFRASTRUCTURE) {
-                DrawTechNode(aifarm.x, aifarm.y, "AI FARM", "Labs: 16 industry and 8\% polution", tech, TECHNOLOGY_AIFARM);
+                DrawTechNode(aifarm.x, aifarm.y, "AI FARM", "Labs: 16 industry, sever polution", tech, TECHNOLOGY_AIFARM);
                 DrawTextureEx(tex::gear, {aifarm.x + ICON_DX, aifarm.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AIFARM | TECHNOLOGY_MECHANISED)) {
@@ -3209,14 +3241,15 @@ int main() {
 
             DrawText(
                 "Concede",
-                clusteringBtn.x + (clusteringBtn.width - MeasureText("Exit Game", 36)) * 0.5f,
+                clusteringBtn.x + (clusteringBtn.width - MeasureText("Concede", 36)) * 0.5f,
                      clusteringBtn.y + (clusteringBtn.height - 36) * 0.5f,
                      36,
                      WHITE
             );
 
             if (hover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                goto MAIN_MENU;
+                factions[0].victory_points = -factions[0].victory_points;
+                goto GAME_OVER;
             }
         }
 
@@ -3297,7 +3330,12 @@ int main() {
                 DrawRectangleRec(bar_bg, bg);
                 DrawRectangleRec(bar_fg, fg);
 
-                DrawText("Pollution progress", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
+                if(polution_speedup<-0.1f)
+                    DrawText("Pollution slowed down", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
+                else if(polution_speedup>0.2f)
+                    DrawText("Pollution sped up from industry", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
+                else
+                    DrawText("Pollution progress", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
                 DrawRectangleLinesEx(bar_bg, 8.0f, BLACK);
             }
 
@@ -3370,9 +3408,15 @@ int main() {
                         DrawText("Mighty", px + 80, textY+60, 28, WHITE);
                 }
                 else if(hovered->damage) {
-                    if(hovered->range<3.f) DrawText("Animal", px + 80, textY, 28, WHITE);
-                    else DrawText("Combatant", px + 80, textY, 28, WHITE);
-                    DrawText("Needs industry", px + 80, textY+30, 28, WHITE);
+                    if(hovered->range<3.f) {
+                        DrawText("Animal", px + 80, textY, 28, WHITE);
+                        if(hovered->texture==&tex::snowman) DrawText("Drops hide", px + 80, textY+30, 28, WHITE);
+                        else DrawText("Drops hide", px + 80, textY+30, 28, WHITE);
+                    }
+                    else {
+                        DrawText("Combatant", px + 80, textY, 28, WHITE);
+                        DrawText("Needs industry", px + 80, textY+30, 28, WHITE);
+                    }
                     if(hovered->name==veteran_name)
                         DrawText("Stronger", px + 80, textY+60, 28, WHITE);
                     if(hovered->name==hero_name)
@@ -3412,12 +3456,7 @@ int main() {
                 if(currentMovementMode==MovementMode::Scattered) dx += i*16.f;
                 if(currentMovementMode==MovementMode::Explore) dx += i*32.f;
                 Rectangle src = {0, 0, (float)tex::human.width, (float)tex::human.height};
-                Rectangle dst = {
-                    cx + dx,
-                    cy,
-                    32,
-                    32
-                };
+                Rectangle dst = {cx + dx, cy, 32, 32};
                 DrawTexturePro(tex::human, src, dst, {dst.width / 2, dst.height / 2}, -90.f, WHITE);
             }
 
@@ -3431,8 +3470,6 @@ int main() {
             );
 
         }
-
-
         EndDrawing();
     }
 
