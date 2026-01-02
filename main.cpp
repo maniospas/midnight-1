@@ -64,6 +64,8 @@ namespace tex {
     static Texture2D gear;
     static Texture2D utopia;
     static Texture2D track;
+    static Texture2D sun;
+    static Texture2D research;
 }
 
 static void DrawTechProgressBar(
@@ -721,7 +723,7 @@ struct Decorator {
 int main() {
     SetTraceLogLevel(LOG_NONE); // disable raylib logs
     //SetConfigFlags(FLAG_FULLSCREEN_MODE);
-    InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), "midnight+1");
+    InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), "MIDNIGHT - next morn");
     SetRandomSeed((unsigned)time(NULL));
     NOISE_SEED = GetRandomValue(1, 1'000'000);
     MaximizeWindow();
@@ -750,6 +752,8 @@ int main() {
     tex::gear = LoadTexture("data/gear.png");
     tex::utopia = LoadTexture("data/utopia.png");
     tex::track = LoadTexture("data/track.png");
+    tex::sun = LoadTexture("data/sun.png");
+    tex::research = LoadTexture("data/research.png");
     tex::snowman = LoadTexture("data/snowman.png");
     tex::railgun = LoadTexture("data/railgun.png");
     tex::hide = LoadTexture("data/hide.png");
@@ -826,12 +830,12 @@ int main() {
     // main loop
     MAIN_MENU:
     Rectangle btnStart = {
-        GetScreenWidth()/2 - 300, 420,
+        GetScreenWidth()/2 - 300, 920,
         600, 80
     };
 
     Rectangle btnQuit = {
-        GetScreenWidth()/2 - 300, 520,
+        GetScreenWidth()/2 - 300, 1020,
         600, 80
     };
 
@@ -839,7 +843,14 @@ int main() {
         BeginDrawing();
         ClearBackground(BLACK);
 
-        DrawText("MIDNIGHT +1", GetScreenWidth()/2 - 340, 50, 128, WHITE);
+        DrawTexturePro(
+            tex::sun,
+            Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
+            Rectangle{GetScreenWidth()/2-256, 300, 512, 256},
+            {0,0}, 0, WHITE);
+        DrawText("MIDNIGHT", GetScreenWidth()/2 - 300, 600, 128, WHITE);
+        DrawText("next", GetScreenWidth()/2 +260, 600, 64, WHITE);
+        DrawText("morn", GetScreenWidth()/2 +260, 650, 64, WHITE);
 
         Vector2 mouse = GetMousePosition();
 
@@ -856,7 +867,7 @@ int main() {
         DrawTexturePro(
             tex::utopia,
             Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height},
-                       Rectangle{GetScreenWidth()/2-64, btnStart.y-110, 128, 128},
+                       Rectangle{GetScreenWidth()/2+200, btnStart.y+5, 80, 80},
                        {0,0}, 0, WHITE);
 
         // --- Quit button ---
@@ -2978,7 +2989,7 @@ int main() {
             DrawTextureEx(tex::gear, {hunting.x + ICON_DX, hunting.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
 
             DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "+33\% research, -1 spawn health", tech, TECHNOLOGY_NERDS);
-            //DrawTextureEx(tex::lab, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::lab.width, WHITE);
+            DrawTextureEx(tex::research, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
 
 
             if(prev_tech & (TECHNOLOGY_BIOWEAPON | TECHNOLOGY_GRIT)) {
@@ -3015,7 +3026,7 @@ int main() {
             }
             if(prev_tech & TECHNOLOGY_NERDS) {
                 DrawTechNode(research.x, research.y, "RESEARCH", "+33\% research", tech, TECHNOLOGY_RESEARCH);
-                //DrawTextureEx(tex::lab, {research.x + ICON_DX, research.y + ICON_DY}, 0, ICON_SIZE / tex::lab.width, WHITE);
+                DrawTextureEx(tex::research, {research.x + ICON_DX, research.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_NERDS) {
                 DrawTechNode(homunculi.x, homunculi.y, "HOMUNCULI", "Killed bloos become allies", tech, TECHNOLOGY_HOMUNCULI);
@@ -3426,6 +3437,8 @@ int main() {
     }
 
     UnloadTexture(tex::gear);
+    UnloadTexture(tex::sun);
+    UnloadTexture(tex::research);
     UnloadTexture(tex::utopia);
     UnloadTexture(tex::track);
     UnloadTexture(tex::grass);
