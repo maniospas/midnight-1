@@ -1205,6 +1205,7 @@ int main() {
     
     // declare camera
     Camera2D camera = { 0 };
+    float target_zoom = CAMERA_ZOOM;
     camera.target = { GRID_SIZE * TILE_SIZE / 2.0f, GRID_SIZE * TILE_SIZE / 2.0f }; // will overwrite this
     camera.offset = { (float)GetScreenWidth() / 2, (float)GetScreenHeight() / 2 };
     camera.zoom = CAMERA_ZOOM;
@@ -1497,11 +1498,17 @@ int main() {
         //if (camera.zoom < 0.5f) camera.zoom = 0.5f;
         //if (camera.zoom < 0.25f) camera.zoom = 0.25f;
         float wheel = GetMouseWheelMove();
-        if (wheel) {
+        if (wheel)
+            target_zoom += wheel * 0.1f;
+        if (camera.zoom!=target_zoom) {
             Vector2 mouseWorldBefore = GetScreenToWorld2D(GetMousePosition(), camera);
-            camera.zoom += wheel * 0.1f;
-            if (camera.zoom < 0.15f) camera.zoom = 0.15f;
-            if (camera.zoom > 2.0f)  camera.zoom = 2.0f;
+            if (target_zoom < 0.15f) target_zoom = 0.15f;
+            if (target_zoom > 2.0f) target_zoom = 2.0f;
+            float diff = camera.zoom-target_zoom;
+            camera.zoom -= diff*dt*5;
+            if(diff*(camera.zoom-target_zoom)<=0.01f) {
+                camera.zoom = target_zoom;
+            }
             Vector2 mouseWorldAfter = GetScreenToWorld2D(GetMousePosition(), camera);
             if(wheel>0) {
                 camera.target.x += mouseWorldBefore.x - mouseWorldAfter.x;
@@ -1516,6 +1523,7 @@ int main() {
             factions[i].technology_progress += dt*0.009f;
             if(factions[i].technology==0 && factions[i].technology_progress<2.f) factions[i].technology_progress += dt*0.009f;
             if(factions[i].technology & TECHNOLOGY_NERDS) factions[i].technology_progress += dt*0.003f;
+            if(factions[i].technology & TECHNOLOGY_TAMING) factions[i].technology_progress -= dt*0.003f;
             if(factions[i].technology & TECHNOLOGY_RESEARCH) factions[i].technology_progress += dt*0.003f;
         }
         for (int i = 0; i < num_units; i++) {
@@ -1548,7 +1556,7 @@ int main() {
             if(!u.faction) continue;
             if(u.capturing) continue;
             if(!u.speed) continue;
-            if(u.texture!=&tex::bison && u.texture!=&tex::wolf && u.texture!=&tex::rat) { // don't count animals for industry needs'
+            if(u.texture!=&tex::bison && u.texture!=&tex::wolf && u.texture!=&tex::rat && u.texture!=&tex::snowman) { // don't count animals for industry needs'
                 u.faction->count_members += u.max_health/5.f;
                 if(u.faction->technology & TECHNOLOGY_HYPERMAGNET) u.faction->count_members += u.max_health/5.f;
             }
@@ -1561,8 +1569,8 @@ int main() {
                 factions[i].victory_points += factions[i].industry*0.01f;
                 //factions[i].industry *= 0.5f;
             }
-            game_time += dt*(factions[i].industry/500);
-            polution_speedup += factions[i].industry/500;
+            game_time += dt*(factions[i].industry/300);
+            polution_speedup += factions[i].industry/300;
         }
 
         // process units
@@ -1714,6 +1722,16 @@ int main() {
             }
             if(u.texture==&tex::mine) 
                 continue;
+            if (u.texture == &tex::rat) {
+                if((float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<dt*u.attack_rate*(1-time_norm)*(1-time_norm)*(1-time_norm)*(1-time_norm)) {
+                    int canMake = (int)u.faction->industry-(int)u.faction->count_members;
+                    float sx = u.x + (GetRandomValue(-5000, 5000) * 0.0002f);
+                    float sy = u.y + (GetRandomValue(-5000, 5000) * 0.0002f);
+                    if(canMake>0) {
+                        CREATE_RAT(u.faction, sx, sy);
+                    }
+                }
+            }
             if (u.texture == &tex::camp) {
                 if((float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<dt*u.attack_rate && u.faction!=factions+1) {
                     int canMake = (int)u.faction->industry-(int)u.faction->count_members;
@@ -2003,7 +2021,7 @@ int main() {
                         if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && o.max_health>18.f) skipChance += 0.5f;
                         if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==hero_name) skipChance += 0.5f;
                         if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==veteran_name) skipChance += 0.25f;
-                        if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat)) skipChance += 0.5f;
+                        if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat || u.texture==&tex::snowman)) skipChance += 0.5f;
                         if(skipChance<0.f) skipChance = 0.f;
                         if(skipChance>0.95f) skipChance = 0.95f;
                         if(u_damage>=o.health && o.faction && (o.faction->technology & TECHNOLOGY_GRIT)) skipChance = (skipChance+1.f)*0.5f;
@@ -2018,7 +2036,7 @@ int main() {
                         else if(o.name==hero_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {o.popup = "heroics";}
                         else if(o.name==veteran_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {o.popup = "heroics";}
                         else if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && o.max_health>18.f) {o.popup = "mecha";}
-                        else if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat)) {o.popup = "pristine";}
+                        else if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat || u.texture==&tex::snowman)) {o.popup = "pristine";}
                         else {o.popup = "cover";}
                         if (o.health >= o.max_health) o.health = o.max_health;
                         if (o.health < 0) o.health = 0;
@@ -2054,7 +2072,7 @@ int main() {
                             o.popup = "hijacked";
                             o.animation = 0.f;
                         }
-                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_TAMING) && (o.texture==&tex::bison || o.texture==&tex::wolf || o.texture==&tex::rat)) {
+                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_TAMING) && (o.texture==&tex::bison || o.texture==&tex::wolf || o.texture==&tex::rat || o.texture==&tex::snowman)) {
                             o.faction = u.faction;
                             o.health = o.max_health;
                             o.popup = "tamed";
@@ -3087,7 +3105,7 @@ int main() {
             DrawTextureEx(tex::research, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
 
 
-            DrawTechNode(taming.x, taming.y, "TAMER", "Control defeated animals", tech, TECHNOLOGY_TAMING);
+            DrawTechNode(taming.x, taming.y, "TAMER", "-33\% research, tame animals", tech, TECHNOLOGY_TAMING);
             DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
 
 
@@ -3478,7 +3496,7 @@ int main() {
                     if(hovered->range<3.f) {
                         DrawText("Animal", px + 80, textY, 28, WHITE);
                         if(hovered->texture==&tex::snowman) {}
-                        else if(hovered->texture==&tex::rat) DrawText("Propagates", px + 80, textY+30, 28, WHITE);
+                        else if(hovered->texture==&tex::rat) DrawText("Proliferates based on non-pollution", px + 80, textY+30, 28, WHITE);
                         else DrawText("Drops hide", px + 80, textY+30, 28, WHITE);
                     }
                     else {
