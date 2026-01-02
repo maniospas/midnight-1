@@ -1512,7 +1512,7 @@ int main() {
         for(int i=0;i<max_factions;i++) {
             factions[i].industry = (factions[i].technology&TECHNOLOGY_REACTOR)?60:20;
             factions[i].count_members = 0;
-            factions[i].victory_points = (factions[i].technology&TECHNOLOGY_SUPERIORITY)?2.f:0.f;
+            factions[i].victory_points = (factions[i].technology&TECHNOLOGY_SUPERIORITY)?1.f:0.f;
             factions[i].technology_progress += dt*0.009f;
             if(factions[i].technology==0 && factions[i].technology_progress<2.f) factions[i].technology_progress += dt*0.009f;
             if(factions[i].technology & TECHNOLOGY_NERDS) factions[i].technology_progress += dt*0.003f;
@@ -1558,8 +1558,8 @@ int main() {
         }
         for(int i=0;i<max_factions;i++) {
             if(factions[i].technology & TECHNOLOGY_TECHNOCRACY) {
-                factions[i].victory_points += factions[i].industry*0.02f;
-                factions[i].industry *= 0.5f;
+                factions[i].victory_points += factions[i].industry*0.01f;
+                //factions[i].industry *= 0.5f;
             }
             game_time += dt*(factions[i].industry/500);
             polution_speedup += factions[i].industry/500;
@@ -1681,9 +1681,7 @@ int main() {
             if(u.texture==&tex::warehouse)
                 u.faction->victory_points += 1.f;
             if(u.texture==&tex::radio && u.faction && (u.faction->technology & TECHNOLOGY_PROPAGANDA) )
-                u.faction->victory_points += 0.5f;
-            if(u.texture==&tex::camp && u.faction && (u.faction->technology & TECHNOLOGY_LUXURY) )
-                u.faction->victory_points += 0.5f;
+                u.faction->victory_points += 0.334f;
             if(u.texture==&tex::lab)
                 continue;
             if(u.texture==&tex::field) 
@@ -1721,7 +1719,6 @@ int main() {
                     int canMake = (int)u.faction->industry-(int)u.faction->count_members;
                     if (canMake > 0) {
                         if (canMake > 2) canMake = 2;
-                        if (canMake > 1 && u.faction && (u.faction->technology & TECHNOLOGY_LUXURY)) canMake = 1;
                         for (int k = 0; k < canMake; k++) {
                             if (num_units >= MAX_UNITS) break;
                             float sx = u.x + (GetRandomValue(-5000, 5000) * 0.0002f);
@@ -1733,9 +1730,10 @@ int main() {
                                 CREATE_HUMAN(u.faction, sx, sy);
                             }
                             // superiority has 25% chance of spawning something hostile
-                            if(u.faction&&(u.faction->technology&TECHNOLOGY_SUPERIORITY)&&GetRandomValue(0, 100)<25)
+                            /*if(u.faction&&(u.faction->technology&TECHNOLOGY_SUPERIORITY)&&GetRandomValue(0, 100)<25)
                                 units[num_units-1].faction = factions+2;
-                            else {
+                            else*/
+                            {
                                 if(u.faction && (u.faction->technology & TECHNOLOGY_NERDS)) {
                                     units[num_units-1].max_health -= 1;
                                     units[num_units-1].health -= 1;
@@ -2005,8 +2003,9 @@ int main() {
                         if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && o.max_health>18.f) skipChance += 0.5f;
                         if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==hero_name) skipChance += 0.5f;
                         if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==veteran_name) skipChance += 0.25f;
+                        if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat)) skipChance += 0.5f;
                         if(skipChance<0.f) skipChance = 0.f;
-                        if(skipChance>0.9f) skipChance = 0.9f;
+                        if(skipChance>0.95f) skipChance = 0.95f;
                         if(u_damage>=o.health && o.faction && (o.faction->technology & TECHNOLOGY_GRIT)) skipChance = (skipChance+1.f)*0.5f;
                         if(u.faction && (u.faction->technology&TECHNOLOGY_SNIPING)) skipChance /= 2;
 
@@ -2019,6 +2018,7 @@ int main() {
                         else if(o.name==hero_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {o.popup = "heroics";}
                         else if(o.name==veteran_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {o.popup = "heroics";}
                         else if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && o.max_health>18.f) {o.popup = "mecha";}
+                        else if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat)) {o.popup = "pristine";}
                         else {o.popup = "cover";}
                         if (o.health >= o.max_health) o.health = o.max_health;
                         if (o.health < 0) o.health = 0;
@@ -2355,13 +2355,13 @@ int main() {
             if (candidate == TECHNOLOGY_EXPLORE) chosen = candidate;
             else if (candidate == TECHNOLOGY_HUNTING) chosen = candidate;
             else if (candidate == TECHNOLOGY_NERDS) chosen = candidate;
+            else if (candidate == TECHNOLOGY_TAMING) chosen = candidate;
 
             else if (candidate == TECHNOLOGY_TRACK && (prev & TECHNOLOGY_EXPLORE)) chosen = candidate;
-            else if (candidate == TECHNOLOGY_TAMING && (prev & TECHNOLOGY_EXPLORE)) chosen = candidate;
             else if (candidate == TECHNOLOGY_AGILE && (prev & TECHNOLOGY_EXPLORE)) chosen = candidate;
             else if (candidate == TECHNOLOGY_DRIVER && (prev & TECHNOLOGY_EXPLORE)) chosen = candidate;
 
-            else if (candidate == TECHNOLOGY_WONDER && (prev & TECHNOLOGY_AGILE)) chosen = candidate;
+            else if (candidate == TECHNOLOGY_WONDER && (prev & (TECHNOLOGY_AGILE | TECHNOLOGY_TAMING))) chosen = candidate;
 
             else if (candidate == TECHNOLOGY_FIGHT && (prev & TECHNOLOGY_HUNTING)) chosen = candidate;
             else if (candidate == TECHNOLOGY_FARMING && (prev & TECHNOLOGY_HUNTING)) chosen = candidate;
@@ -2375,8 +2375,8 @@ int main() {
             else if (candidate == TECHNOLOGY_MOBILE_FORTRESS && (prev & TECHNOLOGY_AUTOREPAIRS)) chosen = candidate;
             else if (candidate == TECHNOLOGY_HIJACK && (prev & TECHNOLOGY_AUTOREPAIRS)) chosen = candidate;
 
-            else if (candidate == TECHNOLOGY_HEROICS && (prev & TECHNOLOGY_FIGHT)) chosen = candidate;
-            else if (candidate == TECHNOLOGY_GRIT && (prev & (TECHNOLOGY_FIGHT | TECHNOLOGY_FARMING))) chosen = candidate;
+            else if (candidate == TECHNOLOGY_HEROICS && (prev & (TECHNOLOGY_FIGHT | TECHNOLOGY_TAMING))) chosen = candidate;
+            else if (candidate == TECHNOLOGY_GRIT && (prev & (TECHNOLOGY_HUNTING))) chosen = candidate;
             else if (candidate == TECHNOLOGY_TOUGH && (prev & TECHNOLOGY_FIGHT)) chosen = candidate;
 
             else if (candidate == TECHNOLOGY_HELLBRINGER && (prev & TECHNOLOGY_HEROICS)) chosen = candidate;
@@ -2390,7 +2390,7 @@ int main() {
             else if (candidate == TECHNOLOGY_INFRASTRUCTURE && (prev & (TECHNOLOGY_FARMING | TECHNOLOGY_RESEARCH))) chosen = candidate;
             else if (candidate == TECHNOLOGY_OWNERSHIP && (prev & (TECHNOLOGY_SEAFARERING | TECHNOLOGY_INFRASTRUCTURE))) chosen = candidate;
 
-            else if (candidate == TECHNOLOGY_LUXURY && (prev & TECHNOLOGY_OWNERSHIP)) chosen = candidate;
+            else if (candidate == TECHNOLOGY_LUXURY && (prev & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_WONDER))) chosen = candidate;
             else if (candidate == TECHNOLOGY_PROPAGANDA && (prev & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_HEROICS))) chosen = candidate;
             else if (candidate == TECHNOLOGY_SUPERIORITY && (prev & TECHNOLOGY_PROPAGANDA)) chosen = candidate;
 
@@ -2944,42 +2944,42 @@ int main() {
             
             // ROOTS
             Vector2 explore   = { cx - 2*DX, top+DY };
-            Vector2 hunting   = { cx - 2*DX, top+6*DY };
+            Vector2 hunting   = { cx - 2*DX, top+7*DY };
             Vector2 nerds     = { cx - 2*DX, top+10*DY };
+            Vector2 taming    = { cx - 2*DX, top+4*DY };
 
             // SECOND TIER
-            Vector2 track     = { explore.x+DX, explore.y - DY };
+            Vector2 track     = { explore.x+DX, explore.y };
             Vector2 agile     = { explore.x+DX, explore.y + DY*2};
             Vector2 driver    = { explore.x+DX, explore.y + DY };
-            Vector2 wonder    = { agile.x+DX, agile.y};
-            Vector2 fight     = { hunting.x+DX, hunting.y};
-            Vector2 farming   = { hunting.x+DX, hunting.y+DY*2};
+            Vector2 wonder    = { agile.x+DX, agile.y+DY};
+            Vector2 fight     = { hunting.x+DX, hunting.y-DY};
+            Vector2 farming   = { hunting.x+DX, hunting.y+DY};
             Vector2 research  = { nerds.x + DX, nerds.y-DY };
             Vector2 homunculi = { nerds.x + DX, nerds.y };
             Vector2 mecha     = { nerds.x + DX, nerds.y+DY };
 
             // THIRD TIER
-            Vector2 heroics    = { fight.x+DX,      fight.y };
+            Vector2 heroics    = { fight.x+DX,      fight.y-DY };
             Vector2 grit       = { fight.x+DX,      fight.y+DY };
-            Vector2 tough      = { fight.x+DX,      fight.y-DY };
+            Vector2 tough      = { fight.x+DX,      fight.y };
             Vector2 infrastructure = { research.x + DX, research.y-DY };
             Vector2 aifarm     = { infrastructure.x + 2*DX, infrastructure.y };
             Vector2 technocracy= { aifarm.x + DX, aifarm.y };
             Vector2 unstable   = { homunculi.x + DX, homunculi.y };
 
-            Vector2 seafaring  = { agile.x+DX,      agile.y+DY };
-            Vector2 hellbringer= { heroics.x+DX*2,  heroics.y };
+            Vector2 seafaring  = { agile.x+DX,      agile.y };
+            Vector2 hellbringer= { heroics.x+DX*2,  heroics.y+DY };
             Vector2 speedy     = { hellbringer.x+DX,hellbringer.y };
-            Vector2 taming     = { explore.x+DX, explore.y + DY*3};
 
-            Vector2 sniping    = { track.x+DX,      track.y+DY };
-            Vector2 sniffing   = { track.x+DX,      track.y };
+            Vector2 sniping    = { track.x+DX,      track.y };
+            Vector2 sniffing   = { track.x+DX,      track.y-DY };
             Vector2 conquer    = { sniffing.x+DX,   sniffing.y };
             Vector2 ownership  = { seafaring.x + DX, seafaring.y };
 
-            Vector2 luxury     = { ownership.x+DX,   ownership.y };
-            Vector2 refinery   = { ownership.x+DX,   ownership.y-1*DY };
-            Vector2 propaganda = { ownership.x+DX,   ownership.y+DY };
+            Vector2 luxury     = { ownership.x+DX,   ownership.y+DY };
+            Vector2 refinery   = { ownership.x+DX,   ownership.y };
+            Vector2 propaganda = { ownership.x+DX,   ownership.y+DY*2 };
             Vector2 superiority= { propaganda.x+DX,  propaganda.y };
 
             Vector2 autorepair  = { mecha.x + DX, mecha.y };
@@ -3001,13 +3001,12 @@ int main() {
             DrawConnector(explore.x+340, explore.y+40, track.x, track.y+40, tech & TECHNOLOGY_EXPLORE);
             DrawConnector(explore.x+340, explore.y+40, agile.x, agile.y+40, tech & TECHNOLOGY_EXPLORE);
             DrawConnector(explore.x+340, explore.y+40, driver.x, driver.y+40, tech & TECHNOLOGY_EXPLORE);
-            DrawConnector(explore.x+340, explore.y+40, taming.x, taming.y+40, tech & TECHNOLOGY_EXPLORE);
             DrawConnector(agile.x+340, agile.y+40, wonder.x, wonder.y+40, tech & TECHNOLOGY_AGILE);
 
             // HUNTING
             DrawConnector(hunting.x+340, hunting.y+40, fight.x, fight.y+40, tech & TECHNOLOGY_HUNTING);
-            //DrawConnector(hunting.x+340, hunting.y+40, agile.x, agile.y+40, tech & TECHNOLOGY_HUNTING);
             DrawConnector(hunting.x+340, hunting.y+40, farming.x, farming.y+40, tech & TECHNOLOGY_HUNTING);
+            DrawConnector(taming.x+340, taming.y+40, heroics.x, heroics.y+40, tech & TECHNOLOGY_TAMING);
 
             // NERDS
             DrawConnector(nerds.x+340, nerds.y+40, research.x, research.y+40, tech & TECHNOLOGY_NERDS);
@@ -3016,9 +3015,10 @@ int main() {
 
             // FIGHT
             DrawConnector(fight.x+340, fight.y+40, heroics.x, heroics.y+40, tech & TECHNOLOGY_FIGHT);
-            DrawConnector(fight.x+340, fight.y+40, grit.x, grit.y+40, tech & TECHNOLOGY_FIGHT);
+            DrawConnector(hunting.x+340, hunting.y+40, grit.x, grit.y+40, tech & TECHNOLOGY_HUNTING);
             DrawConnector(fight.x+340, fight.y+40, tough.x, tough.y+40, tech & TECHNOLOGY_FIGHT);
-            DrawConnector(farming.x+340, farming.y+40, grit.x, grit.y+40, tech & TECHNOLOGY_FARMING);
+            DrawConnector(taming.x+340, taming.y+40, wonder.x, wonder.y+40, tech & TECHNOLOGY_TAMING);
+            DrawConnector(wonder.x+340, wonder.y+40, luxury.x, luxury.y+40, tech & TECHNOLOGY_WONDER);
 
             // AGILE
             DrawConnector(agile.x+340, agile.y+40, seafaring.x, seafaring.y+40, tech & TECHNOLOGY_AGILE);
@@ -3087,6 +3087,10 @@ int main() {
             DrawTextureEx(tex::research, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
 
 
+            DrawTechNode(taming.x, taming.y, "TAMER", "Control defeated animals", tech, TECHNOLOGY_TAMING);
+            DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
+
+
             if(prev_tech & (TECHNOLOGY_BIOWEAPON | TECHNOLOGY_GRIT)) {
                 DrawTechNode(evolution.x, evolution.y, "EVOLUTION", "10\% of spawn are snowman", tech, TECHNOLOGY_EVOLUTION);
                 DrawTextureEx(tex::snowman, {evolution.x + ICON_DX, evolution.y + ICON_DY}, 0, ICON_SIZE / tex::snowman.width, WHITE);
@@ -3095,14 +3099,11 @@ int main() {
                 DrawTechNode(track.x, track.y, "TRACKER", "Less reduced visibility", tech, TECHNOLOGY_TRACK);
                 DrawTextureEx(tex::track, {track.x + ICON_DX, track.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_AGILE) {
+            if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_TAMING)) {
                 DrawTechNode(wonder.x, wonder.y, "WONDER", "Discoveries grant experience", tech, TECHNOLOGY_WONDER);
                 DrawTextureEx(tex::track, {wonder.x + ICON_DX, wonder.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_EXPLORE) {
-                DrawTechNode(taming.x, taming.y, "TAMER", "Control defeated animals", tech, TECHNOLOGY_TAMING);
-                DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
-            }
+
             if(prev_tech & (TECHNOLOGY_EXPLORE)) {
                 DrawTechNode(agile.x, agile.y, "AGILE", "Terrain slows less", tech, TECHNOLOGY_AGILE);
                 DrawTextureEx(tex::track, {agile.x + ICON_DX, agile.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
@@ -3135,11 +3136,11 @@ int main() {
                 DrawTechNode(autorepair.x, autorepair.y, "AUTOREPAIR", "Mecha health regen", tech, TECHNOLOGY_AUTOREPAIRS);
                 DrawTextureEx(tex::tank, {autorepair.x + ICON_DX, autorepair.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_FIGHT) {
+            if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TAMING)) {
                 DrawTechNode(heroics.x, heroics.y, "HEROICS", "Veterans and heroes dodge", tech, TECHNOLOGY_HEROICS);
                 DrawTextureEx(tex::blood, {heroics.x + ICON_DX, heroics.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
-            if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_FARMING)) {
+            if(prev_tech & TECHNOLOGY_HUNTING) {
                 DrawTechNode(grit.x, grit.y, "GRIT", "50\% dodge vs lethal", tech, TECHNOLOGY_GRIT);
                 DrawTextureEx(tex::blood, {grit.x + ICON_DX, grit.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
@@ -3172,11 +3173,11 @@ int main() {
                 DrawTextureEx(tex::ghost, {unstable.x + ICON_DX, unstable.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_INFRASTRUCTURE) {
-                DrawTechNode(aifarm.x, aifarm.y, "AI FARM", "Labs: 16 industry, sever polution", tech, TECHNOLOGY_AIFARM);
+                DrawTechNode(aifarm.x, aifarm.y, "AI FARM", "+ 16 industry from labs", tech, TECHNOLOGY_AIFARM);
                 DrawTextureEx(tex::gear, {aifarm.x + ICON_DX, aifarm.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AIFARM | TECHNOLOGY_MECHANISED)) {
-                DrawTechNode(technocracy.x, technocracy.y, "TECHNOCRACY", "-50\% industry, +1 utopia per 25 left", tech, TECHNOLOGY_TECHNOCRACY);
+                DrawTechNode(technocracy.x, technocracy.y, "TECHNOCRACY", "+1 utopia per 100 industry", tech, TECHNOLOGY_TECHNOCRACY);
                 DrawTextureEx(tex::utopia, {technocracy.x + ICON_DX, technocracy.y + ICON_DY}, 0, ICON_SIZE / tex::utopia.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_DRIVER) {
@@ -3207,9 +3208,9 @@ int main() {
                 DrawTechNode(mobile.x, mobile.y, "MOBILE FORT", "Captured mechas turn to tanks", tech, TECHNOLOGY_MOBILE_FORTRESS);
                 DrawTextureEx(tex::tank, {mobile.x + ICON_DX, mobile.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_OWNERSHIP) {
-                DrawTechNode(luxury.x, luxury.y, "LUXURY", "+1 utopia per 2 camps, half spawns", tech, TECHNOLOGY_LUXURY);
-                DrawTextureEx(tex::utopia, {luxury.x + ICON_DX, luxury.y + ICON_DY}, 0, ICON_SIZE / tex::utopia.width, WHITE);
+            if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_WONDER)) {
+                DrawTechNode(luxury.x, luxury.y, "PRISTINE", "+50\% dodge vs animal and bloo", tech, TECHNOLOGY_LUXURY);
+                DrawTextureEx(tex::research, {luxury.x + ICON_DX, luxury.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_GIGAJOULE) {
                 DrawTechNode(terraforming.x, terraforming.y, "TERRAFORMING", "New captures become fields", tech, TECHNOLOGY_TERRAFORIMING);
@@ -3221,11 +3222,11 @@ int main() {
                 DrawTextureEx(tex::gear, {refinery.x + ICON_DX, refinery.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_HEROICS)) {
-                DrawTechNode(propaganda.x, propaganda.y, "PROPAGANDA", "+1 utopia per 2 radios", tech, TECHNOLOGY_PROPAGANDA);
+                DrawTechNode(propaganda.x, propaganda.y, "PROPAGANDA", "+1 utopia per 3 radios", tech, TECHNOLOGY_PROPAGANDA);
                 DrawTextureEx(tex::utopia, {propaganda.x + ICON_DX, propaganda.y + ICON_DY}, 0, ICON_SIZE / tex::utopia.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_PROPAGANDA) {
-                DrawTechNode(superiority.x, superiority.y, "SUPERIORITY", "+2 utopia, 25\% enemy spawn", tech, TECHNOLOGY_SUPERIORITY);
+                DrawTechNode(superiority.x, superiority.y, "SUPERIORITY", "+1 utopia", tech, TECHNOLOGY_SUPERIORITY);
                 DrawTextureEx(tex::utopia, {superiority.x + ICON_DX, superiority.y + ICON_DY}, 0, ICON_SIZE / tex::utopia.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_INDUSTRY) {
