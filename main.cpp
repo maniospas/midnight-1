@@ -66,6 +66,7 @@ namespace tex {
     static Texture2D track;
     static Texture2D sun;
     static Texture2D research;
+    static Texture2D rat;
 }
 
 static void DrawTechProgressBar(
@@ -289,6 +290,28 @@ int NOISE_SEED = 0;
             (faction),    /* faction */ \
             nullptr,      /* faction */ \
             0.3           /* extra scale*/\
+        };
+
+
+#define CREATE_RAT(faction, x, y) \
+    if (num_units < MAX_UNITS) \
+        units[num_units++] = { \
+            &tex::rat,   /* texture */ \
+            "Rat",       /* name */ \
+            7.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            1.0,          /* attack_rate */ \
+            1.0,          /* range */ \
+            1.0,          /* damage */ \
+            0.0,          /* experience */ \
+            0.0,          /* angle */ \
+            0.2,          /* size */ \
+            2.0,         /* health */ \
+            2.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            nullptr,      /* faction */ \
+            0.0           /* extra scale*/\
         };
 
 
@@ -757,6 +780,7 @@ int main() {
     tex::snowman = LoadTexture("data/snowman.png");
     tex::railgun = LoadTexture("data/railgun.png");
     tex::hide = LoadTexture("data/hide.png");
+    tex::rat = LoadTexture("data/rat.png");
     tex::bison = LoadTexture("data/bison.png");
     tex::wolf = LoadTexture("data/wolf.png");
     tex::heal = LoadTexture("data/heal.png");
@@ -883,6 +907,7 @@ int main() {
 
         // --- Input ---
         if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            showTechTree = false;
             goto START_GAME;
         }
 
@@ -1384,6 +1409,13 @@ int main() {
                 CREATE_WOLF(ANIMAL_FACTION, x+1, y+1);
             }
         }
+        if (T.texture == &tex::hill) {
+            CREATE_RAT(ANIMAL_FACTION, x-0.2, y+0.2);
+            CREATE_RAT(ANIMAL_FACTION, x-0.2, y-0.2);
+            CREATE_RAT(ANIMAL_FACTION, x+0.2, y+0.2);
+            CREATE_RAT(ANIMAL_FACTION, x+0.2, y-0.2);
+            CREATE_RAT(ANIMAL_FACTION, x, y);
+        }
         if(T.texture==&tex::mountain) {
             CREATE_SNOWMAN(ANIMAL_FACTION, x-1, y-1);
             CREATE_SNOWMAN(ANIMAL_FACTION, x-1, y+1);
@@ -1516,7 +1548,7 @@ int main() {
             if(!u.faction) continue;
             if(u.capturing) continue;
             if(!u.speed) continue;
-            if(u.texture!=&tex::bison && u.texture!=&tex::wolf) { // don't count animals for industry needs'
+            if(u.texture!=&tex::bison && u.texture!=&tex::wolf && u.texture!=&tex::rat) { // don't count animals for industry needs'
                 u.faction->count_members += u.max_health/5.f;
                 if(u.faction->technology & TECHNOLOGY_HYPERMAGNET) u.faction->count_members += u.max_health/5.f;
             }
@@ -1656,8 +1688,32 @@ int main() {
                 continue;
             if(u.texture==&tex::field) 
                 continue;
-            if(u.texture==&tex::hide) 
+            if(u.texture==&tex::hide) {
+                if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.005) { // once every 10 mins it may become rats
+                    CREATE_RAT(ANIMAL_FACTION, u.x-0.2, u.y+0.2);
+                    CREATE_RAT(ANIMAL_FACTION, u.x-0.2, u.y-0.2);
+                    CREATE_RAT(ANIMAL_FACTION, u.x+0.2, u.y+0.2);
+                    CREATE_RAT(ANIMAL_FACTION, u.x+0.2, u.y-0.2);
+                    CREATE_RAT(ANIMAL_FACTION, u.x, u.y);
+                    u = { \
+                        &tex::blood,  /* texture */
+                        "Blood",      /* name */
+                        0.0,          /* speed */
+                        u.x,          /* x */
+                        u.y,          /* y */
+                        0.0,          /* attack_rate */
+                        0.0,          /* range */
+                        0.0,          /* damage */
+                        0.0,          /* experience */
+                        u.angle,      /* angle */
+                        0.5,          /* size */
+                        0.0,          /* health */
+                        0.0,          /* max_health */
+                        nullptr       /* faction */
+                    };
+                }
                 continue;
+            }
             if(u.texture==&tex::mine) 
                 continue;
             if (u.texture == &tex::camp) {
@@ -1998,7 +2054,7 @@ int main() {
                             o.popup = "hijacked";
                             o.animation = 0.f;
                         }
-                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_TAMING) && (o.texture==&tex::bison || o.texture==&tex::wolf)) {
+                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_TAMING) && (o.texture==&tex::bison || o.texture==&tex::wolf || o.texture==&tex::rat)) {
                             o.faction = u.faction;
                             o.health = o.max_health;
                             o.popup = "tamed";
@@ -2137,6 +2193,13 @@ int main() {
                     else {
                         CREATE_WOLF(ANIMAL_FACTION, x, y);
                     }
+                }
+                else if (T.texture == &tex::hill) {
+                    CREATE_RAT(ANIMAL_FACTION, x-0.2, y+0.2);
+                    CREATE_RAT(ANIMAL_FACTION, x-0.2, y-0.2);
+                    CREATE_RAT(ANIMAL_FACTION, x+0.2, y+0.2);
+                    CREATE_RAT(ANIMAL_FACTION, x+0.2, y-0.2);
+                    CREATE_RAT(ANIMAL_FACTION, x, y);
                 }
                 else if (T.texture == &tex::mountain) {
                     CREATE_SNOWMAN(ANIMAL_FACTION, x, y);
@@ -3394,7 +3457,10 @@ int main() {
                 if(hovered->texture==&tex::camp) DrawText("Spawns humans", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::lab) DrawText("+10% research", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::field) DrawText("+6 industry", px + 80, textY, 28, WHITE);
-                else if(hovered->texture==&tex::hide) DrawText("+4 industry", px + 80, textY, 28, WHITE);
+                else if(hovered->texture==&tex::hide) {
+                    DrawText("+4 industry", px + 80, textY, 28, WHITE);
+                    DrawText("May become rats", px + 80, textY+30, 28, WHITE);
+                }
                 else if(hovered->texture==&tex::mine) DrawText("+12 industry", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::oil) DrawText("+1 utopia", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::warehouse) DrawText("+1 utopia", px + 80, textY, 28, WHITE);
@@ -3410,7 +3476,8 @@ int main() {
                 else if(hovered->damage) {
                     if(hovered->range<3.f) {
                         DrawText("Animal", px + 80, textY, 28, WHITE);
-                        if(hovered->texture==&tex::snowman) DrawText("Drops hide", px + 80, textY+30, 28, WHITE);
+                        if(hovered->texture==&tex::snowman) {}
+                        else if(hovered->texture==&tex::rat) DrawText("Propagates", px + 80, textY+30, 28, WHITE);
                         else DrawText("Drops hide", px + 80, textY+30, 28, WHITE);
                     }
                     else {
@@ -3503,6 +3570,7 @@ int main() {
     UnloadTexture(tex::lab);
     UnloadTexture(tex::blood);
     UnloadTexture(tex::bison);
+    UnloadTexture(tex::rat);
     UnloadTexture(tex::wolf);
     UnloadTexture(tex::warehouse);
     UnloadTexture(tex::ghost);
