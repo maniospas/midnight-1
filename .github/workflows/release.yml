@@ -16,10 +16,26 @@ jobs:
 
     # ---------- Linux ----------
     - name: Install deps (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
+    if: matrix.os == 'ubuntu-latest'
+    run: |
         sudo apt update
-        sudo apt install -y g++ make raylib-dev zip
+        sudo apt install -y g++ make git \
+        libx11-dev libxrandr-dev libxinerama-dev \
+        libxcursor-dev libxi-dev libgl1-mesa-dev zip
+
+    - name: Build raylib (Linux)
+    if: matrix.os == 'ubuntu-latest'
+    run: |
+        git clone https://github.com/raysan5/raylib.git
+        cd raylib/src
+        make PLATFORM=PLATFORM_DESKTOP
+        sudo make install
+        sudo ldconfig
+
+    - name: Build game (Linux)
+    if: matrix.os == 'ubuntu-latest'
+    run: make
+
 
     - name: Build (Linux)
       if: matrix.os == 'ubuntu-latest'
