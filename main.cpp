@@ -1255,11 +1255,11 @@ int main() {
         }
 
         // Spawn base
-        CREATE_CAMP(&factions[0], bx-1, by);
-        CREATE_CAMP(&factions[0], bx+1, by);
+        CREATE_CAMP(&factions[0], bx-0.3, by);
+        CREATE_CAMP(&factions[0], bx+0.3, by);
 
         // Spawn starting humans
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 8; i++) {
             float sx = bx + (GetRandomValue(-5000, 5000) * 0.0002f);
             float sy = by + (GetRandomValue(-5000, 5000) * 0.0002f);
             CREATE_HUMAN(&factions[0], sx, sy);
@@ -1283,9 +1283,9 @@ int main() {
             float by = GetRandomValue(20, GRID_SIZE - 20);
             if (campExistsTooClose(bx, by, BASE_MIN_DIST))
                 continue;
-            CREATE_CAMP(&factions[fi], bx-1, by);
-            CREATE_CAMP(&factions[fi], bx+1, by);
-            for (int i = 0; i < 4; i++) {
+            CREATE_CAMP(&factions[fi], bx-0.3, by);
+            CREATE_CAMP(&factions[fi], bx+0.3, by);
+            for (int i = 0; i < 8; i++) {
                 float sx = bx + (GetRandomValue(-5000, 5000) * 0.0002f);
                 float sy = by + (GetRandomValue(-5000, 5000) * 0.0002f);
                 CREATE_HUMAN(&factions[fi], sx, sy);
@@ -1296,8 +1296,8 @@ int main() {
         if (!placed) {
             float bx = GetRandomValue(20, GRID_SIZE - 20);
             float by = GetRandomValue(20, GRID_SIZE - 20);
-            CREATE_CAMP(&factions[fi], bx-1, by);
-            CREATE_CAMP(&factions[fi], bx+1, by);
+            CREATE_CAMP(&factions[fi], bx-0.3, by);
+            CREATE_CAMP(&factions[fi], bx+0.3, by);
             for (int i = 0; i < 4; i++) {
                 float sx = bx + (GetRandomValue(-5000, 5000) * 0.0002f);
                 float sy = by + (GetRandomValue(-5000, 5000) * 0.0002f);
@@ -1312,7 +1312,7 @@ int main() {
     int NUM_NEUTRAL_STRUCTURES = GRID_SIZE*GRID_SIZE/512;
     int NUM_NEUTRAL_TANKS = GRID_SIZE*GRID_SIZE/512*2;
     int NUM_WILD_ANIMALS= GRID_SIZE*GRID_SIZE/512/4;
-    float AVOID_BASE_RADIUS = 10.0f;
+    float AVOID_BASE_RADIUS = 7.0f;
 
     auto RevealUnitToAllFactions = [&](int unitIndex) {
         for (int fi = 0; fi < max_factions; fi++) {
@@ -1340,7 +1340,13 @@ int main() {
                     continue;
                 }
                 if (!isGrass) continue; 
-                CREATE_FIELD(&factions[1], x, y);
+                {
+                float spacing = 0.7f;
+                CREATE_FIELD(&factions[1], x-spacing, y-spacing);
+                CREATE_FIELD(&factions[1], x-spacing, y+spacing);
+                CREATE_FIELD(&factions[1], x+spacing, y+spacing);
+                CREATE_FIELD(&factions[1], x+spacing, y-spacing);
+                }
                 break;
             case 3:
                 if (!isDesert && GetRandomValue(0, 99) < 80) continue; 
@@ -1532,9 +1538,9 @@ int main() {
                     game_time -= dt*0.08f;
                     polution_speedup -= 0.08f;
                 }
-                if(u.texture==&tex::field && u.faction && (u.faction->technology & TECHNOLOGY_FARMING)) u.faction->industry += 6.f;
+                if(u.texture==&tex::field) u.faction->industry += 2.f;
+                if(u.texture==&tex::field && u.faction && (u.faction->technology & TECHNOLOGY_FARMING)) u.faction->industry += 2.f;
                 if(u.texture==&tex::hide && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 4.f;
-                if(u.faction) u.faction->industry += u.attack_rate;
                 continue;
             }
             if(u.max_health>18.f && u.faction) {
@@ -2117,11 +2123,18 @@ int main() {
                                 u.popup = "conquered";
                             }
                             o.capturing = u.faction;
-                            o.faction = u.faction;
-                            o.health = o.max_health;
-                            if(o.texture==&tex::tank) o.capturing = nullptr; // only capture tanks once
-                            if(o.texture==&tex::van) o.capturing = nullptr; // only capture vans once
-                            if(o.texture==&tex::railgun) o.capturing = nullptr; // only capture railguns once
+                            if(o.capturing==ANIMAL_FACTION) {
+                                o.capturing = factions+1; // animals cannot capture
+                                o.faction = o.capturing;
+                                o.health = o.max_health;
+                            }
+                            else {
+                                o.faction = o.capturing;
+                                o.health = o.max_health;
+                                if(o.texture==&tex::tank) o.capturing = nullptr; // only capture tanks once
+                                if(o.texture==&tex::van) o.capturing = nullptr; // only capture vans once
+                                if(o.texture==&tex::railgun) o.capturing = nullptr; // only capture railguns once
+                            }
 
                             if(u.faction && (u.faction->technology & TECHNOLOGY_MOBILE_FORTRESS) && (o.texture==&tex::railgun || o.texture==&tex::van)) {
                                 units[j] = { \
@@ -3086,7 +3099,7 @@ int main() {
             DrawTextureEx(tex::track, {explore.x + ICON_DX, explore.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
 
 
-            DrawTechNode(hunting.x, hunting.y, "HUNTING", "Camps and hides +4 industry", tech, TECHNOLOGY_HUNTING);
+            DrawTechNode(hunting.x, hunting.y, "HUNTING", "+4 industry from camps and hides", tech, TECHNOLOGY_HUNTING);
             DrawTextureEx(tex::gear, {hunting.x + ICON_DX, hunting.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
 
             DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "+33\% research, -1 spawn health", tech, TECHNOLOGY_NERDS);
@@ -3115,7 +3128,7 @@ int main() {
                 DrawTextureEx(tex::track, {agile.x + ICON_DX, agile.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_HUNTING) {
-                DrawTechNode(farming.x, farming.y, "FARMING", "+6 industry from fields", tech, TECHNOLOGY_FARMING);
+                DrawTechNode(farming.x, farming.y, "FARMING", "+2 industry from fields", tech, TECHNOLOGY_FARMING);
                 DrawTextureEx(tex::gear, {farming.x + ICON_DX, farming.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_EXPLORE) {
@@ -3451,7 +3464,7 @@ int main() {
                 textY += 135;
                 if(hovered->texture==&tex::camp) DrawText("Spawns humans", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::lab) DrawText("+10% research", px + 80, textY, 28, WHITE);
-                else if(hovered->texture==&tex::field) DrawText("+6 industry", px + 80, textY, 28, WHITE);
+                else if(hovered->texture==&tex::field) DrawText("+2 industry", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::hide) {
                     DrawText("+4 industry", px + 80, textY, 28, WHITE);
                     DrawText("May become rats", px + 80, textY+30, 28, WHITE);
