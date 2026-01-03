@@ -478,7 +478,7 @@ int NOISE_SEED = 0;
     if (num_units < MAX_UNITS) \
         units[num_units++] = { \
             &tex::warehouse,   /* texture */ \
-            "Warehouse",  /* name */ \
+            "Storage",  /* name */ \
             0.0,          /* speed */ \
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
@@ -1772,7 +1772,7 @@ int main() {
             u_speed *= u.speed;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             float u_range = u.range*(1+extra_sight);
-            if(u.texture==&tex::camp && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range *= 25.f;
+            if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range *= 25.f;
             if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range += extra_sight;
             // attack (interrupt movement to attack)
             if (u.attack_target_x == 0 && u.attack_target_y == 0 && u.capturing!=factions+1) {
@@ -2377,7 +2377,7 @@ int main() {
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             if(extra_sight<0 && u.faction->technology&TECHNOLOGY_TRACK) extra_sight /= 2;
             float u_range = u.range*(1+extra_sight);
-            if(u.texture==&tex::camp && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range *= 25.f;
+            if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range *= 25.f;
             if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range += extra_sight;
             int VISION_RADIUS = (int)u_range+2;
             for (int dy = -VISION_RADIUS; dy <= VISION_RADIUS; dy++) {
@@ -2844,7 +2844,8 @@ int main() {
             Vector2 world = { u.x * TILE_SIZE, u.y * TILE_SIZE };
             Vector2 screen = GetWorldToScreen2D(world, camera);
             float u_range = u.range*(1+terrainGrid[(int)u.y][(int)u.x].extra_sight);
-            if(u.texture==&tex::camp && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range *= 25.f;
+            // important that here we extend the sight range only for stuff controlled by the player
+            if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range *= 25.f;
             if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range += terrainGrid[(int)u.y][(int)u.x].extra_sight;
             float radiusPixels = (u_range * TILE_SIZE) * camera.zoom;
             Rectangle src = { 0, 0, (float)fog_hole.width, (float)fog_hole.height };
@@ -3133,14 +3134,14 @@ int main() {
             const float ICON_DX = 275.0f;
             const float ICON_DY = 10.0f;
 
-            DrawTechNode(explore.x, explore.y, "EXPLORE", "Wide camp sight", tech, TECHNOLOGY_EXPLORE);
+            DrawTechNode(explore.x, explore.y, "CHARTED", "Wide sight from camps and storages", tech, TECHNOLOGY_EXPLORE);
             DrawTextureEx(tex::track, {explore.x + ICON_DX, explore.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
 
 
             DrawTechNode(hunting.x, hunting.y, "HUNTING", "+4 industry from camps and hides", tech, TECHNOLOGY_HUNTING);
             DrawTextureEx(tex::gear, {hunting.x + ICON_DX, hunting.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
 
-            DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "+33\% research, -1 spawn health", tech, TECHNOLOGY_NERDS);
+            DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "+33\% research, -1 spawn HP", tech, TECHNOLOGY_NERDS);
             DrawTextureEx(tex::research, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
 
 
@@ -3225,7 +3226,7 @@ int main() {
                 DrawTextureEx(tex::blood, {ownership.x + ICON_DX, ownership.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_HOMUNCULI) {
-                DrawTechNode(unstable.x, unstable.y, "UNSTABLE", "-1 spawn health, bloo on death", tech, TECHNOLOGY_UNSTABLE);
+                DrawTechNode(unstable.x, unstable.y, "UNSTABLE", "-1 spawn HP, bloo on death", tech, TECHNOLOGY_UNSTABLE);
                 DrawTextureEx(tex::ghost, {unstable.x + ICON_DX, unstable.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_INFRASTRUCTURE) {
@@ -3245,7 +3246,7 @@ int main() {
                 DrawTextureEx(tex::ghost, {bioweapon.x + ICON_DX, bioweapon.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_TRACK) {
-                DrawTechNode(sniping.x, sniping.y, "SNIPING", "Double accuracy in low visibility", tech, TECHNOLOGY_SNIPING);
+                DrawTechNode(sniping.x, sniping.y, "SNIPING", "Double accuracy vs dodgers", tech, TECHNOLOGY_SNIPING);
                 DrawTextureEx(tex::blood, {sniping.x + ICON_DX, sniping.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_TRACK) {
@@ -3269,7 +3270,7 @@ int main() {
                 DrawTextureEx(tex::research, {luxury.x + ICON_DX, luxury.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_GIGAJOULE) {
-                DrawTechNode(terraforming.x, terraforming.y, "TERRAFORMING", "New captures become fields", tech, TECHNOLOGY_TERRAFORIMING);
+                DrawTechNode(terraforming.x, terraforming.y, "TERRAFORMING", "Fields propagate", tech, TECHNOLOGY_TERRAFORIMING);
                 DrawTextureEx(tex::field, {terraforming.x + ICON_DX, terraforming.y + ICON_DY}, 0, ICON_SIZE / tex::field.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_TERRAFORIMING) DrawTechNode(atmosphere.x, atmosphere.y, "ATMOSPHERE v2.0", "Fields delay polution by 8\%", tech, TECHNOLOGY_ATMOSPHERE);
