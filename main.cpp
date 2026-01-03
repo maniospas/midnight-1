@@ -76,13 +76,8 @@ static void DrawTechProgressBar(
 ) {
     if (progress < 0.f) progress = 0.f;
     if (progress > 1.f) progress = 1.f;
-
     DrawRectangleRounded({x, y, w, h}, 0.3f, 8, Fade(DARKGRAY, 0.6f));
-    DrawRectangleRounded(
-        {x + 2, y + 2, (w - 4) * progress, h - 4},
-                         0.3f, 8,
-                         Fade(GREEN, 0.85f)
-    );
+    DrawRectangleRounded({x + 2, y + 2, (w - 4) * progress, h - 4},0.3f, 8,Fade(GREEN, 0.85f));
     DrawRectangleRoundedLines({x, y, w, h}, 0.3f, 8, GRAY);
 }
 
@@ -818,14 +813,14 @@ int main() {
         GetScreenWidth() - 260.0f,
         GetScreenHeight() - 200.0f,
         240.0f,
-        120.0f
+        100.0f
     };
     bool showTechTree = false;
     Rectangle techBtn = {
         GetScreenWidth() - 260.0f,
-        GetScreenHeight() - 340.0f,
+        GetScreenHeight() - 320.0f,
         240.0f,
-        120.0f
+        100.0f
     };
 
     // preallocate stuff
@@ -1357,12 +1352,7 @@ int main() {
                 }
                 else if(count_warehouses<3){
                     count_warehouses++;
-                    if(GetRandomValue(0, 99) < 50) {
-                        CREATE_WAREHOUSE(&factions[1], x, y);
-                    }
-                    else {
-                        CREATE_OIL(&factions[1], x, y);
-                    }
+                    CREATE_WAREHOUSE(&factions[1], x, y);
                     RevealUnitToAllFactions(num_units - 1);
                 }
                 break;
@@ -1479,8 +1469,7 @@ int main() {
                 else currentMovementMode = MovementMode::Scattered;
             }
         }
-        if (IsKeyPressed(KEY_ESCAPE)) 
-            showTechTree = !showTechTree;
+        if (IsKeyPressed(KEY_ESCAPE)) showTechTree = !showTechTree;
         if (CheckCollisionPointRec(GetMousePosition(), techBtn)) {
             mouseCapturedByUI = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) 
@@ -1489,17 +1478,16 @@ int main() {
 
 
         // camera
-        const float move = 500.0f * GetFrameTime() * CAMERA_ZOOM * 2;
-        if (IsKeyDown(KEY_RIGHT)) camera.target.x += move;
-        if (IsKeyDown(KEY_LEFT))  camera.target.x -= move;
-        if (IsKeyDown(KEY_UP))    camera.target.y -= move;
-        if (IsKeyDown(KEY_DOWN))  camera.target.y += move;
+        const float move = 2000.0f * GetFrameTime() * CAMERA_ZOOM * 2;
+        if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) camera.target.x += move;
+        if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))  camera.target.x -= move;
+        if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))    camera.target.y -= move;
+        if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))  camera.target.y += move;
         //camera.zoom += GetMouseWheelMove() * 0.2f;
         //if (camera.zoom < 0.5f) camera.zoom = 0.5f;
         //if (camera.zoom < 0.25f) camera.zoom = 0.25f;
         float wheel = GetMouseWheelMove();
-        if (wheel)
-            target_zoom += wheel * 0.1f;
+        if (wheel) target_zoom += wheel * 0.1f;
         if (camera.zoom!=target_zoom) {
             Vector2 mouseWorldBefore = GetScreenToWorld2D(GetMousePosition(), camera);
             if (target_zoom < 0.15f) target_zoom = 0.15f;
@@ -1685,9 +1673,9 @@ int main() {
                 continue;
             }
             if(u.texture==&tex::oil) 
-                u.faction->victory_points += 1.f;
+                u.faction->victory_points += 3.f;
             if(u.texture==&tex::warehouse)
-                u.faction->victory_points += 1.f;
+                u.faction->victory_points += 2.f;
             if(u.texture==&tex::radio && u.faction && (u.faction->technology & TECHNOLOGY_PROPAGANDA) )
                 u.faction->victory_points += 0.334f;
             if(u.texture==&tex::lab)
@@ -3279,26 +3267,14 @@ int main() {
         }
 
 
+        // --------------------------------------------------
+        // RESEARCH BUTTON
+        // --------------------------------------------------
         float prog = factions[0].technology_progress;
         bool techHover = CheckCollisionPointRec(GetMousePosition(), techBtn);
-
-        // --- BUTTON BACKGROUND ---
-        DrawRectangleRounded(
-            techBtn,
-            0.2f,
-            8,
-            techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f)
-        );
-
-        // --- TITLE ---
+        DrawRectangleRounded(techBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
         const char* title = (prog >= 1.0f) ? "Tech ready" : "Researching";
-        DrawText(
-            title,
-            techBtn.x + 20,
-            techBtn.y + 16,
-            32,
-            WHITE
-        );
+        DrawText(title,techBtn.x + 20,techBtn.y + 16,32,WHITE);
         float padding = 20.0f;
         float barW = techBtn.width - padding * 2;
         float barH = 20.0f;
@@ -3481,8 +3457,8 @@ int main() {
                     DrawText("May become rats", px + 80, textY+30, 28, WHITE);
                 }
                 else if(hovered->texture==&tex::mine) DrawText("+12 industry", px + 80, textY, 28, WHITE);
-                else if(hovered->texture==&tex::oil) DrawText("+1 utopia", px + 80, textY, 28, WHITE);
-                else if(hovered->texture==&tex::warehouse) DrawText("+1 utopia", px + 80, textY, 28, WHITE);
+                else if(hovered->texture==&tex::oil) DrawText("+3 utopia", px + 80, textY, 28, WHITE);
+                else if(hovered->texture==&tex::warehouse) DrawText("+2 utopia", px + 80, textY, 28, WHITE);
                 else if(hovered->max_health>18.f && hovered->speed==0) DrawText("Mecha", px + 80, textY, 28, WHITE);
                 else if(hovered->max_health>18.f) {
                     DrawText("Mecha", px + 80, textY, 28, WHITE);
@@ -3535,8 +3511,7 @@ int main() {
 
             // icon: three humans with increasing spacing
             float cx = clusteringBtn.x + 40;
-            float cy = clusteringBtn.y + 45;
-
+            float cy = clusteringBtn.y + 70;
             for (int i = 0; i < 3; i++) {
                 float dx = i * 45.0f;
                 if(currentMovementMode==MovementMode::Scattered) dx += i*16.f;
@@ -3550,7 +3525,7 @@ int main() {
             DrawText(
                 currentMovementMode==MovementMode::Explore?"Explore":currentMovementMode==MovementMode::Tight?"Tight move":"Scattered",
                 clusteringBtn.x + 20,
-                clusteringBtn.y + clusteringBtn.height - 42,
+                clusteringBtn.y + 10,
                 32,
                 WHITE
             );
