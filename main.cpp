@@ -519,8 +519,8 @@ static bool DrawTechNode(
     unsigned long long &tech,
     unsigned long long bit
 ) {
-    const int W = 340;
-    const int H = 80;
+    const int W = GetScreenWidth()/6-40;
+    const int H = GetScreenHeight()/14-20;
 
     Rectangle rect = { x, y, (float)W, (float)H };
     Vector2 mouse = GetMousePosition();
@@ -543,19 +543,19 @@ static bool DrawTechNode(
     DrawRectangleRounded(rect, 0.2f, 6, bg);
     DrawRectangleRoundedLines(rect, 0.2f, 6, edge);
 
-    DrawText(title, x + 12, y + 6, 34, WHITE);
-    DrawText(desc,  x + 12, y + 50, 20, Fade(WHITE, 0.85f));
+    DrawText(title, x + 12, y + 6, W/10, WHITE);
+    DrawText(desc,  x + 12, y + W/8, W/18, Fade(WHITE, 0.85f));
 
     // --- hover hint ---
-    if (hovered && !owned) {
-        DrawText(
-            "Click to get it once research completes",
-            x + 8,
-            y - 26,
-            18,
-            Fade(WHITE, 0.7f)
-        );
-    }
+    // if (hovered && !owned) {
+    //     DrawText(
+    //         "Click to get it once research completes",
+    //         x + 8,
+    //         y - 26,
+    //         18,
+    //         Fade(WHITE, 0.7f)
+    //     );
+    // }
 
     // --- click logic ---
     if (hovered && !owned && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -739,6 +739,9 @@ struct Decorator {
     float size;
 };
 
+const int GAME_W = 2560;
+const int GAME_H = 1600;
+
 
 int main() {
     SetTraceLogLevel(LOG_NONE); // disable raylib logs
@@ -850,18 +853,11 @@ int main() {
     };
     Faction* ANIMAL_FACTION = &factions[2];
 
-
     // main loop
     MAIN_MENU:
-    Rectangle btnStart = {
-        GetScreenWidth()/2 - 300, 920,
-        600, 80
-    };
-
-    Rectangle btnQuit = {
-        GetScreenWidth()/2 - 300, 1020,
-        600, 80
-    };
+    const int baseY = GetScreenHeight()/2 - 600;
+    const Rectangle btnStart = {GetScreenWidth()/2 - 300, baseY+720,600, 80};
+    const Rectangle btnQuit = {GetScreenWidth()/2 - 300, baseY+820,600, 80};
 
     while (true) {
         BeginDrawing();
@@ -870,27 +866,20 @@ int main() {
         DrawTexturePro(
             tex::sun,
             Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
-            Rectangle{GetScreenWidth()/2-256, 300, 512, 256},
+            Rectangle{GetScreenWidth()/2-256, baseY+100, 512, 256},
             {0,0}, 0, WHITE);
-        DrawText("MIDNIGHT", GetScreenWidth()/2 - 300, 600, 128, WHITE);
-        DrawText("next", GetScreenWidth()/2 +260, 600, 64, WHITE);
-        DrawText("morn", GetScreenWidth()/2 +260, 650, 64, WHITE);
-
+        DrawText("MIDNIGHT", GetScreenWidth()/2 - 300, baseY+400, 128, WHITE);
+        DrawText("next", GetScreenWidth()/2 +260, baseY+400, 64, WHITE);
+        DrawText("morn", GetScreenWidth()/2 +260, baseY+450, 64, WHITE);
         Vector2 mouse = GetMousePosition();
 
         // --- Start button ---
         bool hoverStart = CheckCollisionPointRec(mouse, btnStart);
         DrawRectangleRec(btnStart, hoverStart ? DARKGRAY : BLACK);
         DrawRectangleLinesEx(btnStart, 2, GRAY);
-        DrawText("Utopia start",
-                btnStart.x + 30, btnStart.y + 8,
-                58,
-                hoverStart ? WHITE : GRAY);
-
-
-        DrawTexturePro(
-            tex::utopia,
-            Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height},
+        DrawText("Utopia start", btnStart.x + 30, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
+        DrawTexturePro(tex::utopia,
+                       Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height},
                        Rectangle{GetScreenWidth()/2+200, btnStart.y+5, 80, 80},
                        {0,0}, 0, WHITE);
 
@@ -898,19 +887,12 @@ int main() {
         bool hoverQuit = CheckCollisionPointRec(mouse, btnQuit);
         DrawRectangleRec(btnQuit, hoverQuit ? Fade(RED, 0.85) : BLACK);
         DrawRectangleLinesEx(btnQuit, 2, DARKGRAY);
-        DrawText("Quit",
-                btnQuit.x + 30, btnQuit.y + 8,
-                58,
-                hoverQuit ? WHITE : DARKGRAY);
-
+        DrawText("Quit", btnQuit.x + 30, btnQuit.y + 8, 58, hoverQuit ? WHITE : DARKGRAY);
         EndDrawing();
-
-        // --- Input ---
         if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             showTechTree = false;
             goto START_GAME;
         }
-
         if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
             IsKeyPressed(KEY_ESCAPE)) {
             CloseWindow();
@@ -920,11 +902,6 @@ int main() {
 
     GAME_OVER:
     {
-        Rectangle btnOk = {
-            GetScreenWidth()/2 - 200, 1100,
-            400, 80
-        };
-
         int player_points = factions[0].victory_points;
         int best_ai_points = 0;
         for (int fi = 3; fi < max_factions; fi++)
@@ -933,106 +910,61 @@ int main() {
 
         bool victory = (player_points > best_ai_points) && factions[0].count_members;
         if(player_points<0) player_points = -player_points;
+        const int baseY = GetScreenHeight()/2 - 600;
+        Rectangle btnOk = {GetScreenWidth()/2 - 200, baseY+820,400, 80};
         while (true) {
             BeginDrawing();
             ClearBackground(BLACK);
-            const char* title = victory ? "BEST UTOPIA" : "FAILED";
-
             if(victory) {
                 DrawTexturePro(
                     tex::sun,
                     Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
-                    Rectangle{GetScreenWidth()/2-256, 300, 512, 256},
+                    Rectangle{GetScreenWidth()/2-256, baseY+100, 512, 256},
                     {0,0}, 0, WHITE);
-                DrawText(
-                    title,
-                    GetScreenWidth()/2 - MeasureText(title, 96)/2+70,
-                        620,
-                        96,
-                        victory ? GREEN : RED
-                );
+                DrawText("BEST UTOPIA", GetScreenWidth()/2 - MeasureText("BEST UTOPIA", 96)/2+70, baseY+620, 96, GREEN);
             }
             else {
                 DrawTexturePro(
                     tex::blood,
-                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-128, 256, 256, 256},
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-128, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
                 DrawTexturePro(
                     tex::blood,
-                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-256+32, 256, 256, 256},
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-256+32, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
                 DrawTexturePro(
                     tex::blood,
-                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-32, 256, 256, 256},
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-32, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
-                DrawText(
-                    title,
-                    GetScreenWidth()/2 - MeasureText(title, 96)/2+50,
-                         620,
-                         96,
-                         victory ? GREEN : RED
-                );
+                DrawText("FAILED", GetScreenWidth()/2 - MeasureText("FAILED", 96)/2+50, baseY+420, 96, RED);
             }
             // --- Score ---
             char score[128];
-            snprintf(score, sizeof(score),
-                    "Your utopia: %d   |   Best AI: %d",
-                    player_points,
-                    best_ai_points);
-            DrawText(
-                score,
-                GetScreenWidth()/2 - MeasureText(score, 42)/2+40,
-                     740,
-                     42,
-                     WHITE
-            );
+            snprintf(score, sizeof(score), "Your utopia: %d   |   Best AI: %d", player_points, best_ai_points);
+            DrawText(score, GetScreenWidth()/2 - MeasureText(score, 42)/2+40, baseY+540, 42, WHITE);
 
             // --- Ethical tech disclosure ---
             const char* badTechNames[8];
             int badTechCount = 0;
             auto player_techs = factions[0].technology;
-
             if (player_techs & TECHNOLOGY_BIOWEAPON) badTechNames[badTechCount++] = "BIOWEAPONS";
             if (player_techs & TECHNOLOGY_PROPAGANDA) badTechNames[badTechCount++] = "PROPAGANDA";
             if (player_techs & TECHNOLOGY_SUPERIORITY) badTechNames[badTechCount++] = "SUPERIORITY";
             if (player_techs & TECHNOLOGY_ARTIFICIAL) badTechNames[badTechCount++] = "HIVEMENIND";
             if (player_techs & TECHNOLOGY_AIFARM) badTechNames[badTechCount++] = "AI FARMS";
-
             if (badTechCount > 0) {
-                DrawText(
-                    "Was it really worth it?",
-                    GetScreenWidth()/2 - MeasureText("Was it really worth it?", 28)/2,
-                    910,
-                    28,
-                    ORANGE
-                );
-
-                for (int i = 0; i < badTechCount; i++) {
-                    DrawText(
-                        TextFormat("- %s", badTechNames[i]),
-                        GetScreenWidth()/2 - 260,
-                        950 + i * 28,
-                        24,
-                        DARKGRAY
-                    );
-                }
+                DrawText("Was it really worth it?",GetScreenWidth()/2 - MeasureText("Was it really worth it?", 28)/2,baseY+610,28,ORANGE);
+                for (int i = 0; i < badTechCount; i++)
+                    DrawText(TextFormat("- %s", badTechNames[i]),GetScreenWidth()/2 - 260,baseY+650 + i * 28,24,DARKGRAY);
             }
 
             // --- OK button ---
             Vector2 mouse = GetMousePosition();
             bool hoverOk = CheckCollisionPointRec(mouse, btnOk);
-
             DrawRectangleRec(btnOk, hoverOk ? DARKGRAY : BLACK);
             DrawRectangleLinesEx(btnOk, 2, GRAY);
-
-            DrawText("OK",
-                    btnOk.x + btnOk.width/2 - MeasureText("OK", 48)/2,
-                    btnOk.y + 14,
-                    48,
-                    hoverOk ? WHITE : GRAY);
-
+            DrawText("OK", btnOk.x + btnOk.width/2 - MeasureText("OK", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
             EndDrawing();
-
             if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
                 IsKeyPressed(KEY_ESCAPE)) {
                 goto MAIN_MENU;
@@ -3028,11 +2960,18 @@ int main() {
             unsigned long long tech = F.technology;
             unsigned long long prev_tech = F.technology;
 
-            float top = 40.0f;
+            //F.technology_progress += 1; // for debug
 
-            const float DX = 400.0f;
-            const float DY = 110.0f;
-            float cx = GetScreenWidth() * 0.5f-DX;
+            const float actual_cell_width = GetScreenWidth()/6-40;
+            const float actual_cell_height = (GetScreenHeight()/14-20)/2;
+            const float ICON_SIZE = actual_cell_height;
+            const float ICON_DX = actual_cell_width-ICON_SIZE-3.f;
+            const float ICON_DY = 3.f;
+            float top = actual_cell_height;
+
+            const float DX = GetScreenWidth()/6.0f;
+            const float DY = GetScreenHeight()/15.0f;
+            float cx = GetScreenWidth() * 0.5f-DX+20.f;
 
             // ROOTS
             Vector2 explore   = { cx - 2*DX, top+DY };
@@ -3087,86 +3026,80 @@ int main() {
             Vector2 hypermagnet = { reactor.x + DX, reactor.y};
             Vector2 evolution   = { bioweapon.x + DX, bioweapon.y-DY*3};
             Vector2 artificial  = { bioweapon.x + DX, bioweapon.y};
-            Vector2 atmosphere  = { terraforming.x+DX, terraforming.y};
+            Vector2 atmosphere  = { terraforming.x+DX, terraforming.y};;
 
             // EXPLORE
-            DrawConnector(explore.x+340, explore.y+40, track.x, track.y+40, tech & TECHNOLOGY_EXPLORE);
-            DrawConnector(explore.x+340, explore.y+40, agile.x, agile.y+40, tech & TECHNOLOGY_EXPLORE);
-            DrawConnector(explore.x+340, explore.y+40, driver.x, driver.y+40, tech & TECHNOLOGY_EXPLORE);
-            DrawConnector(agile.x+340, agile.y+40, wonder.x, wonder.y+40, tech & TECHNOLOGY_AGILE);
+            DrawConnector(explore.x+actual_cell_width, explore.y+actual_cell_height, track.x, track.y+actual_cell_height, tech & TECHNOLOGY_EXPLORE);
+            DrawConnector(explore.x+actual_cell_width, explore.y+actual_cell_height, agile.x, agile.y+actual_cell_height, tech & TECHNOLOGY_EXPLORE);
+            DrawConnector(explore.x+actual_cell_width, explore.y+actual_cell_height, driver.x, driver.y+actual_cell_height, tech & TECHNOLOGY_EXPLORE);
+            DrawConnector(agile.x+actual_cell_width, agile.y+actual_cell_height, wonder.x, wonder.y+actual_cell_height, tech & TECHNOLOGY_AGILE);
 
             // HUNTING
-            DrawConnector(hunting.x+340, hunting.y+40, fight.x, fight.y+40, tech & TECHNOLOGY_HUNTING);
-            DrawConnector(hunting.x+340, hunting.y+40, farming.x, farming.y+40, tech & TECHNOLOGY_HUNTING);
-            DrawConnector(taming.x+340, taming.y+40, heroics.x, heroics.y+40, tech & TECHNOLOGY_TAMING);
+            DrawConnector(hunting.x+actual_cell_width, hunting.y+actual_cell_height, fight.x, fight.y+actual_cell_height, tech & TECHNOLOGY_HUNTING);
+            DrawConnector(hunting.x+actual_cell_width, hunting.y+actual_cell_height, farming.x, farming.y+actual_cell_height, tech & TECHNOLOGY_HUNTING);
+            DrawConnector(taming.x+actual_cell_width, taming.y+actual_cell_height, heroics.x, heroics.y+actual_cell_height, tech & TECHNOLOGY_TAMING);
 
             // NERDS
-            DrawConnector(nerds.x+340, nerds.y+40, research.x, research.y+40, tech & TECHNOLOGY_NERDS);
-            DrawConnector(nerds.x+340, nerds.y+40, homunculi.x, homunculi.y+40, tech & TECHNOLOGY_NERDS);
-            DrawConnector(nerds.x+340, nerds.y+40, mecha.x, mecha.y+40, tech & TECHNOLOGY_NERDS);
+            DrawConnector(nerds.x+actual_cell_width, nerds.y+actual_cell_height, research.x, research.y+actual_cell_height, tech & TECHNOLOGY_NERDS);
+            DrawConnector(nerds.x+actual_cell_width, nerds.y+actual_cell_height, homunculi.x, homunculi.y+actual_cell_height, tech & TECHNOLOGY_NERDS);
+            DrawConnector(nerds.x+actual_cell_width, nerds.y+actual_cell_height, mecha.x, mecha.y+actual_cell_height, tech & TECHNOLOGY_NERDS);
 
             // FIGHT
-            DrawConnector(fight.x+340, fight.y+40, heroics.x, heroics.y+40, tech & TECHNOLOGY_FIGHT);
-            DrawConnector(hunting.x+340, hunting.y+40, grit.x, grit.y+40, tech & TECHNOLOGY_HUNTING);
-            DrawConnector(fight.x+340, fight.y+40, tough.x, tough.y+40, tech & TECHNOLOGY_FIGHT);
-            DrawConnector(taming.x+340, taming.y+40, wonder.x, wonder.y+40, tech & TECHNOLOGY_TAMING);
-            DrawConnector(wonder.x+340, wonder.y+40, luxury.x, luxury.y+40, tech & TECHNOLOGY_WONDER);
+            DrawConnector(fight.x+actual_cell_width, fight.y+actual_cell_height, heroics.x, heroics.y+actual_cell_height, tech & TECHNOLOGY_FIGHT);
+            DrawConnector(hunting.x+actual_cell_width, hunting.y+actual_cell_height, grit.x, grit.y+actual_cell_height, tech & TECHNOLOGY_HUNTING);
+            DrawConnector(fight.x+actual_cell_width, fight.y+actual_cell_height, tough.x, tough.y+actual_cell_height, tech & TECHNOLOGY_FIGHT);
+            DrawConnector(taming.x+actual_cell_width, taming.y+actual_cell_height, wonder.x, wonder.y+actual_cell_height, tech & TECHNOLOGY_TAMING);
+            DrawConnector(wonder.x+actual_cell_width, wonder.y+actual_cell_height, luxury.x, luxury.y+actual_cell_height, tech & TECHNOLOGY_WONDER);
 
             // AGILE
-            DrawConnector(agile.x+340, agile.y+40, seafaring.x, seafaring.y+40, tech & TECHNOLOGY_AGILE);
-            //DrawConnector(agile.x+340, agile.y+40, speedy.x, speedy.y+40, tech & TECHNOLOGY_AGILE);
-            DrawConnector(seafaring.x+340, seafaring.y+40, ownership.x, ownership.y+40, tech & TECHNOLOGY_SEAFARERING);
-            DrawConnector(heroics.x+340, heroics.y+40, hellbringer.x, hellbringer.y+40, tech & TECHNOLOGY_HEROICS);
-            DrawConnector(hellbringer.x+340, hellbringer.y+40, speedy.x, speedy.y+40, tech & TECHNOLOGY_HELLBRINGER);
+            DrawConnector(agile.x+actual_cell_width, agile.y+actual_cell_height, seafaring.x, seafaring.y+actual_cell_height, tech & TECHNOLOGY_AGILE);
+            //DrawConnector(agile.x+actual_cell_width, agile.y+actual_cell_height, speedy.x, speedy.y+actual_cell_height, tech & TECHNOLOGY_AGILE);
+            DrawConnector(seafaring.x+actual_cell_width, seafaring.y+actual_cell_height, ownership.x, ownership.y+actual_cell_height, tech & TECHNOLOGY_SEAFARERING);
+            DrawConnector(heroics.x+actual_cell_width, heroics.y+actual_cell_height, hellbringer.x, hellbringer.y+actual_cell_height, tech & TECHNOLOGY_HEROICS);
+            DrawConnector(hellbringer.x+actual_cell_width, hellbringer.y+actual_cell_height, speedy.x, speedy.y+actual_cell_height, tech & TECHNOLOGY_HELLBRINGER);
 
             //INFRA & OWNERSHIP
-            DrawConnector(farming.x+340, farming.y+40, infrastructure.x, infrastructure.y+40, tech & TECHNOLOGY_FARMING);
-            DrawConnector(infrastructure.x+340, infrastructure.y+40, aifarm.x, aifarm.y+40, tech & TECHNOLOGY_INFRASTRUCTURE);
-            DrawConnector(aifarm.x+340, aifarm.y+40, technocracy.x, technocracy.y+40, tech & TECHNOLOGY_AIFARM);
-            DrawConnector(mechanised.x+340, mechanised.y+40, technocracy.x, technocracy.y+40, tech & TECHNOLOGY_MECHANISED);
-            DrawConnector(research.x+340, research.y+40, infrastructure.x, infrastructure.y+40, tech & TECHNOLOGY_RESEARCH);
-            //DrawConnector(conquer.x+340, conquer.y+40, ownership.x, ownership.y+40, tech & TECHNOLOGY_CONQUER);
-            DrawConnector(infrastructure.x+340, infrastructure.y+40, ownership.x, ownership.y+40, tech & TECHNOLOGY_INFRASTRUCTURE);
-            DrawConnector(ownership.x+340, ownership.y+40, propaganda.x, propaganda.y+40, tech & TECHNOLOGY_OWNERSHIP);
-            DrawConnector(ownership.x+340, ownership.y+40, luxury.x, luxury.y+40, tech & TECHNOLOGY_OWNERSHIP);
-            DrawConnector(ownership.x+340, ownership.y+40, refinery.x, refinery.y+40, tech & TECHNOLOGY_OWNERSHIP);
-            DrawConnector(gigajoule.x+340, gigajoule.y+40, refinery.x, refinery.y+40, tech & TECHNOLOGY_GIGAJOULE);
-            DrawConnector(gigajoule.x+340, gigajoule.y+40, mechanised.x, mechanised.y+40, tech & TECHNOLOGY_GIGAJOULE);
-            DrawConnector(gigajoule.x+340, gigajoule.y+40, terraforming.x, terraforming.y+40, tech & TECHNOLOGY_GIGAJOULE);
-            DrawConnector(terraforming.x+340, terraforming.y+40, atmosphere.x, atmosphere.y+40, tech & TECHNOLOGY_TERRAFORIMING);
+            DrawConnector(farming.x+actual_cell_width, farming.y+actual_cell_height, infrastructure.x, infrastructure.y+actual_cell_height, tech & TECHNOLOGY_FARMING);
+            DrawConnector(infrastructure.x+actual_cell_width, infrastructure.y+actual_cell_height, aifarm.x, aifarm.y+actual_cell_height, tech & TECHNOLOGY_INFRASTRUCTURE);
+            DrawConnector(aifarm.x+actual_cell_width, aifarm.y+actual_cell_height, technocracy.x, technocracy.y+actual_cell_height, tech & TECHNOLOGY_AIFARM);
+            DrawConnector(mechanised.x+actual_cell_width, mechanised.y+actual_cell_height, technocracy.x, technocracy.y+actual_cell_height, tech & TECHNOLOGY_MECHANISED);
+            DrawConnector(research.x+actual_cell_width, research.y+actual_cell_height, infrastructure.x, infrastructure.y+actual_cell_height, tech & TECHNOLOGY_RESEARCH);
+            //DrawConnector(conquer.x+actual_cell_width, conquer.y+actual_cell_height, ownership.x, ownership.y+actual_cell_height, tech & TECHNOLOGY_CONQUER);
+            DrawConnector(infrastructure.x+actual_cell_width, infrastructure.y+actual_cell_height, ownership.x, ownership.y+actual_cell_height, tech & TECHNOLOGY_INFRASTRUCTURE);
+            DrawConnector(ownership.x+actual_cell_width, ownership.y+actual_cell_height, propaganda.x, propaganda.y+actual_cell_height, tech & TECHNOLOGY_OWNERSHIP);
+            DrawConnector(ownership.x+actual_cell_width, ownership.y+actual_cell_height, luxury.x, luxury.y+actual_cell_height, tech & TECHNOLOGY_OWNERSHIP);
+            DrawConnector(ownership.x+actual_cell_width, ownership.y+actual_cell_height, refinery.x, refinery.y+actual_cell_height, tech & TECHNOLOGY_OWNERSHIP);
+            DrawConnector(gigajoule.x+actual_cell_width, gigajoule.y+actual_cell_height, refinery.x, refinery.y+actual_cell_height, tech & TECHNOLOGY_GIGAJOULE);
+            DrawConnector(gigajoule.x+actual_cell_width, gigajoule.y+actual_cell_height, mechanised.x, mechanised.y+actual_cell_height, tech & TECHNOLOGY_GIGAJOULE);
+            DrawConnector(gigajoule.x+actual_cell_width, gigajoule.y+actual_cell_height, terraforming.x, terraforming.y+actual_cell_height, tech & TECHNOLOGY_GIGAJOULE);
+            DrawConnector(terraforming.x+actual_cell_width, terraforming.y+actual_cell_height, atmosphere.x, atmosphere.y+actual_cell_height, tech & TECHNOLOGY_TERRAFORIMING);
 
 
 
             //UNSTABLE
-            DrawConnector(homunculi.x+340, homunculi.y+40, unstable.x, unstable.y+40, tech & TECHNOLOGY_HOMUNCULI);
-            DrawConnector(unstable.x+340, unstable.y+40, bioweapon.x, bioweapon.y+40, tech & TECHNOLOGY_UNSTABLE);
-            DrawConnector(research.x+340, research.y+40, nuclear.x, nuclear.y+40, tech & TECHNOLOGY_RESEARCH);
-            DrawConnector(nuclear.x+340, nuclear.y+40, reactor.x, reactor.y+40, tech & TECHNOLOGY_NUCLEAR);
-            DrawConnector(bioweapon.x+340, bioweapon.y+40, evolution.x, evolution.y+40, tech & TECHNOLOGY_BIOWEAPON);
-            DrawConnector(bioweapon.x+340, bioweapon.y+40, artificial.x, artificial.y+40, tech & TECHNOLOGY_BIOWEAPON);
-            DrawConnector(grit.x+340, grit.y+40, evolution.x, evolution.y+40, tech & TECHNOLOGY_GRIT);
-            DrawConnector(reactor.x+340, reactor.y+40, hypermagnet.x, hypermagnet.y+40, tech & TECHNOLOGY_REACTOR);
+            DrawConnector(homunculi.x+actual_cell_width, homunculi.y+actual_cell_height, unstable.x, unstable.y+actual_cell_height, tech & TECHNOLOGY_HOMUNCULI);
+            DrawConnector(unstable.x+actual_cell_width, unstable.y+actual_cell_height, bioweapon.x, bioweapon.y+actual_cell_height, tech & TECHNOLOGY_UNSTABLE);
+            DrawConnector(research.x+actual_cell_width, research.y+actual_cell_height, nuclear.x, nuclear.y+actual_cell_height, tech & TECHNOLOGY_RESEARCH);
+            DrawConnector(nuclear.x+actual_cell_width, nuclear.y+actual_cell_height, reactor.x, reactor.y+actual_cell_height, tech & TECHNOLOGY_NUCLEAR);
+            DrawConnector(bioweapon.x+actual_cell_width, bioweapon.y+actual_cell_height, evolution.x, evolution.y+actual_cell_height, tech & TECHNOLOGY_BIOWEAPON);
+            DrawConnector(bioweapon.x+actual_cell_width, bioweapon.y+actual_cell_height, artificial.x, artificial.y+actual_cell_height, tech & TECHNOLOGY_BIOWEAPON);
+            DrawConnector(grit.x+actual_cell_width, grit.y+actual_cell_height, evolution.x, evolution.y+actual_cell_height, tech & TECHNOLOGY_GRIT);
+            DrawConnector(reactor.x+actual_cell_width, reactor.y+actual_cell_height, hypermagnet.x, hypermagnet.y+actual_cell_height, tech & TECHNOLOGY_REACTOR);
 
 
             // MOBILE FORTRESS
-            DrawConnector(driver.x+340, driver.y+40, industry.x, industry.y+40, tech & TECHNOLOGY_DRIVER);
-            DrawConnector(mecha.x+340, mecha.y+40, autorepair.x, autorepair.y+40, tech & TECHNOLOGY_MECHA);
-            DrawConnector(autorepair.x+340, autorepair.y+40, mobile.x, mobile.y+40, tech & TECHNOLOGY_AUTOREPAIRS);
-            DrawConnector(autorepair.x+340, autorepair.y+40, hijack.x, hijack.y+40, tech & TECHNOLOGY_AUTOREPAIRS);
-            DrawConnector(industry.x+340, industry.y+40, gigajoule.x, gigajoule.y+40, tech & TECHNOLOGY_INDUSTRY);
-            DrawConnector(heroics.x+340, heroics.y+40, propaganda.x, propaganda.y+40, tech & TECHNOLOGY_HEROICS);
-            DrawConnector(propaganda.x+340, propaganda.y+40, superiority.x, superiority.y+40, tech & TECHNOLOGY_PROPAGANDA);
+            DrawConnector(driver.x+actual_cell_width, driver.y+actual_cell_height, industry.x, industry.y+actual_cell_height, tech & TECHNOLOGY_DRIVER);
+            DrawConnector(mecha.x+actual_cell_width, mecha.y+actual_cell_height, autorepair.x, autorepair.y+actual_cell_height, tech & TECHNOLOGY_MECHA);
+            DrawConnector(autorepair.x+actual_cell_width, autorepair.y+actual_cell_height, mobile.x, mobile.y+actual_cell_height, tech & TECHNOLOGY_AUTOREPAIRS);
+            DrawConnector(autorepair.x+actual_cell_width, autorepair.y+actual_cell_height, hijack.x, hijack.y+actual_cell_height, tech & TECHNOLOGY_AUTOREPAIRS);
+            DrawConnector(industry.x+actual_cell_width, industry.y+actual_cell_height, gigajoule.x, gigajoule.y+actual_cell_height, tech & TECHNOLOGY_INDUSTRY);
+            DrawConnector(heroics.x+actual_cell_width, heroics.y+actual_cell_height, propaganda.x, propaganda.y+actual_cell_height, tech & TECHNOLOGY_HEROICS);
+            DrawConnector(propaganda.x+actual_cell_width, propaganda.y+actual_cell_height, superiority.x, superiority.y+actual_cell_height, tech & TECHNOLOGY_PROPAGANDA);
             // TRACK
-            DrawConnector(track.x+340, track.y+40, sniping.x, sniping.y+40, tech & TECHNOLOGY_TRACK);
-            DrawConnector(track.x+340, track.y+40, sniffing.x, sniffing.y+40, tech & TECHNOLOGY_TRACK);
-            DrawConnector(sniffing.x+340, sniffing.y+40, conquer.x, conquer.y+40, tech & TECHNOLOGY_SNIFFING);
+            DrawConnector(track.x+actual_cell_width, track.y+actual_cell_height, sniping.x, sniping.y+actual_cell_height, tech & TECHNOLOGY_TRACK);
+            DrawConnector(track.x+actual_cell_width, track.y+actual_cell_height, sniffing.x, sniffing.y+actual_cell_height, tech & TECHNOLOGY_TRACK);
+            DrawConnector(sniffing.x+actual_cell_width, sniffing.y+actual_cell_height, conquer.x, conquer.y+actual_cell_height, tech & TECHNOLOGY_SNIFFING);
 
-
-            //F.technology_progress += 1; // for debug
-
-            const float ICON_SIZE = 40.0f;
-            const float ICON_DX = 295.0f;
-            const float ICON_DY = 3.0f;
 
             DrawTechNode(explore.x, explore.y, "CHARTED", "Sight from camps and storages", tech, TECHNOLOGY_EXPLORE);
             DrawTextureEx(tex::track, {explore.x + ICON_DX, explore.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
