@@ -40,6 +40,8 @@ namespace tex {
     static Texture2D hide;
     static Texture2D heal;
     static Texture2D field;
+    static Texture2D field_little;
+    static Texture2D field_empty;
     static Texture2D mine;
     static Texture2D camp;
     static Texture2D lab;
@@ -379,8 +381,8 @@ int NOISE_SEED = 0;
             0.0,          /* speed */ \
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
-            6.0,          /* attack_rate (6 industry)*/ \
-            4.0,         /* range */ \
+            0.0,          /* attack_rate (store industry state here)*/ \
+            4.0,          /* range */ \
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
@@ -607,8 +609,8 @@ static void DrawDashedLine(float x1, float y1, float x2, float y2, Color c) {
 }
 
 static float HashNoise2D(int x, int y) {
-    unsigned int n = (unsigned int)(x * 374761393u 
-                                   + y * 668265263u 
+    unsigned int n = (unsigned int)(x * 374761393u
+                                   + y * 668265263u
                                    + NOISE_SEED * 374761393u);
     n = (n ^ (n >> 13)) * 1274126177u;
     return (float)(n & 0x00FFFFFF) / (float)0x01000000; // 0.0 - 1.0
@@ -780,6 +782,8 @@ int main() {
     tex::wolf = LoadTexture("data/wolf.png");
     tex::heal = LoadTexture("data/heal.png");
     tex::field = LoadTexture("data/field.png");
+    tex::field_empty = LoadTexture("data/field_empty.png");
+    tex::field_little = LoadTexture("data/field_little.png");
     tex::mine = LoadTexture("data/mine.png");
     tex::road = LoadTexture("data/road.png");
     tex::road_transition = LoadTexture("data/road_transition.png");
@@ -811,23 +815,23 @@ int main() {
     // prepare buttons
     MovementMode currentMovementMode = MovementMode::Tight;
     Rectangle clusteringBtn = {
-        GetScreenWidth() - 260.0f,
+        GetScreenWidth() - 300.0f,
         GetScreenHeight() - 200.0f,
-        240.0f,
+        280.0f,
         100.0f
     };
     bool showTechTree = false;
     Rectangle techBtn = {
-        GetScreenWidth() - 260.0f,
+        GetScreenWidth() - 300.0f,
         GetScreenHeight() - 320.0f,
-        240.0f,
+        280.0f,
         100.0f
     };
 
     // preallocate stuff
     Terrain* terrainBlock = (Terrain*)malloc(GRID_SIZE * GRID_SIZE * sizeof(Terrain));
     Terrain** terrainGrid = (Terrain**)malloc(GRID_SIZE * sizeof(Terrain*));
-    for (int y = 0; y < GRID_SIZE; y++) 
+    for (int y = 0; y < GRID_SIZE; y++)
         terrainGrid[y] = &terrainBlock[y * GRID_SIZE];
     static Unit units[MAX_UNITS];
     static Decorator decorators[MAX_DECORATORS];
@@ -1060,9 +1064,9 @@ int main() {
 
 
     // create grid
-    for (int y = 0; y < GRID_SIZE; y++) 
-        for (int x = 0; x < GRID_SIZE; x++) 
-            if (GetRandomValue(1, 100) <= 90) 
+    for (int y = 0; y < GRID_SIZE; y++)
+        for (int x = 0; x < GRID_SIZE; x++)
+            if (GetRandomValue(1, 100) <= 90)
                 terrainGrid[y][x] = { &tex::grass, "Grass", 1.0 };
             else {
                 int alt = GetRandomValue(2, 4); // 2,3,4
@@ -1194,11 +1198,11 @@ int main() {
                 decorators[num_decorators++] = {&tex::tree,(float)x+ox,(float)y+oy,1.0f};
                 T.extra_sight -= 0.7f;
                 if(T.extra_sight<-0.7f) T.extra_sight = -0.7f;
-                T.speed = 0.4f; 
+                T.speed = 0.4f;
             }
         }
 
-    
+
     // declare camera
     Camera2D camera = { 0 };
     float target_zoom = CAMERA_ZOOM;
@@ -1326,7 +1330,7 @@ int main() {
     int count_warehouses = 0;
     for (int i = 0; i < NUM_NEUTRAL_STRUCTURES; i++) {
         float x, y;
-        x = GetRandomValue(20, GRID_SIZE - 20); 
+        x = GetRandomValue(20, GRID_SIZE - 20);
         y = GetRandomValue(20, GRID_SIZE - 20);
         if (tooCloseToAnyCamp(x, y)) continue;
         Terrain &T = terrainGrid[(int)y][(int)x];
@@ -1340,7 +1344,7 @@ int main() {
                     CREATE_MINE(&factions[1], x, y);
                     continue;
                 }
-                if (!isGrass) continue; 
+                if (!isGrass) continue;
                 {
                 float spacing = 0.7f;
                 CREATE_FIELD(&factions[1], x-spacing, y-spacing);
@@ -1350,7 +1354,7 @@ int main() {
                 }
                 break;
             case 3:
-                if (!isDesert && GetRandomValue(0, 99) < 80) continue; 
+                if (!isDesert && GetRandomValue(0, 99) < 80) continue;
                 CREATE_OIL(&factions[1], x, y);
                 break;
             case 4:
@@ -1379,21 +1383,21 @@ int main() {
 
     for (int i = 0; i < NUM_NEUTRAL_TANKS; i++) {
         float x, y;
-        x = GetRandomValue(20, GRID_SIZE - 20); 
+        x = GetRandomValue(20, GRID_SIZE - 20);
         y = GetRandomValue(20, GRID_SIZE - 20);
         if (tooCloseToAnyCamp(x, y)) continue;
         Terrain &T = terrainGrid[(int)y][(int)x];
         bool isDesert = (T.texture == &tex::desert);
-        if (T.texture == &tex::mountain || T.texture == &tex::hill 
-            || T.texture == &tex::hill2 || T.texture == &tex::hill3 || T.texture == &tex::hill4) 
+        if (T.texture == &tex::mountain || T.texture == &tex::hill
+            || T.texture == &tex::hill2 || T.texture == &tex::hill3 || T.texture == &tex::hill4)
             {CREATE_RAILGUN(&factions[1], x, y);continue;}
-        if (!isDesert && GetRandomValue(0, 99) < 50) continue; 
+        if (!isDesert && GetRandomValue(0, 99) < 50) continue;
         {CREATE_TANK(&factions[1], x, y);}
     }
 
     for (int i = 0; i < NUM_WILD_ANIMALS; i++) {
         float x, y;
-        x = GetRandomValue(20, GRID_SIZE - 20); 
+        x = GetRandomValue(20, GRID_SIZE - 20);
         y = GetRandomValue(20, GRID_SIZE - 20);
         if (tooCloseToAnyCamp(x, y)) continue;
         Terrain &T = terrainGrid[(int)y][(int)x];
@@ -1455,7 +1459,7 @@ int main() {
     static const float GAME_DURATION = 15.0f * 60.0f; // 15 minutes
     float game_time = 0.0f;
     float time_norm = 0.0f; // 0..1
-    
+
     while (true) {
         float dt = GetFrameTime();
         float polution_speedup = 0.f;// just track this for this frame
@@ -1467,7 +1471,12 @@ int main() {
         time_norm = game_time / GAME_DURATION;
 
         bool mouseCapturedByUI = false;
-        if (CheckCollisionPointRec(GetMousePosition(), clusteringBtn)) {
+        if (IsKeyPressed(KEY_SPACE)) {
+            if(currentMovementMode==MovementMode::Scattered) currentMovementMode = MovementMode::Explore;
+            else if(currentMovementMode==MovementMode::Explore) currentMovementMode = MovementMode::Tight;
+            else currentMovementMode = MovementMode::Scattered;
+        }
+        else if (CheckCollisionPointRec(GetMousePosition(), clusteringBtn)) {
             mouseCapturedByUI = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 if(currentMovementMode==MovementMode::Scattered) currentMovementMode = MovementMode::Explore;
@@ -1478,13 +1487,13 @@ int main() {
         if (IsKeyPressed(KEY_ESCAPE)) showTechTree = !showTechTree;
         if (CheckCollisionPointRec(GetMousePosition(), techBtn)) {
             mouseCapturedByUI = true;
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) 
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                 showTechTree = !showTechTree;
         }
 
 
         // camera
-        const float move = 2000.0f * GetFrameTime() * CAMERA_ZOOM * 2;
+        const float move = 2000.0f * GetFrameTime() / camera.zoom;
         if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) camera.target.x += move;
         if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))  camera.target.x -= move;
         if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))    camera.target.y -= move;
@@ -1493,6 +1502,8 @@ int main() {
         //if (camera.zoom < 0.5f) camera.zoom = 0.5f;
         //if (camera.zoom < 0.25f) camera.zoom = 0.25f;
         float wheel = GetMouseWheelMove();
+        if (IsKeyDown(KEY_Q))  wheel += dt*10.f;
+        if (IsKeyDown(KEY_E))  wheel -= dt*10.f;
         if (wheel) target_zoom += wheel * 0.1f;
         if (camera.zoom!=target_zoom) {
             Vector2 mouseWorldBefore = GetScreenToWorld2D(GetMousePosition(), camera);
@@ -1500,7 +1511,7 @@ int main() {
             if (target_zoom > 2.0f) target_zoom = 2.0f;
             float diff = camera.zoom-target_zoom;
             camera.zoom -= diff*dt*5;
-            if(diff*(camera.zoom-target_zoom)<=0.01f) {
+            if(diff*(camera.zoom-target_zoom)<=0.f) {
                 camera.zoom = target_zoom;
             }
             Vector2 mouseWorldAfter = GetScreenToWorld2D(GetMousePosition(), camera);
@@ -1533,13 +1544,13 @@ int main() {
             if(u.texture==&tex::camp && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 4.f;
             if(u.texture==&tex::camp || u.speed) u.faction->count_members += 0.00001f;
             if(u.texture==&tex::oil && u.faction && (u.faction->technology & TECHNOLOGY_REFINERY)) u.faction->industry += 25.f;
-            if(u.texture==&tex::field || u.texture==&tex::mine || u.texture==&tex::hide) {
-                if(u.texture==&tex::field && u.faction && (u.faction->technology & TECHNOLOGY_ATMOSPHERE)) {
+            if(u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty || u.texture==&tex::mine || u.texture==&tex::hide) {
+                if((u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty) && u.faction && (u.faction->technology & TECHNOLOGY_ATMOSPHERE)) {
                     game_time -= dt*0.08f;
                     polution_speedup -= 0.08f;
                 }
-                if(u.texture==&tex::field) u.faction->industry += 2.f;
-                if(u.texture==&tex::field && u.faction && (u.faction->technology & TECHNOLOGY_FARMING)) u.faction->industry += 2.f;
+                if(u.texture==&tex::field) u.faction->industry += 4.f;
+                if(u.texture==&tex::field_little) u.faction->industry += 2.f;
                 if(u.texture==&tex::hide && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 4.f;
                 continue;
             }
@@ -1586,21 +1597,21 @@ int main() {
             if (u.texture == &tex::blood) {
                 if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.001f * dt) {
                     u = { \
-                        &tex::ghost,  /* texture */ 
-                        "Bloo",       /* name */ 
-                        2.0,          /* speed */ 
-                        u.x,          /* x */ 
-                        u.y,          /* y */ 
-                        2.0,          /* attack_rate */ 
-                        7.0,          /* range */ 
+                        &tex::ghost,  /* texture */
+                        "Bloo",       /* name */
+                        2.0,          /* speed */
+                        u.x,          /* x */
+                        u.y,          /* y */
+                        2.0,          /* attack_rate */
+                        7.0,          /* range */
                         0.5,          /* damage */
-                        0.0,          /* experience */ 
-                        u.angle,      /* angle */ 
-                        0.4,          /* size */ 
-                        3.0,          /* health */ 
-                        3.0,          /* max_health */ 
+                        0.0,          /* experience */
+                        u.angle,      /* angle */
+                        0.4,          /* size */
+                        3.0,          /* health */
+                        3.0,          /* max_health */
                         factions+2,   /* faction */
-                        nullptr   /* faction */ 
+                        nullptr   /* faction */
                     };
                 }
                 continue; // blood does nothing else
@@ -1619,40 +1630,40 @@ int main() {
                 if(u.texture==&tex::bison || u.texture==&tex::wolf) {
                     terrainGrid[(int)u.y][(int)u.x].speed /= 2; // terrain becomes uneven
                     u = { \
-                        &tex::hide,  /* texture */ 
-                        "Hide",       /* name */ 
-                        0.0,          /* speed */ 
-                        u.x,          /* x */ 
-                        u.y,          /* y */ 
-                        4.0,          /* attack_rate */ 
+                        &tex::hide,  /* texture */
+                        "Hide",       /* name */
+                        0.0,          /* speed */
+                        u.x,          /* x */
+                        u.y,          /* y */
+                        4.0,          /* attack_rate */
                         2.0,          /* range */
-                        0.0,          /* damage */ 
-                        0.0,          /* experience */ 
-                        u.angle,      /* angle */ 
-                        0.8,          /* size */ 
+                        0.0,          /* damage */
+                        0.0,          /* experience */
+                        u.angle,      /* angle */
+                        0.8,          /* size */
                         15.0,          /* health */
                         15.0,          /* max_health */
-                        factions+1,       /* faction */ 
-                        factions+1       /* faction */ 
+                        factions+1,       /* faction */
+                        factions+1       /* faction */
                     };
                 }
                 else if(u.max_health>18.f) {
                     terrainGrid[(int)u.y][(int)u.x].speed /= 2; // terrain becomes uneven
                     u = { \
-                        &tex::crater,  /* texture */ 
-                        "Crater",      /* name */ 
-                        0.0,          /* speed */ 
-                        u.x,          /* x */ 
-                        u.y,          /* y */ 
-                        0.0,          /* attack_rate */ 
-                        0.0,          /* range */ 
-                        0.0,          /* damage */ 
-                        0.0,          /* experience */ 
-                        u.angle,      /* angle */ 
-                        1.5,          /* size */ 
-                        0.0,          /* health */ 
-                        0.0,          /* max_health */ 
-                        nullptr       /* faction */ 
+                        &tex::crater,  /* texture */
+                        "Crater",      /* name */
+                        0.0,          /* speed */
+                        u.x,          /* x */
+                        u.y,          /* y */
+                        0.0,          /* attack_rate */
+                        0.0,          /* range */
+                        0.0,          /* damage */
+                        0.0,          /* experience */
+                        u.angle,      /* angle */
+                        1.5,          /* size */
+                        0.0,          /* health */
+                        0.0,          /* max_health */
+                        nullptr       /* faction */
                     };
                 }
                 else if(u.texture==&tex::ghost) { // use bloos to clean up units
@@ -1661,24 +1672,24 @@ int main() {
                 }
                 else// if(terrainGrid[(int)u.y][(int)u.x].texture!=&tex::water)
                     u = { \
-                        &tex::blood,  /* texture */ 
-                        "Blood",      /* name */ 
-                        0.0,          /* speed */ 
-                        u.x,          /* x */ 
-                        u.y,          /* y */ 
-                        0.0,          /* attack_rate */ 
-                        0.0,          /* range */ 
-                        0.0,          /* damage */ 
-                        0.0,          /* experience */ 
-                        u.angle,      /* angle */ 
-                        0.5,          /* size */ 
-                        0.0,          /* health */ 
-                        0.0,          /* max_health */ 
-                        nullptr       /* faction */ 
+                        &tex::blood,  /* texture */
+                        "Blood",      /* name */
+                        0.0,          /* speed */
+                        u.x,          /* x */
+                        u.y,          /* y */
+                        0.0,          /* attack_rate */
+                        0.0,          /* range */
+                        0.0,          /* damage */
+                        0.0,          /* experience */
+                        u.angle,      /* angle */
+                        0.5,          /* size */
+                        0.0,          /* health */
+                        0.0,          /* max_health */
+                        nullptr       /* faction */
                     };
                 continue;
             }
-            if(u.texture==&tex::oil) 
+            if(u.texture==&tex::oil)
                 u.faction->victory_points += 3.f;
             if(u.texture==&tex::warehouse)
                 u.faction->victory_points += 2.f;
@@ -1686,8 +1697,24 @@ int main() {
                 u.faction->victory_points += 0.334f;
             if(u.texture==&tex::lab)
                 continue;
-            if(u.texture==&tex::field) 
+            if(u.texture==&tex::field) {
+                if(u.faction->technology & TECHNOLOGY_FARMING) {
+                    if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.01) {u.texture = &tex::field_empty;u.popup = "barren";} // once every 100 sec
+                }
+                else if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.05) {u.texture = &tex::field_empty;u.popup = "barren";} // once every 20 sec
                 continue;
+            }
+            if(u.texture==&tex::field_little) {
+                if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.05) {u.texture = &tex::field;u.popup = "bloom";} // once every 20 sec
+                continue;
+            }
+            if(u.texture==&tex::field_empty) {
+                if(u.faction->technology & TECHNOLOGY_FARMING) {
+                    if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.1) {u.texture = &tex::field_little;u.popup = "grows";} // once every 10 sec
+                }
+                else if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.05) {u.texture = &tex::field_little;u.popup = "grows";} // once every 20 sec
+                continue;
+            }
             if(u.texture==&tex::hide) {
                 if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.005) { // once every 10 mins it may become rats
                     CREATE_RAT(ANIMAL_FACTION, u.x-0.2, u.y+0.2);
@@ -1714,7 +1741,7 @@ int main() {
                 }
                 continue;
             }
-            if(u.texture==&tex::mine) 
+            if(u.texture==&tex::mine)
                 continue;
             if (u.texture == &tex::rat) {
                 if((float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<dt*u.attack_rate*(1-time_norm)*(1-time_norm)*(1-time_norm)*(1-time_norm)) {
@@ -1764,7 +1791,7 @@ int main() {
                 }
                 continue;
             }
-                
+
             float u_speed = terrainGrid[(int)u.y][(int)u.x].speed;
             if(u_speed<1.f && u.faction && (u.faction->technology && TECHNOLOGY_AGILE)) u_speed = (1.f+u_speed)*0.5f;
             if(u_speed<1.f && u.max_health>18.f && u.faction && (u.faction->technology && TECHNOLOGY_DRIVER)) u_speed = 1.f;
@@ -1772,8 +1799,8 @@ int main() {
             u_speed *= u.speed;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             float u_range = u.range*(1+extra_sight);
-            if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range *= 25.f;
-            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range += extra_sight;
+            if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range = 25.f;
+            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
             // attack (interrupt movement to attack)
             if (u.attack_target_x == 0 && u.attack_target_y == 0 && u.capturing!=factions+1) {
                 float r = (float)GetRandomValue(0, 1000000) / 1000000.0f;
@@ -1916,12 +1943,16 @@ int main() {
             Unit &u = units[i];
             if (!u.max_health) continue;
             if (u.texture==&tex::field) continue;
+            if (u.texture==&tex::field_empty) continue;
+            if (u.texture==&tex::field_little) continue;
             if (u.texture==&tex::hide) continue;
 
             for (int j = i + 1; j < num_units; j++) {
                 Unit &o = units[j];
                 if (!o.max_health) continue;
                 if (o.texture==&tex::field) continue;
+                if (o.texture==&tex::field_little) continue;
+                if (o.texture==&tex::field_empty) continue;
                 if (o.texture==&tex::hide) continue;
 
                 float dx = u.x - o.x;
@@ -1968,8 +1999,8 @@ int main() {
         // --- PROCESS ATTACK PROJECTILES ---
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];
-            if (u.attack_target_x == 0 && u.attack_target_y == 0) continue; 
-            if (u.attack_x == 0 && u.attack_y == 0) continue; 
+            if (u.attack_target_x == 0 && u.attack_target_y == 0) continue;
+            if (u.attack_x == 0 && u.attack_y == 0) continue;
             float ax = u.attack_x;
             float ay = u.attack_y;
             float tx = u.attack_target_x;
@@ -2008,6 +2039,7 @@ int main() {
                             else if(o.capturing) o.health -= CAPTURE_RATE*u_damage*0.5f;
                             else  o.health -= u_damage;
                         }
+                        else if(u_damage>=o.health && o.faction && (o.faction->technology & TECHNOLOGY_GRIT)) {o.popup = "grit";}
                         else if(o.name==hero_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {o.popup = "heroics";}
                         else if(o.name==veteran_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {o.popup = "heroics";}
                         else if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && o.max_health>18.f) {o.popup = "mecha";}
@@ -2308,7 +2340,7 @@ int main() {
                 (dragStartScreen.y - now.y) / camera.zoom
             };
 
-            camera.target = { 
+            camera.target = {
                 dragStartTarget.x + delta.x,
                 dragStartTarget.y + delta.y
             };
@@ -2321,7 +2353,7 @@ int main() {
             float ty = worldClick.y / TILE_SIZE;
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
-                
+
                 if (u.selected && u.speed) {
                     if(currentMovementMode==MovementMode::Explore) {
                         u.target_x = tx + (float)GetRandomValue(-10,10);
@@ -2365,7 +2397,7 @@ int main() {
 
         // --- Fog of War computation ---
         for (int y = 0; y < GRID_SIZE; y++)
-            for (int x = 0; x < GRID_SIZE; x++) 
+            for (int x = 0; x < GRID_SIZE; x++)
                 visible[y][x] = false;
 
         // Example vision radius in tile-units
@@ -2377,8 +2409,8 @@ int main() {
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             if(extra_sight<0 && u.faction->technology&TECHNOLOGY_TRACK) extra_sight /= 2;
             float u_range = u.range*(1+extra_sight);
-            if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range *= 25.f;
-            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range += extra_sight;
+            if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
+            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
             int VISION_RADIUS = (int)u_range+2;
             for (int dy = -VISION_RADIUS; dy <= VISION_RADIUS; dy++) {
                 for (int dx = -VISION_RADIUS; dx <= VISION_RADIUS; dx++) {
@@ -2624,7 +2656,7 @@ int main() {
                 if (terrainGrid[y][x].texture == &tex::water) continue;
                 DrawTexture(*terrainGrid[y][x].texture, px, py, WHITE);
             }
-        
+
         BeginShaderMode(waterShader);
         float tsec = GetTime()*2.f;
         SetShaderValue(waterShader, waterTimeLoc, &tsec, SHADER_UNIFORM_FLOAT);
@@ -2657,7 +2689,7 @@ int main() {
     //         bool h = IsHill(tx);
     //         bool m = IsMountain(tx);
 
-    //         if (m && terrainGrid[y][x].name==mountaintop_name) 
+    //         if (m && terrainGrid[y][x].name==mountaintop_name)
     //             DrawRot(tex::snow, px, py, 0);
 
     //         if (d) {
@@ -2685,7 +2717,7 @@ int main() {
         // --- UNDER UNIT LAYER ---
         Color target_line_color = Fade(BLUE, 0.3f);
         Color shadow_color = Fade(GRAY, 0.5f);
-        float t = GetTime(); 
+        float t = GetTime();
         // draw blood and explosion remnants
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];
@@ -2713,7 +2745,7 @@ int main() {
             SetShaderValue(unitShader, factionColorLoc, fcf, SHADER_UNIFORM_VEC4);
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
-                if(u.texture!=&tex::field && u.texture!=&tex::hide) continue;
+                if(u.texture!=&tex::field && u.texture!=&tex::field_little && u.texture!=&tex::field_empty && u.texture!=&tex::hide) continue;
                 if(u.faction!=factions+faction_id) continue;
                 int ux = (int)u.x;
                 int uy = (int)u.y;
@@ -2770,7 +2802,7 @@ int main() {
                 DrawDashedLine(tx, ty, px, py, target_line_color);
             }
         }
-            
+
         // Draw non-field units
         for(int faction_id=0;faction_id<max_factions;++faction_id) {
             Color fc = factions[faction_id].color;
@@ -2780,6 +2812,8 @@ int main() {
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
                 if(u.texture==&tex::field) continue;
+                if(u.texture==&tex::field_little) continue;
+                if(u.texture==&tex::field_empty) continue;
                 if(u.texture==&tex::hide) continue;
                 if(u.faction!=factions+faction_id) continue;
                 int ux = (int)u.x;
@@ -2821,11 +2855,11 @@ int main() {
             Texture2D* tex = d.texture;
 
             Rectangle src = { 0, 0, (float)tex->width, (float)tex->height };
-            Rectangle dst = { 
-                px, 
-                py, 
-                TILE_SIZE * d.size, 
-                TILE_SIZE * d.size 
+            Rectangle dst = {
+                px,
+                py,
+                TILE_SIZE * d.size,
+                TILE_SIZE * d.size
             };
             Vector2 origin = { 0, 0 };
 
@@ -2845,15 +2879,15 @@ int main() {
             Vector2 screen = GetWorldToScreen2D(world, camera);
             float u_range = u.range*(1+terrainGrid[(int)u.y][(int)u.x].extra_sight);
             // important that here we extend the sight range only for stuff controlled by the player
-            if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range *= 25.f;
-            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range += terrainGrid[(int)u.y][(int)u.x].extra_sight;
+            if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
+            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
             float radiusPixels = (u_range * TILE_SIZE) * camera.zoom;
             Rectangle src = { 0, 0, (float)fog_hole.width, (float)fog_hole.height };
-            Rectangle dst = { 
-                screen.x, 
-                screen.y, 
-                radiusPixels * 2.0f, 
-                radiusPixels * 2.0f 
+            Rectangle dst = {
+                screen.x,
+                screen.y,
+                radiusPixels * 2.0f,
+                radiusPixels * 2.0f
             };
             Vector2 origin = { radiusPixels, radiusPixels };
             DrawTexturePro(fog_hole, src, dst, origin, 0.f, WHITE);
@@ -2999,7 +3033,7 @@ int main() {
             const float DX = 400.0f;
             const float DY = 110.0f;
             float cx = GetScreenWidth() * 0.5f-DX;
-            
+
             // ROOTS
             Vector2 explore   = { cx - 2*DX, top+DY };
             Vector2 hunting   = { cx - 2*DX, top+7*DY };
@@ -3054,7 +3088,7 @@ int main() {
             Vector2 evolution   = { bioweapon.x + DX, bioweapon.y-DY*3};
             Vector2 artificial  = { bioweapon.x + DX, bioweapon.y};
             Vector2 atmosphere  = { terraforming.x+DX, terraforming.y};
-            
+
             // EXPLORE
             DrawConnector(explore.x+340, explore.y+40, track.x, track.y+40, tech & TECHNOLOGY_EXPLORE);
             DrawConnector(explore.x+340, explore.y+40, agile.x, agile.y+40, tech & TECHNOLOGY_EXPLORE);
@@ -3113,7 +3147,7 @@ int main() {
             DrawConnector(grit.x+340, grit.y+40, evolution.x, evolution.y+40, tech & TECHNOLOGY_GRIT);
             DrawConnector(reactor.x+340, reactor.y+40, hypermagnet.x, hypermagnet.y+40, tech & TECHNOLOGY_REACTOR);
 
-            
+
             // MOBILE FORTRESS
             DrawConnector(driver.x+340, driver.y+40, industry.x, industry.y+40, tech & TECHNOLOGY_DRIVER);
             DrawConnector(mecha.x+340, mecha.y+40, autorepair.x, autorepair.y+40, tech & TECHNOLOGY_MECHA);
@@ -3130,11 +3164,11 @@ int main() {
 
             //F.technology_progress += 1; // for debug
 
-            const float ICON_SIZE = 60.0f;
-            const float ICON_DX = 275.0f;
-            const float ICON_DY = 10.0f;
+            const float ICON_SIZE = 40.0f;
+            const float ICON_DX = 295.0f;
+            const float ICON_DY = 3.0f;
 
-            DrawTechNode(explore.x, explore.y, "CHARTED", "Wide sight from camps and storages", tech, TECHNOLOGY_EXPLORE);
+            DrawTechNode(explore.x, explore.y, "CHARTED", "Sight from camps and storages", tech, TECHNOLOGY_EXPLORE);
             DrawTextureEx(tex::track, {explore.x + ICON_DX, explore.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
 
 
@@ -3166,7 +3200,7 @@ int main() {
                 DrawTextureEx(tex::track, {agile.x + ICON_DX, agile.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_HUNTING) {
-                DrawTechNode(farming.x, farming.y, "FARMING", "+2 industry from fields", tech, TECHNOLOGY_FARMING);
+                DrawTechNode(farming.x, farming.y, "FARMING", "Fields stay mostly in bloom", tech, TECHNOLOGY_FARMING);
                 DrawTextureEx(tex::gear, {farming.x + ICON_DX, farming.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_EXPLORE) {
@@ -3324,7 +3358,7 @@ int main() {
         float prog = factions[0].technology_progress;
         bool techHover = CheckCollisionPointRec(GetMousePosition(), techBtn);
         DrawRectangleRounded(techBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
-        const char* title = (prog >= 1.0f) ? "Tech ready" : "Researching";
+        const char* title = (prog >= 1.0f) ? "Tech ready (esc)" : (showTechTree?"Back (esc)":"Research (esc)");
         DrawText(title,techBtn.x + 20,techBtn.y + 16,32,WHITE);
         float padding = 20.0f;
         float barW = techBtn.width - padding * 2;
@@ -3388,9 +3422,9 @@ int main() {
 
             float offset = 5.f;
             DrawTexturePro(
-                tex::overlay, 
-                Rectangle{0,0,(float)tex::overlay.width,(float)tex::overlay.height}, 
-                Rectangle{0, offset, 512, 230}, 
+                tex::overlay,
+                Rectangle{0,0,(float)tex::overlay.width,(float)tex::overlay.height},
+                Rectangle{0, offset, 512, 230},
                 {0,0},0, WHITE);
             char msg[256];
             snprintf(msg, sizeof(msg), "Utopia %d", player_points);
@@ -3502,7 +3536,18 @@ int main() {
                 textY += 135;
                 if(hovered->texture==&tex::camp) DrawText("Spawns humans", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::lab) DrawText("+10% research", px + 80, textY, 28, WHITE);
-                else if(hovered->texture==&tex::field) DrawText("+2 industry", px + 80, textY, 28, WHITE);
+                else if(hovered->texture==&tex::field) {
+                    DrawText("+4 industry (bloom)", px + 80, textY, 28, WHITE);
+                    DrawText("Irrational crop cycle", px + 80, textY+30, 28, WHITE);
+                }
+                else if(hovered->texture==&tex::field_little) {
+                    DrawText("+2 industry (grows)", px + 80, textY, 28, WHITE);
+                    DrawText("Irrational crop cycle", px + 80, textY+30, 28, WHITE);
+                }
+                else if(hovered->texture==&tex::field_empty) {
+                    DrawText("+0 industry (barren)", px + 80, textY, 28, WHITE);
+                    DrawText("Irrational crop cycle", px + 80, textY+30, 28, WHITE);
+                }
                 else if(hovered->texture==&tex::hide) {
                     DrawText("+4 industry", px + 80, textY, 28, WHITE);
                     DrawText("May become rats", px + 80, textY+30, 28, WHITE);
@@ -3574,7 +3619,8 @@ int main() {
 
             // label
             DrawText(
-                currentMovementMode==MovementMode::Explore?"Explore":currentMovementMode==MovementMode::Tight?"Tight move":"Scattered",
+                //currentMovementMode==MovementMode::Explore?"Explore":currentMovementMode==MovementMode::Tight?"Tight move":"Scattered",
+                "Formation (space)",
                 clusteringBtn.x + 20,
                 clusteringBtn.y + 10,
                 32,
@@ -3610,6 +3656,8 @@ int main() {
     UnloadTexture(tex::van);
     UnloadTexture(tex::snowman);
     UnloadTexture(tex::field);
+    UnloadTexture(tex::field_little);
+    UnloadTexture(tex::field_empty);
     UnloadTexture(tex::heal);
     UnloadTexture(tex::camp);
     UnloadTexture(tex::lab);
