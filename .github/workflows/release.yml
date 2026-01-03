@@ -1,0 +1,69 @@
+name: Build Release
+
+on:
+  push:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # ---------- Linux ----------
+    - name: Install deps (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt update
+        sudo apt install -y g++ make libraylib-dev
+
+    - name: Build (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: make
+
+    - name: Package (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        mkdir release
+        cp game release/
+        cp -r data release/
+        ldd game | grep "=> /" | awk '{print $3}' | xargs -I{} cp {} release/
+        zip -r game-linux.zip release
+
+    # ---------- Windows ----------
+    - name: Install deps (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        vcpkg install raylib:x64-windows
+      shell: pwsh
+
+    - name: Build (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        g++ -std=c++17 -O2 -Wall main.cpp -o game.exe ^
+          -IC:/vcpkg/installed/x64-windows/include ^
+          -LC:/vcpkg/installed/x64-windows/lib ^
+          -lraylib -lopengl32 -lgdi32 -lwinmm
+      shell: cmd
+
+    - name: Package (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        mkdir release
+        copy game.exe release\
+        xcopy /E /I data release\data
+        copy C:\vcpkg\installed\x64-windows\bin\*.dll release\
+        tar -a -c -f game-windows.zip release
+      shell: cmd
+
+    # ---------- Upload ----------
+    - name: Upload release assets
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          game-linux.zip
+          game-windows.zip
