@@ -19,7 +19,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt update
-        sudo apt install -y g++ make libraylib-dev
+        sudo apt install -y g++ make raylib-dev zip
 
     - name: Build (Linux)
       if: matrix.os == 'ubuntu-latest'
