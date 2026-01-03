@@ -46,21 +46,20 @@ jobs:
         cp game release/
         cp -r data release/
         ldd game | grep "=> /" | awk '{print $3}' | xargs -I{} cp {} release/
-        zip -r midnight next morn-linux.zip release
+        zip -r "midnight next morn-linux.zip" release
 
     - uses: actions/upload-artifact@v4
       if: matrix.os == 'ubuntu-latest'
       with:
         name: game-linux
-        path: game-linux.zip
+        path: "midnight next morn-linux.zip"
 
     # =========================================================
     # WINDOWS
     # =========================================================
     - name: Install deps (Windows)
       if: matrix.os == 'windows-latest'
-      run: |
-        vcpkg install raylib:x64-windows
+      run: vcpkg install raylib:x64-windows
       shell: pwsh
 
     - name: Build game (Windows)
@@ -79,26 +78,29 @@ jobs:
         copy game.exe release\
         xcopy /E /I data release\data
         copy C:\vcpkg\installed\x64-windows\bin\*.dll release\
-        tar -a -c -f midnight next morn-windows.zip release
+        tar -a -c -f "midnight next morn-windows.zip" release
       shell: cmd
 
     - uses: actions/upload-artifact@v4
       if: matrix.os == 'windows-latest'
       with:
         name: game-windows
-        path: game-windows.zip
+        path: "midnight next morn-windows.zip"
 
-    release:
-        needs: build
-        runs-on: ubuntu-latest
+  release:
+    needs: build
+    runs-on: ubuntu-latest
 
-        steps:
-        - uses: actions/download-artifact@v4
-        with:
-            path: artifacts
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        path: artifacts
 
-        - uses: softprops/action-gh-release@v2
-        with:
-            files: |
-            artifacts/game-linux/midnight next morn-linux.zip
-            artifacts/game-windows/midnight next morn-windows.zip
+    - uses: softprops/action-gh-release@v2
+      with:
+        tag_name: snapshot
+        name: Snapshot Build
+        prerelease: true
+        files: |
+          artifacts/game-linux/midnight next morn-linux.zip
+          artifacts/game-windows/midnight next morn-windows.zip
