@@ -802,7 +802,8 @@ int main() {
     // load shaders
     Shader unitShader = LoadShader(0, "data/unit_tint.fs");
     int alphaThresholdLoc = GetShaderLocation(unitShader, "alphaThreshold");
-    SetShaderValue(unitShader, alphaThresholdLoc, (float[]){0.5f}, SHADER_UNIFORM_FLOAT);
+    float alphaThreshold = 0.5f;
+    SetShaderValue(unitShader, alphaThresholdLoc, &alphaThreshold, SHADER_UNIFORM_FLOAT);
     int factionColorLoc = GetShaderLocation(unitShader, "factionColor");
     Shader waterShader = LoadShader(0, "data/water.fs");
     int waterTimeLoc = GetShaderLocation(waterShader, "time");
