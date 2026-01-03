@@ -1470,9 +1470,8 @@ int main() {
         if (CheckCollisionPointRec(GetMousePosition(), clusteringBtn)) {
             mouseCapturedByUI = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                //if(currentMovementMode==MovementMode::Scattered) currentMovementMode = MovementMode::Explore;
-                //else if(currentMovementMode==MovementMode::Explore) currentMovementMode = MovementMode::Tight;
-                if(currentMovementMode==MovementMode::Scattered) currentMovementMode = MovementMode::Tight;
+                if(currentMovementMode==MovementMode::Scattered) currentMovementMode = MovementMode::Explore;
+                else if(currentMovementMode==MovementMode::Explore) currentMovementMode = MovementMode::Tight;
                 else currentMovementMode = MovementMode::Scattered;
             }
         }
@@ -1518,7 +1517,7 @@ int main() {
             factions[i].technology_progress += dt*0.009f;
             if(factions[i].technology==0 && factions[i].technology_progress<2.f) factions[i].technology_progress += dt*0.009f;
             if(factions[i].technology & TECHNOLOGY_NERDS) factions[i].technology_progress += dt*0.003f;
-            if(factions[i].technology & TECHNOLOGY_TAMING) factions[i].technology_progress -= dt*0.003f;
+            if(factions[i].technology & TECHNOLOGY_TAMING) factions[i].technology_progress -= dt*0.0045f;
             if(factions[i].technology & TECHNOLOGY_RESEARCH) factions[i].technology_progress += dt*0.003f;
         }
         for (int i = 0; i < num_units; i++) {
@@ -1799,27 +1798,8 @@ int main() {
                         effective_range *= effective_range;
                         bool in_range = d2 < effective_range;
                         if (in_range && o.capturing) {
-                            if(!u.faction->visible_knowledge[j] && (u.faction->technology & TECHNOLOGY_WONDER)) {
-                                u.experience += 15.f;
-                                u.popup = "wonder";
-                                if(u.experience>=10 && (u.max_health<=18.f || (u.faction && (u.faction->technology & TECHNOLOGY_INDUSTRY)))
-                                    && u.name!=veteran_name && u.name!=hero_name) {
-                                    u.size *= 1.2;
-                                    u.name = veteran_name;
-                                    u.popup = veteran_name;
-                                    u.damage *= 1.5;
-                                    u.max_health += 5;
-                                    u.popup = "new veteran";
-                                }
-                                if(u.experience>=20 && u.name==veteran_name) {
-                                    u.size *= 1.2;
-                                    u.name = hero_name;
-                                    u.popup = hero_name;
-                                    u.damage *= 1.5;
-                                    u.max_health += 5;
-                                    u.popup = "new hero";
-                                }
-                            }
+                            if(u.faction && !u.faction->visible_knowledge[j] && (u.faction->technology & TECHNOLOGY_WONDER))
+                                u.faction->technology_progress += 0.02f;
                             u.faction->visible_knowledge.set(j);
                         }
                         if (o.faction == u.faction) continue;
@@ -2055,6 +2035,27 @@ int main() {
                                 u.max_health += 5;
                                 u.popup = "new hero";
                             }
+                            if(u.experience>50 && u.name==hero_name) {
+                                u.experience -= 20;
+                                int r = GetRandomValue(0, 100);
+                                if(r<25) {
+                                    u.attack_rate *= 1.5f;
+                                    u.popup = "hero: aggression";
+                                }
+                                else if(r<50) {
+                                    u.speed *= 1.2f;
+                                    u.popup = "hero: faster";
+                                }
+                                else if(r<75){
+                                    u.max_health += 2.f;
+                                    u.health += 2.f;
+                                    u.popup = "hero: healthier";
+                                }
+                                else {
+                                    u.range *= 1.2f;
+                                    u.popup = "hero: farsight";
+                                }
+                            }
                         }
                         if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_HOMUNCULI) && o.texture==&tex::ghost) {
                             o.faction = u.faction;
@@ -2120,8 +2121,44 @@ int main() {
                             o.animation = 0.f;
                             o.popup = "captured";
                             if(u.faction && (u.faction->technology & TECHNOLOGY_CONQUER)) {
-                                u.faction->technology_progress += 0.02f;
-                                u.popup = "conquered";
+                                u.experience += 15.f;
+                                u.animation = 0.f;
+                                if(u.experience>=10 && (u.max_health<=18.f || (u.faction && (u.faction->technology & TECHNOLOGY_INDUSTRY)))
+                                    && u.name!=veteran_name && u.name!=hero_name) {
+                                    u.size *= 1.2;
+                                    u.name = veteran_name;
+                                    u.damage *= 1.5;
+                                    u.max_health += 5;
+                                    u.popup = "new veteran";
+                                }
+                                if(u.experience>=20 && u.name==veteran_name) {
+                                    u.size *= 1.2;
+                                    u.name = hero_name;
+                                    u.damage *= 1.5;
+                                    u.max_health += 5;
+                                    u.popup = "new hero";
+                                }
+                                if(u.experience>50 && u.name==hero_name) {
+                                    u.experience -= 20;
+                                    int r = GetRandomValue(0, 100);
+                                    if(r<25) {
+                                        u.attack_rate *= 1.5f;
+                                        u.popup = "hero: aggression";
+                                    }
+                                    else if(r<50) {
+                                        u.speed *= 1.2f;
+                                        u.popup = "hero: faster";
+                                    }
+                                    else if(r<75){
+                                        u.max_health += 2.f;
+                                        u.health += 2.f;
+                                        u.popup = "hero: healthier";
+                                    }
+                                    else {
+                                        u.range *= 1.2f;
+                                        u.popup = "hero: farsight";
+                                    }
+                                }
                             }
                             o.capturing = u.faction;
                             if(o.capturing==ANIMAL_FACTION) {
@@ -2286,7 +2323,7 @@ int main() {
                 Unit &u = units[i];
                 
                 if (u.selected && u.speed) {
-                    if(currentMovementMode==MovementMode::Scattered && u.faction && (u.faction->technology&TECHNOLOGY_EXPLORE)) {
+                    if(currentMovementMode==MovementMode::Explore) {
                         u.target_x = tx + (float)GetRandomValue(-10,10);
                         u.target_y = ty + (float)GetRandomValue(-10,10);
                     }
@@ -3096,7 +3133,7 @@ int main() {
             const float ICON_DX = 275.0f;
             const float ICON_DY = 10.0f;
 
-            DrawTechNode(explore.x, explore.y, "EXPLORE", "Wide scatter and camp sight", tech, TECHNOLOGY_EXPLORE);
+            DrawTechNode(explore.x, explore.y, "EXPLORE", "Wide camp sight", tech, TECHNOLOGY_EXPLORE);
             DrawTextureEx(tex::track, {explore.x + ICON_DX, explore.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
 
 
@@ -3107,7 +3144,7 @@ int main() {
             DrawTextureEx(tex::research, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
 
 
-            DrawTechNode(taming.x, taming.y, "TAMER", "-33\% research, tame animals", tech, TECHNOLOGY_TAMING);
+            DrawTechNode(taming.x, taming.y, "TAMER", "-50\% research, tame animals", tech, TECHNOLOGY_TAMING);
             DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
 
 
@@ -3120,10 +3157,9 @@ int main() {
                 DrawTextureEx(tex::track, {track.x + ICON_DX, track.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_TAMING)) {
-                DrawTechNode(wonder.x, wonder.y, "WONDER", "Discoveries grant experience", tech, TECHNOLOGY_WONDER);
+                DrawTechNode(wonder.x, wonder.y, "WONDER", "Discoveries grant research", tech, TECHNOLOGY_WONDER);
                 DrawTextureEx(tex::track, {wonder.x + ICON_DX, wonder.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
-
             if(prev_tech & (TECHNOLOGY_EXPLORE)) {
                 DrawTechNode(agile.x, agile.y, "AGILE", "Terrain slows less", tech, TECHNOLOGY_AGILE);
                 DrawTextureEx(tex::track, {agile.x + ICON_DX, agile.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
@@ -3217,7 +3253,7 @@ int main() {
                 DrawTextureEx(tex::track, {sniffing.x + ICON_DX, sniffing.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_SNIFFING) {
-                DrawTechNode(conquer.x, conquer.y, "CONQUER", "Captures yield research", tech, TECHNOLOGY_CONQUER);
+                DrawTechNode(conquer.x, conquer.y, "CONQUER", "Captures yield experience", tech, TECHNOLOGY_CONQUER);
                 DrawTextureEx(tex::track, {conquer.x + ICON_DX, conquer.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_RESEARCH) {
