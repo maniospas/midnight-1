@@ -1,4 +1,4 @@
-name: Build Release
+name: Build Artifacts
 
 on:
   push:
@@ -14,30 +14,28 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # ---------- Linux ----------
+    # =========================================================
+    # LINUX
+    # =========================================================
     - name: Install deps (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-            sudo apt update
-            sudo apt install -y g++ make git \
-            libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libxi-dev libgl1-mesa-dev zip
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          g++ make git zip \
+          libx11-dev libxrandr-dev libxinerama-dev \
+          libxcursor-dev libxi-dev libgl1-mesa-dev
 
     - name: Build raylib (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-            git clone https://github.com/raysan5/raylib.git
-            cd raylib/src
-            make PLATFORM=PLATFORM_DESKTOP
-            sudo make install
-            sudo ldconfig
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        git clone --depth 1 https://github.com/raysan5/raylib.git
+        cd raylib/src
+        make PLATFORM=PLATFORM_DESKTOP
+        sudo make install
+        sudo ldconfig
 
     - name: Build game (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: make
-
-
-    - name: Build (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: make
 
@@ -50,14 +48,22 @@ jobs:
         ldd game | grep "=> /" | awk '{print $3}' | xargs -I{} cp {} release/
         zip -r game-linux.zip release
 
-    # ---------- Windows ----------
+    - uses: actions/upload-artifact@v4
+      if: matrix.os == 'ubuntu-latest'
+      with:
+        name: game-linux
+        path: game-linux.zip
+
+    # =========================================================
+    # WINDOWS
+    # =========================================================
     - name: Install deps (Windows)
       if: matrix.os == 'windows-latest'
       run: |
         vcpkg install raylib:x64-windows
       shell: pwsh
 
-    - name: Build (Windows)
+    - name: Build game (Windows)
       if: matrix.os == 'windows-latest'
       run: |
         g++ -std=c++17 -O2 -Wall main.cpp -o game.exe ^
@@ -76,10 +82,8 @@ jobs:
         tar -a -c -f game-windows.zip release
       shell: cmd
 
-    # ---------- Upload ----------
-    - name: Upload release assets
-      uses: softprops/action-gh-release@v2
+    - uses: actions/upload-artifact@v4
+      if: matrix.os == 'windows-latest'
       with:
-        files: |
-          game-linux.zip
-          game-windows.zip
+        name: game-windows
+        path: game-windows.zip
