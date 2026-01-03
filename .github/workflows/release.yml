@@ -3,6 +3,9 @@ name: Build Artifacts
 on:
   push:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
