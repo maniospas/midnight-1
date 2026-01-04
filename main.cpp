@@ -1622,7 +1622,12 @@ int main() {
             if(u.x>=GRID_SIZE-2) u.x = GRID_SIZE-2;
             if(u.y>=GRID_SIZE-2) u.y = GRID_SIZE-2;
             if (u.texture == &tex::blood) {
-                if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.001f * dt) {
+                if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.002f * dt) {
+                    num_units--;
+                    u = units[num_units];
+                    continue;
+                }
+                else if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.002f * dt) {
                     u = { \
                         &tex::ghost,  /* texture */
                         "Bloo",       /* name */
@@ -3679,7 +3684,7 @@ int main() {
                     if(hovered->range<3.f) {
                         DrawText("Animal", px + 80, textY, 28, WHITE);
                         if(hovered->texture==&tex::snowman) {}
-                        else if(hovered->texture==&tex::rat) DrawText("Proliferates based on non-pollution", px + 80, textY+30, 28, WHITE);
+                        else if(hovered->texture==&tex::rat) DrawText("Proliferates", px + 80, textY+30, 28, WHITE);
                         else DrawText("Drops hide", px + 80, textY+30, 28, WHITE);
                     }
                     else {
