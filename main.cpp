@@ -1452,7 +1452,7 @@ int main() {
         }
         if (prev_game_time / GAME_DURATION < 0.9f & game_time / GAME_DURATION >= 0.9f ) {
             last_message_counter = 0.f;
-            last_message = "Pollution is peaking! This forray will end soon.";
+            last_message = "Pollution has peaked! This forray will end soon.";
         }
         prev_game_time = game_time;
         game_time += dt;
@@ -1622,12 +1622,12 @@ int main() {
             if(u.x>=GRID_SIZE-2) u.x = GRID_SIZE-2;
             if(u.y>=GRID_SIZE-2) u.y = GRID_SIZE-2;
             if (u.texture == &tex::blood) {
-                if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.002f * dt) {
+                if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.005f * dt) {
                     num_units--;
                     u = units[num_units];
                     continue;
                 }
-                else if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.002f * dt) {
+                else if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.005f * dt) {
                     u = { \
                         &tex::ghost,  /* texture */
                         "Bloo",       /* name */
@@ -2199,6 +2199,20 @@ int main() {
                                 }
                                 else if(o.texture==&tex::warehouse) {
                                     last_message = "Important loss: Storage";
+                                    last_message_counter = 0.f;
+                                }
+                            }
+                            if(u.faction==factions) {
+                                if(o.texture==&tex::camp) {
+                                    last_message = "Important capture: Camp";
+                                    last_message_counter = 0.f;
+                                }
+                                else if(o.texture==&tex::oil) {
+                                    last_message = "Important capture: Black Gold";
+                                    last_message_counter = 0.f;
+                                }
+                                else if(o.texture==&tex::warehouse) {
+                                    last_message = "Important capture: Storage";
                                     last_message_counter = 0.f;
                                 }
                             }
