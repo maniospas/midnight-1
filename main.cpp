@@ -616,19 +616,10 @@ static const char* veteran_name = "Veteran";
 static const char* hero_name = "Hero";
 
 
-static void DrawConnector(
-    float x1, float y1,
-    float x2, float y2,
-    bool active
-) {
+static void DrawConnector(float x1, float y1, float x2, float y2, bool active) {
     if(!active) return;
     Color c = active ? Fade(GREEN, 0.8f) : Fade(GRAY, 0.4f);
-    DrawLineBezier(
-        { x1, y1 },
-        { x2, y2 },
-        3.0f,
-        c
-    );
+    DrawLineBezier({ x1, y1 }, { x2, y2 }, 3.0f, c);
 }
 
 
@@ -853,6 +844,8 @@ int main() {
 
     int num_units = 0;
     int max_factions = 7; // can never be less than 3 if we include the player, unclaimed, and wild - can also not include the last Wild faction
+    static const float GAME_DURATION = 15.0f * 60.0f; // 15 minutes
+    float game_time = 0.f;
 
     // load shaders
     Shader unitShader = LoadShader(0, "data/unit_tint.fs");
@@ -971,7 +964,7 @@ int main() {
                     {0,0}, 0, WHITE);
                 DrawText("BEST UTOPIA", GetScreenWidth()/2 - MeasureText("BEST UTOPIA", 96)/2+70, baseY+420, 96, GREEN);
             }
-            else {
+            else if (game_time >= GAME_DURATION) {
                 DrawTexturePro(
                     tex::blood,
                     Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-128, baseY+100, 256, 256},
@@ -984,12 +977,27 @@ int main() {
                     tex::blood,
                     Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-32, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
-                DrawText("FAILED", GetScreenWidth()/2 - MeasureText("FAILED", 96)/2+50, baseY+420, 96, RED);
+                DrawText("SURVIVED AT BEST", GetScreenWidth()/2 - MeasureText("SURVIVED AT BEST", 96)/2+50, baseY+420, 96, ORANGE);
+            }
+            else {
+                DrawTexturePro(
+                    tex::blood,
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-128, baseY+100, 256, 256},
+                               {0,0}, 0, WHITE);
+                DrawTexturePro(
+                    tex::blood,
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-256+32, baseY+100, 256, 256},
+                               {0,0}, 0, WHITE);
+                DrawTexturePro(
+                    tex::blood,
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-32, baseY+100, 256, 256},
+                               {0,0}, 0, WHITE);
+                DrawText("ELIMINATED", GetScreenWidth()/2 - MeasureText("ELIMINATED", 96)/2+50, baseY+420, 96, RED);
             }
             // --- Score ---
             char score[128];
             snprintf(score, sizeof(score), "Your utopia: %d   |   Best AI: %d", player_points, best_ai_points);
-            DrawText(score, GetScreenWidth()/2 - MeasureText(score, 42)/2+40, baseY+540, 42, WHITE);
+            if (game_time >= GAME_DURATION) DrawText(score, GetScreenWidth()/2 - MeasureText(score, 42)/2+40, baseY+540, 42, WHITE);
 
             // --- Ethical tech disclosure ---
             const char* badTechNames[8];
@@ -1436,11 +1444,10 @@ int main() {
     // UnloadImage(fog_edges_image);
 
     // duration
-    static const float GAME_DURATION = 15.0f * 60.0f; // 15 minutes
-    float game_time = 0.f;
+    game_time = 0.f;
     float time_norm = 0.f; // 0..1
     float last_message_counter = 0.f;
-    const char* last_message = "Create the best utopia until pollution comes back.";
+    const char* last_message = "Create the best utopia before re-pollution.";
     float prev_game_time = 0.f;
 
     while (true) {
@@ -3455,7 +3462,7 @@ int main() {
         const char* title = (prog >= 1.0f) ? "New tech (esc)" : (showTechTree?"Back (esc)":"Research (esc)");
         if(prev_prog<1.f && prog >= 1.0f) {
             last_message_counter = 0.f;
-            last_message = "New tech can be selected";
+            last_message = "New tech can be selected.";
         }
         prev_prog = prog;
         DrawText(title,techBtn.x + 20,techBtn.y + 16,32,WHITE);
