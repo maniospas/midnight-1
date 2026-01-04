@@ -969,7 +969,7 @@ int main() {
                     Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
                     Rectangle{GetScreenWidth()/2-256, baseY+100, 512, 256},
                     {0,0}, 0, WHITE);
-                DrawText("BEST UTOPIA", GetScreenWidth()/2 - MeasureText("BEST UTOPIA", 96)/2+70, baseY+620, 96, GREEN);
+                DrawText("BEST UTOPIA", GetScreenWidth()/2 - MeasureText("BEST UTOPIA", 96)/2+70, baseY+420, 96, GREEN);
             }
             else {
                 DrawTexturePro(
@@ -1164,8 +1164,8 @@ int main() {
             bool hill = IsHill(T.texture);
             bool mountain = IsMountain(T.texture);
             if (!grass && !hill && !mountain) continue;
-            if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.05f) continue;
-            if (hill && (float)GetRandomValue(0, 1000000) / 1000000.0f < 0.5f) continue;
+            // if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.02f) continue;
+            if (hill && (float)GetRandomValue(0, 1000000) / 1000000.0f < 0.2f) continue;
             if (mountain && (float)GetRandomValue(0, 1000000) / 1000000.0f < 0.95f) continue;
             float f = ForestNoise(x, y);
             if((float)GetRandomValue(0, 1000000) / 1000000.0f<f*0.1f) continue;
@@ -1448,7 +1448,7 @@ int main() {
         float polution_speedup = 0.f;// just track this for this frame
         if (prev_game_time / GAME_DURATION < 0.7f & game_time / GAME_DURATION >= 0.7f ) {
             last_message_counter = 0.f;
-            last_message = "Pollution is coming back!";
+            last_message = "Pollution is coming back! How is our utopia looking?";
         }
         if (prev_game_time / GAME_DURATION < 0.9f & game_time / GAME_DURATION >= 0.9f ) {
             last_message_counter = 0.f;
@@ -2204,15 +2204,15 @@ int main() {
                             }
                             if(u.faction==factions) {
                                 if(o.texture==&tex::camp) {
-                                    last_message = "Important capture: Camp";
+                                    last_message = "Nice capture: Camp";
                                     last_message_counter = 0.f;
                                 }
                                 else if(o.texture==&tex::oil) {
-                                    last_message = "Important capture: Black Gold";
+                                    last_message = "Nice capture: Black Gold";
                                     last_message_counter = 0.f;
                                 }
                                 else if(o.texture==&tex::warehouse) {
-                                    last_message = "Important capture: Storage";
+                                    last_message = "Nice capture: Storage";
                                     last_message_counter = 0.f;
                                 }
                             }
