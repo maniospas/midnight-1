@@ -8,6 +8,7 @@ out vec4 finalColor;
 uniform float time;
 
 const float TAU = 6.28318530718;
+const float PERIOD = 32.0;
 
 /* Fully periodic wave */
 float wave(vec2 uv, vec2 freq, float speed, float phase)
@@ -15,7 +16,7 @@ float wave(vec2 uv, vec2 freq, float speed, float phase)
     return sin(TAU * (uv.x * freq.x + uv.y * freq.y) + time * speed + phase);
 }
 
-/* Periodic flow field (tiles perfectly) */
+/* Periodic flow field (tiles every PERIOD tiles) */
 vec2 flow(vec2 uv)
 {
     float fx = sin(TAU * uv.y * 2.0 + time * 0.3);
@@ -25,10 +26,12 @@ vec2 flow(vec2 uv)
 
 void main()
 {
-    vec2 uv = fract(fragTexCoord);
+    /* --- Macro-periodic UV ------------------------------------------ */
+    vec2 tileUV = fragTexCoord;
+    vec2 uv = fract(tileUV / PERIOD) * PERIOD;
 
-    /* --- Flow distortion (periodic) ---------------------------------- */
-    vec2 f = flow(uv);
+    /* --- Flow distortion -------------------------------------------- */
+    vec2 f = flow(uv / PERIOD);
 
     /* --- Height field ------------------------------------------------ */
     float h = 0.0;
@@ -40,7 +43,7 @@ void main()
     h += wave(uv, vec2(1.0, 2.0), 2.2, f.y * 1.7) * 0.012;
 
     /* --- Tile-safe normal -------------------------------------------- */
-    float eps = 1.0 / 512.0;
+    float eps = PERIOD / 512.0;
 
     float hx =
         wave(uv + vec2(eps, 0.0), vec2(1.0,0.0), 1.1, f.x) -
@@ -70,7 +73,7 @@ void main()
 
     vec3 waterColor = mix(deep, shallow, diffuse);
     waterColor += fresnel * vec3(0.20, 0.30, 0.35);
-    waterColor += foam * vec3(0.25);
+    waterColor += foam * vec3(0.05);
 
     finalColor = vec4(waterColor, 1.0) * fragColor;
 }

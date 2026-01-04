@@ -19,6 +19,8 @@ namespace tex {
     static Texture2D grass2;
     static Texture2D grass3;
     static Texture2D grass4;
+    static Texture2D grass_transition;
+    static Texture2D grass_transition2;
     static Texture2D water;
     static Texture2D desert;
     static Texture2D desert_transition;
@@ -518,6 +520,9 @@ int NOISE_SEED = 0;
             (faction)     /* can only be captured */ \
         };
 
+inline bool IsGrass(Texture2D* t) {
+    return t==&tex::grass || t==&tex::grass2 || t==&tex::grass3 || t==&tex::grass4;
+}
 inline bool IsHill(Texture2D* t) {
     return t==&tex::hill || t==&tex::hill2 || t==&tex::hill3 || t==&tex::hill4;
 }
@@ -527,12 +532,30 @@ inline bool IsMountain(Texture2D* t) {
 inline bool IsDesert(Texture2D* t) {
     return t==&tex::desert;
 }
-inline void DrawRot(Texture2D tex, int px, int py, float rot) {
-    Rectangle src = {0,0,(float)tex.width,(float)tex.height};
-    Rectangle dst = { (float)px, (float)py, (float)tex.width, (float)tex.height };
-    Vector2 origin = {0,0};
-    DrawTexturePro(tex, src, dst, origin, rot+180.f, WHITE);
+inline void DrawRot(Texture2D tex, int px, int py, float rot)
+{
+    Rectangle src = {
+        0.0f,
+        0.0f,
+        (float)tex.width,
+        (float)tex.height
+    };
+
+    Rectangle dst = {
+        (float)px + tex.width  * 0.5f,
+        (float)py + tex.height * 0.5f,
+        (float)tex.width,
+        (float)tex.height
+    };
+
+    Vector2 origin = {
+        tex.width  * 0.5f,
+        tex.height * 0.5f
+    };
+
+    DrawTexturePro(tex, src, dst, origin, rot, WHITE);
 }
+
 
 static bool DrawTechNode(
     float x, float y,
@@ -777,6 +800,8 @@ int main() {
     tex::grass2 = LoadTexture("data/grass2.png");
     tex::grass3 = LoadTexture("data/grass3.png");
     tex::grass4 = LoadTexture("data/grass4.png");
+    tex::grass_transition = LoadTexture("data/grass_transition.png");
+    tex::grass_transition2 = LoadTexture("data/grass_transition2.png");
     tex::hill  = LoadTexture("data/hill3.png");
     tex::hill2 = LoadTexture("data/hill2.png");
     tex::hill3 = LoadTexture("data/hill.png");
@@ -842,14 +867,14 @@ int main() {
     MovementMode currentMovementMode = MovementMode::Tight;
     Rectangle clusteringBtn = {
         GetScreenWidth() - 300.0f,
-        GetScreenHeight() - 200.0f,
+        GetScreenHeight() - 110.0f,
         280.0f,
         100.0f
     };
     bool showTechTree = false;
     Rectangle techBtn = {
         GetScreenWidth() - 300.0f,
-        GetScreenHeight() - 320.0f,
+        GetScreenHeight() - 220.0f,
         280.0f,
         100.0f
     };
@@ -1045,7 +1070,6 @@ int main() {
 
     for (int r = 0; r < NUM_ROADS; r++) {
         int x = 0, y = 0, dir = 0;
-
         switch (GetRandomValue(0,3)) {
             case 0: x = GetRandomValue(0, GRID_SIZE-1); y = 3;             dir = 2; break;
             case 1: x = GetRandomValue(0, GRID_SIZE-1); y = GRID_SIZE-4;   dir = 3; break;
@@ -1069,9 +1093,7 @@ int main() {
             // --- SECOND TILE (perpendicular, width = 2) ---
             int px = 0, py = 0;
             if (dirX[dir] != 0) py = 1;  // horizontal → widen vertically
-            else                px = 1;  // vertical → widen horizontally
-
-            if (GetRandomValue(0,1)) { px = -px; py = -py; }
+            else  px = 1;  // vertical → widen horizontally
 
             int wx = x + px;
             int wy = y + py;
@@ -1418,11 +1440,21 @@ int main() {
     float game_time = 0.f;
     float time_norm = 0.f; // 0..1
     float last_message_counter = 0.f;
-    const char* last_message = "Create the best utopia until pollution comes back";
+    const char* last_message = "Create the best utopia until pollution comes back.";
+    float prev_game_time = 0.f;
 
     while (true) {
         float dt = GetFrameTime();
         float polution_speedup = 0.f;// just track this for this frame
+        if (prev_game_time / GAME_DURATION < 0.7f & game_time / GAME_DURATION >= 0.7f ) {
+            last_message_counter = 0.f;
+            last_message = "Pollution is coming back!";
+        }
+        if (prev_game_time / GAME_DURATION < 0.9f & game_time / GAME_DURATION >= 0.9f ) {
+            last_message_counter = 0.f;
+            last_message = "Pollution is peaking! This forray will end soon.";
+        }
+        prev_game_time = game_time;
         game_time += dt;
         if (game_time >= GAME_DURATION) {
             game_time = GAME_DURATION;
@@ -1451,9 +1483,21 @@ int main() {
         else if (CheckCollisionPointRec(GetMousePosition(), clusteringBtn)) {
             mouseCapturedByUI = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                if(currentMovementMode==MovementMode::Scattered) currentMovementMode = MovementMode::Explore;
-                else if(currentMovementMode==MovementMode::Explore) currentMovementMode = MovementMode::Tight;
-                else currentMovementMode = MovementMode::Scattered;
+                if(currentMovementMode==MovementMode::Scattered) {
+                    currentMovementMode = MovementMode::Explore;
+                    last_message = "Explore formation";
+                    last_message_counter = 0.f;
+                }
+                else if(currentMovementMode==MovementMode::Explore) {
+                    currentMovementMode = MovementMode::Tight;
+                    last_message = "Tight formation";
+                    last_message_counter = 0.f;
+                }
+                else {
+                    currentMovementMode = MovementMode::Scattered;
+                    last_message = "Scattered formation";
+                    last_message_counter = 0.f;
+                }
             }
         }
         if (IsKeyPressed(KEY_ESCAPE)) showTechTree = !showTechTree;
@@ -2674,47 +2718,72 @@ int main() {
         EndShaderMode();
 
 
-    // for (int y = yMin; y < yMax; y++)
-    //     for (int x = xMin; x < xMax; x++) {
+        for (int y = yMin; y < yMax; y++)
+            for (int x = xMin; x < xMax; x++) {
 
-    //         Texture2D* tx = terrainGrid[y][x].texture;
-    //         int px = x * TILE_SIZE;
-    //         int py = y * TILE_SIZE;
-    //         if(!explored[y][x]) continue;
+                if (!explored[y][x]) continue;
 
-    //         Texture2D* n1 = terrainGrid[y-1][x-1].texture; // NW
-    //         Texture2D* n2 = terrainGrid[y-1][x+1].texture; // NE
-    //         Texture2D* n3 = terrainGrid[y+1][x-1].texture; // SW
-    //         Texture2D* n4 = terrainGrid[y+1][x+1].texture; // SE
+                Texture2D* tx = terrainGrid[y][x].texture;
+                int px = x * TILE_SIZE;
+                int py = y * TILE_SIZE;
 
-    //         bool d = (tx == &tex::desert);
-    //         bool h = IsHill(tx);
-    //         bool m = IsMountain(tx);
+                bool hasN = (y > 0);
+                bool hasS = (y < GRID_SIZE - 1);
+                bool hasW = (x > 0);
+                bool hasE = (x < GRID_SIZE - 1);
 
-    //         if (m && terrainGrid[y][x].name==mountaintop_name)
-    //             DrawRot(tex::snow, px, py, 0);
+                Texture2D* n  = hasN ? terrainGrid[y-1][x].texture : tx;
+                Texture2D* s  = hasS ? terrainGrid[y+1][x].texture : tx;
+                Texture2D* w  = hasW ? terrainGrid[y][x-1].texture : tx;
+                Texture2D* e  = hasE ? terrainGrid[y][x+1].texture : tx;
 
-    //         if (d) {
-    //             if (n1 != &tex::desert && !IsHill(n1) && !IsMountain(n1)) DrawRot(tex::desert_transition, px, py,   0);
-    //             if (n2 != &tex::desert && !IsHill(n2) && !IsMountain(n2)) DrawRot(tex::desert_transition, px, py,  90);
-    //             if (n3 != &tex::desert && !IsHill(n3) && !IsMountain(n3)) DrawRot(tex::desert_transition, px, py, 270);
-    //             if (n4 != &tex::desert && !IsHill(n4) && !IsMountain(n4)) DrawRot(tex::desert_transition, px, py, 180);
-    //         }
+                if (tx==&tex::water) {
+                    bool sN  = IsGrass(n);
+                    bool sS  = IsGrass(s);
+                    bool sW  = IsGrass(w);
+                    bool sE  = IsGrass(e);
+                    Texture2D &transition = (x+y)%2?tex::grass_transition:tex::grass_transition2;
+                    if (sN && sW && !sE && !sS) DrawRot(transition,  px, py,   0);
+                    if (sN && sE && !sW && !sS) DrawRot(transition, px, py,  90);
+                    if (sS && sW && !sE && !sN) DrawRot(transition,  px, py, 270);
+                    if (sS && sE && !sW && !sN) DrawRot(transition, px, py, 180);
+                }
+                if (!IsHill(tx) && !IsMountain(tx)) {
+                    bool sN  = IsHill(n);
+                    bool sS  = IsHill(s);
+                    bool sW  = IsHill(w);
+                    bool sE  = IsHill(e);
+                    Texture2D &transition = (x+y)%2?tex::hill_transition:tex::hill_transition2;
+                    if (sN && sW && !sE && !sS) DrawRot(transition,  px, py,   0);
+                    if (sN && sE && !sW && !sS) DrawRot(transition, px, py,  90);
+                    if (sS && sW && !sE && !sN) DrawRot(transition,  px, py, 270);
+                    if (sS && sE && !sW && !sN) DrawRot(transition, px, py, 180);
+                }
+                if (!IsDesert(tx) && !IsHill(tx) && !IsMountain(tx)) {
+                    bool sN  = IsDesert(n);
+                    bool sS  = IsDesert(s);
+                    bool sW  = IsDesert(w);
+                    bool sE  = IsDesert(e);
+                    Texture2D &transition = (x+y)%2?tex::desert_transition:tex::desert_transition;
+                    if (sN && sW && !sE && !sS) DrawRot(transition,  px, py,   0);
+                    if (sN && sE && !sW && !sS) DrawRot(transition, px, py,  90);
+                    if (sS && sW && !sE && !sN) DrawRot(transition,  px, py, 270);
+                    if (sS && sE && !sW && !sN) DrawRot(transition, px, py, 180);
+                }
+                if (!IsHill(tx) && !IsMountain(tx)) {
+                    bool sN  = IsMountain(n);
+                    bool sS  = IsMountain(s);
+                    bool sW  = IsMountain(w);
+                    bool sE  = IsMountain(e);
+                    Texture2D &transition = tex::mountain_transition;
+                    if (sN && sW && !sE && !sS) DrawRot(transition,  px, py,   0);
+                    if (sN && sE && !sW && !sS) DrawRot(transition, px, py,  90);
+                    if (sS && sW && !sE && !sN) DrawRot(transition,  px, py, 270);
+                    if (sS && sE && !sW && !sN) DrawRot(transition, px, py, 180);
+                }
 
-    //         if (h) {
-    //             if (!IsHill(n1) && !IsMountain(n1)) DrawRot(tex::hill_transition,  px, py,   0);
-    //             if (!IsHill(n2) && !IsMountain(n2)) DrawRot(tex::hill_transition2, px, py,  90);
-    //             if (!IsHill(n3) && !IsMountain(n3)) DrawRot(tex::hill_transition,  px, py, 270);
-    //             if (!IsHill(n4) && !IsMountain(n4)) DrawRot(tex::hill_transition2, px, py, 180);
-    //         }
+            }
 
-    //         if (m) {
-    //             if (!IsMountain(n1)) DrawRot(tex::mountain_transition, px, py,   0);
-    //             if (!IsMountain(n2)) DrawRot(tex::mountain_transition, px, py,  90);
-    //             if (!IsMountain(n3)) DrawRot(tex::mountain_transition, px, py, 270);
-    //             if (!IsMountain(n4)) DrawRot(tex::mountain_transition, px, py, 180);
-    //         }
-    //     }
 
         // --- UNDER UNIT LAYER ---
         Color target_line_color = Fade(BLUE, 0.3f);
@@ -3682,6 +3751,8 @@ int main() {
     UnloadTexture(tex::grass2);
     UnloadTexture(tex::grass3);
     UnloadTexture(tex::grass4);
+    UnloadTexture(tex::grass_transition);
+    UnloadTexture(tex::grass_transition2);
     UnloadTexture(tex::hill);
     UnloadTexture(tex::hill2);
     UnloadTexture(tex::hill3);
