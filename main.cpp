@@ -2933,6 +2933,7 @@ int main() {
             DrawCircle(px, py, 4.0f*(1+sqrtf(u.damage)*0.5f), RED);
         }
 
+        Color transparent = Fade(WHITE, 0.55f);
         for (int i = 0; i < num_decorators; i++) {
             Decorator &d = decorators[i];
             int x = (int)d.x;
@@ -2953,7 +2954,7 @@ int main() {
             };
             Vector2 origin = { 0, 0 };
 
-            DrawTexturePro(*tex, src, dst, origin, 0.0f, WHITE);
+            DrawTexturePro(*tex, src, dst, origin, 0.0f, visible[y][x]?transparent:WHITE);
         }
 
 
