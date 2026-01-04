@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include <bitset>
+#include <cstring>
 
 #define DrawText(txt, x, y, size, col) DrawTextEx(uiFont, txt, (Vector2){ (float)(x), (float)(y) }, (float)(size), 2.0f, col)
 static const int GRID_SIZE = 196;
@@ -34,6 +35,7 @@ namespace tex {
     static Texture2D human;
     static Texture2D scout;
     static Texture2D tank;
+    static Texture2D datacenter;
     static Texture2D railgun;
     static Texture2D bison;
     static Texture2D wolf;
@@ -378,6 +380,26 @@ int NOISE_SEED = 0;
         units[num_units++] = { \
             &tex::field,   /* texture */ \
             "Field",       /* name */ \
+            0.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            0.0,          /* attack_rate (store industry state here)*/ \
+            4.0,          /* range */ \
+            0.0,          /* damage */ \
+            0.0,          /* experience */ \
+            0.0,          /* angle */ \
+            1.3,          /* size */ \
+            15.0,         /* health */ \
+            15.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            (faction),    /* can only be captured */ \
+            -0.1f \
+        };
+#define CREATE_DATACENTER(faction, x, y) \
+    if (num_units < MAX_UNITS) \
+        units[num_units++] = { \
+            &tex::datacenter,   /* texture */ \
+            "Datacenter",       /* name */ \
             0.0,          /* speed */ \
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
@@ -745,7 +767,7 @@ const int GAME_H = 1600;
 
 int main() {
     SetTraceLogLevel(LOG_NONE); // disable raylib logs
-    //SetConfigFlags(FLAG_FULLSCREEN_MODE);
+    SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), "MIDNIGHT - next morn");
     SetRandomSeed((unsigned)time(NULL));
     NOISE_SEED = GetRandomValue(1, 1'000'000);
@@ -798,6 +820,7 @@ int main() {
     tex::crater = LoadTexture("data/crater.png");
     tex::radio = LoadTexture("data/radio.png");
     tex::oil = LoadTexture("data/oil.png");
+    tex::datacenter = LoadTexture("data/datacenter.png");
     tex::info = LoadTexture("data/info.png");
     tex::overlay = LoadTexture("data/overlay.png");
     SetTargetFPS(60);
@@ -1140,7 +1163,7 @@ int main() {
     float target_zoom = CAMERA_ZOOM;
     camera.target = { GRID_SIZE * TILE_SIZE / 2.0f, GRID_SIZE * TILE_SIZE / 2.0f }; // will overwrite this
     camera.offset = { (float)GetScreenWidth() / 2, (float)GetScreenHeight() / 2 };
-    camera.zoom = CAMERA_ZOOM;
+    camera.zoom = 0.05;
 
     // spawn starting units
     // -----------------------------------------------------------------------------
@@ -1248,7 +1271,7 @@ int main() {
     // ====================================================================
     int NUM_NEUTRAL_STRUCTURES = GRID_SIZE*GRID_SIZE/512;
     int NUM_NEUTRAL_TANKS = GRID_SIZE*GRID_SIZE/512*2;
-    int NUM_WILD_ANIMALS= GRID_SIZE*GRID_SIZE/512/4;
+    int NUM_WILD_ANIMALS= GRID_SIZE*GRID_SIZE/512/8;
     float AVOID_BASE_RADIUS = 7.0f;
 
     auto RevealUnitToAllFactions = [&](int unitIndex) {
@@ -1269,7 +1292,7 @@ int main() {
         bool isGrass  = (T.texture == &tex::grass || T.texture == &tex::grass2 || T.texture == &tex::grass3 || T.texture == &tex::grass4);
         bool isDesert = (T.texture == &tex::desert);
         if(T.texture == &tex::water) continue;
-        int type = GetRandomValue(0, 4);
+        int type = GetRandomValue(0, 5);
         switch (type) {
             case 1:
                 if (T.texture == &tex::mountain) {
@@ -1288,6 +1311,9 @@ int main() {
             case 3:
                 if (!isDesert && GetRandomValue(0, 99) < 80) continue;
                 CREATE_OIL(&factions[1], x, y);
+                break;
+            case 5:
+                CREATE_DATACENTER(&factions[1], x, y);
                 break;
             case 4:
                 if(GetRandomValue(0, 99) < 80 && count_warehouses) {
@@ -1389,8 +1415,10 @@ int main() {
 
     // duration
     static const float GAME_DURATION = 15.0f * 60.0f; // 15 minutes
-    float game_time = 0.0f;
-    float time_norm = 0.0f; // 0..1
+    float game_time = 0.f;
+    float time_norm = 0.f; // 0..1
+    float last_message_counter = 0.f;
+    const char* last_message = "Create the best utopia until pollution comes back";
 
     while (true) {
         float dt = GetFrameTime();
@@ -1404,9 +1432,21 @@ int main() {
 
         bool mouseCapturedByUI = false;
         if (IsKeyPressed(KEY_SPACE)) {
-            if(currentMovementMode==MovementMode::Scattered) currentMovementMode = MovementMode::Explore;
-            else if(currentMovementMode==MovementMode::Explore) currentMovementMode = MovementMode::Tight;
-            else currentMovementMode = MovementMode::Scattered;
+            if(currentMovementMode==MovementMode::Scattered) {
+                currentMovementMode = MovementMode::Explore;
+                last_message = "Explore formation";
+                last_message_counter = 0.f;
+            }
+            else if(currentMovementMode==MovementMode::Explore) {
+                currentMovementMode = MovementMode::Tight;
+                last_message = "Tight formation";
+                last_message_counter = 0.f;
+            }
+            else {
+                currentMovementMode = MovementMode::Scattered;
+                last_message = "Scattered formation";
+                last_message_counter = 0.f;
+            }
         }
         else if (CheckCollisionPointRec(GetMousePosition(), clusteringBtn)) {
             mouseCapturedByUI = true;
@@ -1442,8 +1482,8 @@ int main() {
             if (target_zoom < 0.15f) target_zoom = 0.15f;
             if (target_zoom > 2.0f) target_zoom = 2.0f;
             float diff = camera.zoom-target_zoom;
-            camera.zoom -= diff*dt*5;
-            if(diff*(camera.zoom-target_zoom)<=0.f) {
+            camera.zoom -= diff*dt*5*(1+camera.zoom);
+            if(diff*(camera.zoom-target_zoom)<=0.00001f) {
                 camera.zoom = target_zoom;
             }
             Vector2 mouseWorldAfter = GetScreenToWorld2D(GetMousePosition(), camera);
@@ -1472,6 +1512,17 @@ int main() {
                     polution_speedup += 0.08f;
                 }
                 else u.faction->technology_progress += dt*0.0009f;
+            }
+            if(u.texture==&tex::datacenter && (float)GetRandomValue(0, 1000000) / 1000000.0f * 1000.f < dt &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION) {
+                unsigned long long candidate = 1ULL << GetRandomValue(0, 62);
+                if(!(u.faction->technology & candidate)) {
+                    u.faction->technology = u.faction->technology | candidate;
+                    u.popup = "new tech";
+                    if(u.faction==factions) {
+                        last_message = "New tech from a datacenter";
+                        last_message_counter = 0.f;
+                    }
+                }
             }
             if(u.texture==&tex::camp && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 4.f;
             if(u.texture==&tex::camp || u.speed) u.faction->count_members += 0.00001f;
@@ -1757,8 +1808,13 @@ int main() {
                         effective_range *= effective_range;
                         bool in_range = d2 < effective_range;
                         if (in_range && o.capturing) {
-                            if(u.faction && !u.faction->visible_knowledge[j] && (u.faction->technology & TECHNOLOGY_WONDER))
+                            if(u.faction && !u.faction->visible_knowledge[j] && (u.faction->technology & TECHNOLOGY_WONDER)) {
                                 u.faction->technology_progress += 0.02f;
+                                if(u.faction==factions) {
+                                    last_message_counter = 0.f;
+                                    last_message = "Wonder: bonus research from new discovery";
+                                }
+                            }
                             u.faction->visible_knowledge.set(j);
                         }
                         if (o.faction == u.faction) continue;
@@ -2083,6 +2139,20 @@ int main() {
                         }
                         if (o.health<=0 && o.capturing) {
                             o.animation = 0.f;
+                            if(o.faction==factions) {
+                                if(o.texture==&tex::camp) {
+                                    last_message = "Important loss: Camp";
+                                    last_message_counter = 0.f;
+                                }
+                                else if(o.texture==&tex::oil) {
+                                    last_message = "Important loss: Black Gold";
+                                    last_message_counter = 0.f;
+                                }
+                                else if(o.texture==&tex::warehouse) {
+                                    last_message = "Important loss: Storage";
+                                    last_message_counter = 0.f;
+                                }
+                            }
                             o.popup = "captured";
                             if(u.faction && (u.faction->technology & TECHNOLOGY_CONQUER)) {
                                 u.experience += 15.f;
@@ -2369,7 +2439,7 @@ int main() {
             if(F.technology_progress < 1.f) continue;
             unsigned long long prev = F.technology;
             unsigned long long chosen = 0;
-            int k = GetRandomValue(0, 62); // skip last technocracy because it's too hard to understand if it's good or bad
+            int k = GetRandomValue(0, 62);
             unsigned long long candidate = 1ULL << k;
             if(prev & candidate) continue;
 
@@ -3116,164 +3186,165 @@ int main() {
             DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
 
 
-            if(prev_tech & (TECHNOLOGY_BIOWEAPON | TECHNOLOGY_GRIT)) {
+            // account for datacenters autonomously adding techs without predecesoors
+            if(prev_tech & (TECHNOLOGY_BIOWEAPON | TECHNOLOGY_GRIT | TECHNOLOGY_EVOLUTION)) {
                 DrawTechNode(evolution.x, evolution.y, "EVOLUTION", "10\% of spawn are snowman", tech, TECHNOLOGY_EVOLUTION);
                 DrawTextureEx(tex::snowman, {evolution.x + ICON_DX, evolution.y + ICON_DY}, 0, ICON_SIZE / tex::snowman.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_EXPLORE) {
+            if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_TRACK)) {
                 DrawTechNode(track.x, track.y, "TRACKER", "Less reduced visibility", tech, TECHNOLOGY_TRACK);
                 DrawTextureEx(tex::track, {track.x + ICON_DX, track.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
-            if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_TAMING)) {
+            if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_TAMING | TECHNOLOGY_WONDER)) {
                 DrawTechNode(wonder.x, wonder.y, "WONDER", "Discoveries grant research", tech, TECHNOLOGY_WONDER);
                 DrawTextureEx(tex::track, {wonder.x + ICON_DX, wonder.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
-            if(prev_tech & (TECHNOLOGY_EXPLORE)) {
+            if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_AGILE)) {
                 DrawTechNode(agile.x, agile.y, "AGILE", "Terrain slows less", tech, TECHNOLOGY_AGILE);
                 DrawTextureEx(tex::track, {agile.x + ICON_DX, agile.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_HUNTING) {
+            if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_FARMING)) {
                 DrawTechNode(farming.x, farming.y, "FARMING", "Fields stay mostly in bloom", tech, TECHNOLOGY_FARMING);
                 DrawTextureEx(tex::gear, {farming.x + ICON_DX, farming.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_EXPLORE) {
+            if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_DRIVER)) {
                 DrawTechNode(driver.x, driver.y, "DRIVER", "Mechas are never slowed", tech, TECHNOLOGY_DRIVER);
                 DrawTextureEx(tex::tank, {driver.x + ICON_DX, driver.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_HUNTING) {
-                DrawTechNode(fight.x, fight.y, "FIGHT", "Double experience gain", tech, TECHNOLOGY_FIGHT);
+            if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_FIGHT)) {
+                DrawTechNode(fight.x, fight.y, "FIGHT", "Double unit experience", tech, TECHNOLOGY_FIGHT);
                 DrawTextureEx(tex::blood, {fight.x + ICON_DX, fight.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_NERDS) {
+            if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_RESEARCH)) {
                 DrawTechNode(research.x, research.y, "RESEARCH", "+33\% research", tech, TECHNOLOGY_RESEARCH);
                 DrawTextureEx(tex::research, {research.x + ICON_DX, research.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_NERDS) {
+            if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_HOMUNCULI)) {
                 DrawTechNode(homunculi.x, homunculi.y, "HOMUNCULI", "Killed bloos become allies", tech, TECHNOLOGY_HOMUNCULI);
                 DrawTextureEx(tex::ghost, {homunculi.x + ICON_DX, homunculi.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_NERDS) {
+            if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_MECHA)) {
                 DrawTechNode(mecha.x, mecha.y, "MECHA", "50\% mecha dodge", tech, TECHNOLOGY_MECHA);
                 DrawTextureEx(tex::tank, {mecha.x + ICON_DX, mecha.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_MECHA) {
+            if(prev_tech & (TECHNOLOGY_MECHA | TECHNOLOGY_AUTOREPAIRS)) {
                 DrawTechNode(autorepair.x, autorepair.y, "AUTOREPAIR", "Mecha health regen", tech, TECHNOLOGY_AUTOREPAIRS);
                 DrawTextureEx(tex::tank, {autorepair.x + ICON_DX, autorepair.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
-            if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TAMING)) {
+            if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TAMING | TECHNOLOGY_HEROICS)) {
                 DrawTechNode(heroics.x, heroics.y, "HEROICS", "Veterans and heroes dodge", tech, TECHNOLOGY_HEROICS);
                 DrawTextureEx(tex::blood, {heroics.x + ICON_DX, heroics.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_HUNTING) {
+            if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_GRIT)) {
                 DrawTechNode(grit.x, grit.y, "GRIT", "50\% dodge vs lethal", tech, TECHNOLOGY_GRIT);
                 DrawTextureEx(tex::blood, {grit.x + ICON_DX, grit.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_FIGHT) {
+            if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TOUGH)) {
                 DrawTechNode(tough.x, tough.y, "TOUGH", "+1 human health", tech, TECHNOLOGY_TOUGH);
                 DrawTextureEx(tex::blood, {tough.x + ICON_DX, tough.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_HEROICS) {
+            if(prev_tech & (TECHNOLOGY_HEROICS | TECHNOLOGY_HELLBRINGER)) {
                 DrawTechNode(hellbringer.x, hellbringer.y, "HELLBRINGER", "Rapid hero and veteran fire", tech, TECHNOLOGY_HELLBRINGER);
                 DrawTextureEx(tex::blood, {hellbringer.x + ICON_DX, hellbringer.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_HELLBRINGER) {
+            if(prev_tech & (TECHNOLOGY_HELLBRINGER | TECHNOLOGY_SPEEDY)) {
                 DrawTechNode(speedy.x, speedy.y, "360 ANGLE", "Rotate faster", tech, TECHNOLOGY_SPEEDY);
                 DrawTextureEx(tex::track, {speedy.x + ICON_DX, speedy.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_AGILE) {
+            if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_SEAFARERING)) {
                 DrawTechNode(seafaring.x, seafaring.y, "SEAFARING", "Water increases speed", tech, TECHNOLOGY_SEAFARERING);
                 DrawTextureEx(tex::track, {seafaring.x + ICON_DX, seafaring.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
-            if(prev_tech & (TECHNOLOGY_FARMING | TECHNOLOGY_RESEARCH)) {
+            if(prev_tech & (TECHNOLOGY_FARMING | TECHNOLOGY_RESEARCH | TECHNOLOGY_INFRASTRUCTURE)) {
                 DrawTechNode(infrastructure.x, infrastructure.y, "MEDIA", "Increased radio sight", tech, TECHNOLOGY_INFRASTRUCTURE);
                 DrawTextureEx(tex::track, {infrastructure.x + ICON_DX, infrastructure.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
-            if(prev_tech & (TECHNOLOGY_SEAFARERING | TECHNOLOGY_INFRASTRUCTURE)) {
+            if(prev_tech & (TECHNOLOGY_SEAFARERING | TECHNOLOGY_INFRASTRUCTURE | TECHNOLOGY_OWNERSHIP)) {
                 DrawTechNode(ownership.x, ownership.y, "OWNERSHIP", "Better hold captured assets", tech, TECHNOLOGY_OWNERSHIP);
                 DrawTextureEx(tex::blood, {ownership.x + ICON_DX, ownership.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_HOMUNCULI) {
+            if(prev_tech & (TECHNOLOGY_HOMUNCULI | TECHNOLOGY_UNSTABLE)) {
                 DrawTechNode(unstable.x, unstable.y, "UNSTABLE", "-1 spawn HP, bloo on death", tech, TECHNOLOGY_UNSTABLE);
                 DrawTextureEx(tex::ghost, {unstable.x + ICON_DX, unstable.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_INFRASTRUCTURE) {
+            if(prev_tech & (TECHNOLOGY_INFRASTRUCTURE | TECHNOLOGY_AIFARM)) {
                 DrawTechNode(aifarm.x, aifarm.y, "AI FARM", "+ 16 industry from labs", tech, TECHNOLOGY_AIFARM);
                 DrawTextureEx(tex::gear, {aifarm.x + ICON_DX, aifarm.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
-            if(prev_tech & (TECHNOLOGY_AIFARM | TECHNOLOGY_MECHANISED)) {
+            if(prev_tech & (TECHNOLOGY_AIFARM | TECHNOLOGY_MECHANISED | TECHNOLOGY_TECHNOCRACY)) {
                 DrawTechNode(technocracy.x, technocracy.y, "TECHNOCRACY", "+1 utopia per 100 industry", tech, TECHNOLOGY_TECHNOCRACY);
                 DrawTextureEx(tex::utopia, {technocracy.x + ICON_DX, technocracy.y + ICON_DY}, 0, ICON_SIZE / tex::utopia.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_DRIVER) {
+            if(prev_tech & (TECHNOLOGY_DRIVER | TECHNOLOGY_INDUSTRY)) {
                 DrawTechNode(industry.x, industry.y, "LOST INDUSTRY", "Mechas gain experience", tech, TECHNOLOGY_INDUSTRY);
                 DrawTextureEx(tex::tank, {industry.x + ICON_DX, industry.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_UNSTABLE) {
+            if(prev_tech & (TECHNOLOGY_UNSTABLE | TECHNOLOGY_BIOWEAPON)) {
                 DrawTechNode(bioweapon.x, bioweapon.y, "BIOWEAPON", "Your kills become bloo", tech, TECHNOLOGY_BIOWEAPON);
                 DrawTextureEx(tex::ghost, {bioweapon.x + ICON_DX, bioweapon.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_TRACK) {
+            if(prev_tech & (TECHNOLOGY_TRACK | TECHNOLOGY_SNIPING)) {
                 DrawTechNode(sniping.x, sniping.y, "SNIPING", "Double accuracy vs dodgers", tech, TECHNOLOGY_SNIPING);
                 DrawTextureEx(tex::blood, {sniping.x + ICON_DX, sniping.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_TRACK) {
+            if(prev_tech & (TECHNOLOGY_TRACK | TECHNOLOGY_SNIFFING)) {
                 DrawTechNode(sniffing.x, sniffing.y, "BOTNET", "Autonomous non-selected units", tech, TECHNOLOGY_SNIFFING);
                 DrawTextureEx(tex::track, {sniffing.x + ICON_DX, sniffing.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_SNIFFING) {
+            if(prev_tech & (TECHNOLOGY_SNIFFING | TECHNOLOGY_CONQUER)) {
                 DrawTechNode(conquer.x, conquer.y, "CONQUER", "Captures yield experience", tech, TECHNOLOGY_CONQUER);
                 DrawTextureEx(tex::track, {conquer.x + ICON_DX, conquer.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_RESEARCH) {
+            if(prev_tech & (TECHNOLOGY_RESEARCH | TECHNOLOGY_NUCLEAR)) {
                 DrawTechNode(nuclear.x, nuclear.y, "NUCLEAR", "Double damage for no regen", tech, TECHNOLOGY_NUCLEAR);
                 DrawTextureEx(tex::blood, {nuclear.x + ICON_DX, nuclear.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_AUTOREPAIRS) {
+            if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_MOBILE_FORTRESS)) {
                 DrawTechNode(mobile.x, mobile.y, "MOBILE FORT", "Captured mechas turn to tanks", tech, TECHNOLOGY_MOBILE_FORTRESS);
                 DrawTextureEx(tex::tank, {mobile.x + ICON_DX, mobile.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
-            if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_WONDER)) {
+            if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_WONDER | TECHNOLOGY_LUXURY)) {
                 DrawTechNode(luxury.x, luxury.y, "PRISTINE", "+50\% dodge vs animal and bloo", tech, TECHNOLOGY_LUXURY);
                 DrawTextureEx(tex::research, {luxury.x + ICON_DX, luxury.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_GIGAJOULE) {
+            if(prev_tech & (TECHNOLOGY_GIGAJOULE | TECHNOLOGY_TERRAFORIMING)) {
                 DrawTechNode(terraforming.x, terraforming.y, "TERRAFORMING", "Fields propagate", tech, TECHNOLOGY_TERRAFORIMING);
                 DrawTextureEx(tex::field, {terraforming.x + ICON_DX, terraforming.y + ICON_DY}, 0, ICON_SIZE / tex::field.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_TERRAFORIMING) DrawTechNode(atmosphere.x, atmosphere.y, "ATMOSPHERE v2.0", "Fields delay polution by 8\%", tech, TECHNOLOGY_ATMOSPHERE);
-            if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_GIGAJOULE)) {
+            if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_GIGAJOULE | TECHNOLOGY_REFINERY)) {
                 DrawTechNode(refinery.x, refinery.y, "REFINERY", "+25 industry per oil", tech, TECHNOLOGY_REFINERY);
                 DrawTextureEx(tex::gear, {refinery.x + ICON_DX, refinery.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
-            if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_HEROICS)) {
+            if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_HEROICS | TECHNOLOGY_PROPAGANDA)) {
                 DrawTechNode(propaganda.x, propaganda.y, "PROPAGANDA", "+1 utopia per 3 radios", tech, TECHNOLOGY_PROPAGANDA);
                 DrawTextureEx(tex::utopia, {propaganda.x + ICON_DX, propaganda.y + ICON_DY}, 0, ICON_SIZE / tex::utopia.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_PROPAGANDA) {
+            if(prev_tech & (TECHNOLOGY_PROPAGANDA | TECHNOLOGY_SUPERIORITY)) {
                 DrawTechNode(superiority.x, superiority.y, "SUPERIORITY", "+1 utopia", tech, TECHNOLOGY_SUPERIORITY);
                 DrawTextureEx(tex::utopia, {superiority.x + ICON_DX, superiority.y + ICON_DY}, 0, ICON_SIZE / tex::utopia.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_INDUSTRY) {
+            if(prev_tech & (TECHNOLOGY_INDUSTRY | TECHNOLOGY_GIGAJOULE)) {
                 DrawTechNode(gigajoule.x, gigajoule.y, "GIGAJOULE", "No mecha industry cost", tech, TECHNOLOGY_GIGAJOULE);
                 DrawTextureEx(tex::gear, {gigajoule.x + ICON_DX, gigajoule.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_GIGAJOULE) {
+            if(prev_tech & (TECHNOLOGY_GIGAJOULE | TECHNOLOGY_MECHANISED)) {
                 DrawTechNode(mechanised.x, mechanised.y, "MECHANIZATION", "+1 industry per 5 mecha health", tech, TECHNOLOGY_MECHANISED);
                 DrawTextureEx(tex::gear, {mechanised.x + ICON_DX, mechanised.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_NUCLEAR) {
+            if(prev_tech & (TECHNOLOGY_NUCLEAR | TECHNOLOGY_REACTOR)) {
                 DrawTechNode(reactor.x, reactor.y, "REACTOR", "+40 industry", tech, TECHNOLOGY_REACTOR);
                 DrawTextureEx(tex::gear, {reactor.x + ICON_DX, reactor.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_REACTOR) {
+            if(prev_tech & (TECHNOLOGY_REACTOR | TECHNOLOGY_HYPERMAGNET)) {
                 DrawTechNode(hypermagnet.x, hypermagnet.y, "HYPERMAGNET", "x2 industry cost and movement", tech, TECHNOLOGY_HYPERMAGNET);
                 DrawTextureEx(tex::track, {hypermagnet.x + ICON_DX, hypermagnet.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_BIOWEAPON) {
+            if(prev_tech & (TECHNOLOGY_BIOWEAPON | TECHNOLOGY_ARTIFICIAL)) {
                 DrawTechNode(artificial.x, artificial.y, "HIVEMIND", "x5 bloo experience", tech, TECHNOLOGY_ARTIFICIAL);
                 DrawTextureEx(tex::ghost, {artificial.x + ICON_DX, artificial.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_AUTOREPAIRS) {
+            if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_HIJACK)) {
                 DrawTechNode(hijack.x, hijack.y, "HIJACK", "Capture destroyed mecha", tech, TECHNOLOGY_HIJACK);
                 DrawTextureEx(tex::tank, {hijack.x + ICON_DX, hijack.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
@@ -3291,7 +3362,13 @@ int main() {
         float prog = factions[0].technology_progress;
         bool techHover = CheckCollisionPointRec(GetMousePosition(), techBtn);
         DrawRectangleRounded(techBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
-        const char* title = (prog >= 1.0f) ? "Tech ready (esc)" : (showTechTree?"Back (esc)":"Research (esc)");
+        static float prev_prog = 0.f;
+        const char* title = (prog >= 1.0f) ? "New tech (esc)" : (showTechTree?"Back (esc)":"Research (esc)");
+        if(prev_prog<1.f && prog >= 1.0f) {
+            last_message_counter = 0.f;
+            last_message = "New tech can be selected";
+        }
+        prev_prog = prog;
         DrawText(title,techBtn.x + 20,techBtn.y + 16,32,WHITE);
         float padding = 20.0f;
         float barW = techBtn.width - padding * 2;
@@ -3307,32 +3384,76 @@ int main() {
         if (showTechTree) {
             Vector2 mouse = GetMousePosition();
             bool hover = CheckCollisionPointRec(mouse, clusteringBtn);
-
-            DrawRectangleRounded(
-                clusteringBtn,
-                0.2f,
-                8,
-                hover ? Fade(RED, 0.65f) : Fade(BLACK, 0.6f)
-            );
-
-            DrawText(
-                "Concede",
-                clusteringBtn.x + (clusteringBtn.width - MeasureText("Concede", 36)) * 0.5f,
+            DrawRectangleRounded(clusteringBtn, 0.2f, 8, hover ? Fade(RED, 0.65f) : Fade(BLACK, 0.6f));
+            DrawText("Concede",
+                     clusteringBtn.x + (clusteringBtn.width - MeasureText("Concede", 36)) * 0.5f,
                      clusteringBtn.y + (clusteringBtn.height - 36) * 0.5f,
-                     36,
-                     WHITE
-            );
-
+                     36,WHITE);
             if (hover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 factions[0].victory_points = -factions[0].victory_points;
                 goto GAME_OVER;
             }
         }
 
+        if (last_message) {
+            static int   visible_chars = 0;
+            static float type_timer = 0.0f;
+            static bool  finished = false;
+
+            if(last_message_counter==0) {
+                visible_chars = 0;
+                type_timer = 0.0f;
+                finished = false;
+                last_message_counter = 1.0;
+            }
+
+            const float CHAR_DELAY   = 0.02f;   // typing speed
+            const float HOLD_TIME    = 3.0f;    // wait after full text
+
+            const char* msg = last_message;
+            int msg_len = (int)strlen(msg);
+
+            // Typewriter progression
+            if (!finished) {
+                type_timer += dt;
+                while (type_timer > CHAR_DELAY && visible_chars < msg_len) {
+                    visible_chars++;
+                    type_timer -= CHAR_DELAY;
+                }
+                if (visible_chars >= msg_len) {
+                    finished = true;
+                    last_message_counter = HOLD_TIME;
+                }
+            } else {
+                last_message_counter -= dt;
+                if (last_message_counter <= 0.0f) {
+                    last_message_counter = 0.0f;
+                    last_message = nullptr;
+                    visible_chars = 0;
+                    type_timer = 0.0f;
+                    finished = false;
+                }
+            }
+
+            // Build visible string with cursor
+            char buffer[256];
+            int n = visible_chars;
+            memcpy(buffer, msg, n);
+            buffer[n] = finished ? '\0' : '|';
+            buffer[n + (finished ? 0 : 1)] = '\0';
+
+            float px = GetScreenWidth()/2 - MeasureText(msg, 70)/2 + 70;
+            float py = GetScreenHeight()/2 - 35;
+            DrawText(buffer, px-2, py-3, 70, BLACK);
+            DrawText(buffer, px+2, py-2, 70, BLACK);
+            DrawText(buffer, px-2, py+2, 70, BLACK);
+            DrawText(buffer, px+2, py+2, 70, BLACK);
+            DrawText(buffer, px,   py,   70, WHITE);
+        }
 
 
         // draw ui
-        if (selecting) {
+        if (selecting && !showTechTree) {
             Vector2 s = selectStart;
             Vector2 e = selectEnd;
             Vector2 ss = GetWorldToScreen2D(s, camera);
@@ -3346,13 +3467,11 @@ int main() {
         }
 
         if (!showTechTree) {
-
             int player_points = factions[0].victory_points;
             int best_other_points = 0;
             for (int fi = 3; fi < max_factions; fi++) // skip wild faction
                 if (factions[fi].victory_points > best_other_points)
                     best_other_points = factions[fi].victory_points;
-
             float offset = 5.f;
             DrawTexturePro(
                 tex::overlay,
@@ -3419,7 +3538,6 @@ int main() {
 
         static Unit* lasthovered = nullptr;
         static float hoverdelay = 0.f;
-
         if(lasthovered!=hovered) {
             hoverdelay += dt;
             if(hoverdelay>0.1f) {
@@ -3429,28 +3547,19 @@ int main() {
             else hovered = lasthovered;
         }
         else hoverdelay = 0.f;
-
-        if(!showTechTree && hovered)
-        {
+        if(!showTechTree && hovered) {
             float panelSize = 320.0f;
-
             Vector2 mouse = GetMousePosition();
-
             float px = mouse.x - panelSize * 0.5f;
             float py = mouse.y - panelSize * 0.8f - 64;
-
             Rectangle src = { 0, 0, (float)tex::info.width, (float)tex::info.height };
             Rectangle dst = { px, py, panelSize, panelSize };
             Vector2 origin = { 0, 0 };
-
             DrawTexturePro(tex::info, src, dst, origin, 0.0f, WHITE);
-
             float textY = py - 26;
             px -= 55;
-
             if (hovered && hovered->health) {
                 DrawText(hovered->name, px + 80, textY + 80, 42, WHITE);
-
                 {
                     Texture2D* t = hovered->texture;
                     float size = 48.0f;
@@ -3465,7 +3574,6 @@ int main() {
                     Vector2 origin = { size * 0.5f, size * 0.5f };
                     DrawTexturePro(*t, src, dst, origin, rot, WHITE);
                 }
-
                 textY += 135;
                 if(hovered->texture==&tex::camp) DrawText("Spawns humans", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::lab) DrawText("+10% research", px + 80, textY, 28, WHITE);
@@ -3487,6 +3595,7 @@ int main() {
                 }
                 else if(hovered->texture==&tex::mine) DrawText("+12 industry", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::oil) DrawText("+3 utopia", px + 80, textY, 28, WHITE);
+                else if(hovered->texture==&tex::datacenter) DrawText("random tech chance", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::warehouse) DrawText("+2 utopia", px + 80, textY, 28, WHITE);
                 else if(hovered->max_health>18.f && hovered->speed==0) DrawText("Mecha", px + 80, textY, 28, WHITE);
                 else if(hovered->max_health>18.f) {
@@ -3603,6 +3712,7 @@ int main() {
     UnloadTexture(tex::crater);
     UnloadTexture(tex::radio);
     UnloadTexture(tex::oil);
+    UnloadTexture(tex::datacenter);
     UnloadTexture(tex::info);
     UnloadTexture(tex::overlay);
     UnloadTexture(tex::railgun);
