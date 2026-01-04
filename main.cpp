@@ -1557,7 +1557,7 @@ int main() {
                 }
                 else u.faction->technology_progress += dt*0.0009f;
             }
-            if(u.texture==&tex::datacenter && (float)GetRandomValue(0, 1000000) / 1000000.0f * 1000.f < dt &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION) {
+            if(u.texture==&tex::datacenter && (float)GetRandomValue(0, 1000000) / 1000000.0f * 5000.f < dt &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION) {
                 unsigned long long candidate = 1ULL << GetRandomValue(0, 62);
                 if(!(u.faction->technology & candidate)) {
                     u.faction->technology = u.faction->technology | candidate;
@@ -1573,8 +1573,8 @@ int main() {
             if(u.texture==&tex::oil && u.faction && (u.faction->technology & TECHNOLOGY_REFINERY)) u.faction->industry += 25.f;
             if(u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty || u.texture==&tex::mine || u.texture==&tex::hide) {
                 if((u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty) && u.faction && (u.faction->technology & TECHNOLOGY_ATMOSPHERE)) {
-                    game_time -= dt*0.08f;
-                    polution_speedup -= 0.08f;
+                    game_time -= dt*0.02f;
+                    polution_speedup -= 0.02f;
                 }
                 if(u.texture==&tex::field) u.faction->industry += 4.f;
                 if(u.texture==&tex::field_little) u.faction->industry += 2.f;
@@ -3382,7 +3382,7 @@ int main() {
                 DrawTextureEx(tex::research, {luxury.x + ICON_DX, luxury.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_GIGAJOULE | TECHNOLOGY_TERRAFORIMING)) {
-                DrawTechNode(terraforming.x, terraforming.y, "TERRAFORMING", "Fields propagate", tech, TECHNOLOGY_TERRAFORIMING);
+                DrawTechNode(terraforming.x, terraforming.y, "TERRAFORMING", "Captures become fields", tech, TECHNOLOGY_TERRAFORIMING);
                 DrawTextureEx(tex::field, {terraforming.x + ICON_DX, terraforming.y + ICON_DY}, 0, ICON_SIZE / tex::field.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_TERRAFORIMING) DrawTechNode(atmosphere.x, atmosphere.y, "ATMOSPHERE v2.0", "Fields delay polution by 8\%", tech, TECHNOLOGY_ATMOSPHERE);
