@@ -918,7 +918,7 @@ int main() {
         bool hoverStart = CheckCollisionPointRec(mouse, btnStart);
         DrawRectangleRec(btnStart, hoverStart ? DARKGRAY : BLACK);
         DrawRectangleLinesEx(btnStart, 2, GRAY);
-        DrawText("Utopia start", btnStart.x + 30, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
+        DrawText("New expedition", btnStart.x + 30, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
         DrawTexturePro(tex::utopia,
                        Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height},
                        Rectangle{GetScreenWidth()/2+200, btnStart.y+5, 80, 80},
@@ -1394,10 +1394,10 @@ int main() {
                 CREATE_BISON(ANIMAL_FACTION, x, y);
                 CREATE_BISON(ANIMAL_FACTION, x+1, y+1);
             }
-            else {
+            /*else {
                 CREATE_WOLF(ANIMAL_FACTION, x, y);
                 CREATE_WOLF(ANIMAL_FACTION, x+1, y+1);
-            }
+            }*/
         }
         if (T.texture == &tex::hill) {
             CREATE_RAT(ANIMAL_FACTION, x-0.2, y+0.2);
@@ -1564,14 +1564,76 @@ int main() {
                 }
                 else u.faction->technology_progress += dt*0.0009f;
             }
-            if(u.texture==&tex::datacenter && (float)GetRandomValue(0, 1000000) / 1000000.0f * 5000.f < dt &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION) {
-                unsigned long long candidate = 1ULL << GetRandomValue(0, 62);
-                if(!(u.faction->technology & candidate)) {
-                    u.faction->technology = u.faction->technology | candidate;
-                    u.popup = "new tech";
-                    if(u.faction==factions) {
-                        last_message = "New tech from a datacenter";
+            if(u.texture==&tex::datacenter &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
+                if((float)GetRandomValue(0, 1000000) / 1000000.0f * 2000.f < dt) {
+                    bool applied = false;
+                    for (int j = 0; j < num_units; j++)
+                        if (units[j].faction==u.faction && units[j].texture==&tex::blood) {
+                            float dx = units[j].x - u.x;
+                            float dy = units[j].y - u.y;
+                            float d2 = dx*dx + dy*dy;
+                            if(d2<25.f*25.f) {
+                                units[j] = { \
+                                    &tex::ghost,  /* texture */
+                                    "Bloo",       /* name */
+                                    2.0,          /* speed */
+                                    u.x,          /* x */
+                                    u.y,          /* y */
+                                    2.0,          /* attack_rate */
+                                    7.0,          /* range */
+                                    0.5,          /* damage */
+                                    0.0,          /* experience */
+                                    u.angle,      /* angle */
+                                    0.4,          /* size */
+                                    3.0,          /* health */
+                                    3.0,          /* max_health */
+                                    factions+2,   /* faction */
+                                    nullptr   /* faction */
+                                };
+                                units[j].popup = "datacenter radiation";
+                                applied = true;
+                            }
+                        }
+                    if(u.faction==factions && applied) {
+                        last_message = "Datacenter: released radiation that turned nearby blood to bloo.";
                         last_message_counter = 0.f;
+                    }
+                }
+                else if((float)GetRandomValue(0, 1000000) / 1000000.0f * 2000.f < dt) {
+                    bool applied = false;
+                    for (int j = 0; j < num_units; j++)
+                        if (units[j].faction==u.faction && units[j].texture==&tex::human && units[j].health<units[j].max_health) {
+                            units[j].health = units[j].max_health;
+                            units[j].popup = "datacenter healthcare";
+                            applied = true;
+                        }
+                    if(u.faction==factions && applied) {
+                        last_message = "Datacenter: found healthcare products and healed your humans.";
+                        last_message_counter = 0.f;
+                    }
+                }
+                else if((float)GetRandomValue(0, 1000000) / 1000000.0f * 2000.f < dt) {
+                    bool applied = false;
+                    for (int j = 0; j < num_units; j++)
+                        if (units[j].faction==u.faction && units[j].max_health>18.f && units[j].health<units[j].max_health) {
+                            units[j].health = units[j].max_health;
+                            units[j].popup = "datacenter parts";
+                            applied = true;
+                        }
+                    if(u.faction==factions && applied) {
+                        last_message = "Datacenter: found spare parts and fixed your mechas.";
+                        last_message_counter = 0.f;
+                    }
+                }
+                else if((float)GetRandomValue(0, 1000000) / 1000000.0f * 5000.f < dt) {
+                    unsigned long long candidate = 1ULL << GetRandomValue(0, 62);
+                    if(!(u.faction->technology & candidate)) {
+                        u.faction->technology = u.faction->technology | candidate;
+                        u.popup = "new tech";
+                        if(u.faction==factions) {
+                            last_message = "Datacenter: recovered a tech";
+                            last_message_counter = 0.f;
+                        }
                     }
                 }
             }
@@ -1666,7 +1728,7 @@ int main() {
                 if(!u.speed || !u.faction) {
                     u.health = u.max_health;
                 }
-                if(u.texture==&tex::bison || u.texture==&tex::wolf) {
+                if(u.texture==&tex::bison){// || u.texture==&tex::wolf) {
                     terrainGrid[(int)u.y][(int)u.x].speed /= 2; // terrain becomes uneven
                     u = { \
                         &tex::hide,  /* texture */
@@ -2143,7 +2205,12 @@ int main() {
                             o.popup = "hijacked";
                             o.animation = 0.f;
                         }
-                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_TAMING) && (o.texture==&tex::bison || o.texture==&tex::wolf || o.texture==&tex::rat || o.texture==&tex::snowman)) {
+                        else if(o.health<=0 && o.texture==&tex::wolf && GetRandomValue(0, 99) < 50) {
+                            o.faction = u.faction;
+                            o.health = o.max_health;
+                            o.popup = o.faction==ANIMAL_FACTION?"wild":"tamed";
+                        }
+                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_TAMING) && (o.texture==&tex::bison || o.texture==&tex::rat || o.texture==&tex::snowman)) {
                             o.faction = u.faction;
                             o.health = o.max_health;
                             o.popup = "tamed";
@@ -3278,7 +3345,7 @@ int main() {
             DrawTextureEx(tex::research, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
 
 
-            DrawTechNode(taming.x, taming.y, "TAMER", "-50\% research, tame animals", tech, TECHNOLOGY_TAMING);
+            DrawTechNode(taming.x, taming.y, "TAMER", "-50\% research, tame all animals", tech, TECHNOLOGY_TAMING);
             DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
 
 
@@ -3691,7 +3758,7 @@ int main() {
                 }
                 else if(hovered->texture==&tex::mine) DrawText("+12 industry", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::oil) DrawText("+3 utopia", px + 80, textY, 28, WHITE);
-                else if(hovered->texture==&tex::datacenter) DrawText("random tech chance", px + 80, textY, 28, WHITE);
+                else if(hovered->texture==&tex::datacenter) DrawText("Random events", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::warehouse) DrawText("+2 utopia", px + 80, textY, 28, WHITE);
                 else if(hovered->max_health>18.f && hovered->speed==0) DrawText("Mecha", px + 80, textY, 28, WHITE);
                 else if(hovered->max_health>18.f) {
@@ -3707,6 +3774,7 @@ int main() {
                         DrawText("Animal", px + 80, textY, 28, WHITE);
                         if(hovered->texture==&tex::snowman) {}
                         else if(hovered->texture==&tex::rat) DrawText("Proliferates", px + 80, textY+30, 28, WHITE);
+                        else if(hovered->texture==&tex::wolf) DrawText("50\% taming chance", px + 80, textY+30, 28, WHITE);
                         else DrawText("Drops hide", px + 80, textY+30, 28, WHITE);
                     }
                     else {
