@@ -45,11 +45,11 @@ jobs:
     - name: Package (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        mkdir release
-        cp game release/
-        cp -r data release/
-        ldd game | grep "=> /" | awk '{print $3}' | xargs -I{} cp {} release/
-        zip -r "midnight next morn-linux.zip" release
+        mkdir midnight
+        cp game midnight/
+        cp -r data midnight/
+        ldd game | grep "=> /" | awk '{print $3}' | xargs -I{} cp {} midnight/
+        zip -r "midnight next morn-linux.zip" midnight
 
     - uses: actions/upload-artifact@v4
       if: matrix.os == 'ubuntu-latest'
@@ -62,26 +62,22 @@ jobs:
     # =========================================================
     - name: Install deps (Windows)
       if: matrix.os == 'windows-latest'
-      run: vcpkg install raylib:x64-windows
+      run: vcpkg install raylib:x64-mingw-static
       shell: pwsh
 
     - name: Build game (Windows)
       if: matrix.os == 'windows-latest'
-      run: |
-        g++ -std=c++17 -O2 -Wall main.cpp -o game.exe ^
-          -IC:/vcpkg/installed/x64-windows/include ^
-          -LC:/vcpkg/installed/x64-windows/lib ^
-          -lraylib -lopengl32 -lgdi32 -lwinmm
+      run: g++ -std=gnu++17 -O2 -static -static-libgcc -static-libstdc++ -Wall main.cpp -o game.exe -IC:/vcpkg/installed/x64-mingw-static/include -LC:/vcpkg/installed/x64-mingw-static/lib -lraylib -lopengl32 -lgdi32 -lwinmm
       shell: cmd
+
 
     - name: Package (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        mkdir release
-        copy game.exe release\
-        xcopy /E /I data release\data
-        copy C:\vcpkg\installed\x64-windows\bin\*.dll release\
-        tar -a -c -f "midnight next morn-windows.zip" release
+        mkdir midnight
+        copy game.exe midnight\
+        xcopy /E /I data midnight\data
+        tar -a -c -f "midnight next morn-windows.zip" midnight
       shell: cmd
 
     - uses: actions/upload-artifact@v4
