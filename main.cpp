@@ -242,7 +242,7 @@ int NOISE_SEED = 0;
             1.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            0.9,          /* size */ \
+            0.5,          /* size */ \
             20.0,         /* health */ \
             20.0,         /* max_health */ \
             (faction),    /* faction */ \
@@ -977,7 +977,7 @@ int main() {
                     tex::blood,
                     Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-32, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
-                DrawText("SURVIVED AT BEST", GetScreenWidth()/2 - MeasureText("SURVIVED AT BEST", 96)/2+50, baseY+420, 96, ORANGE);
+                DrawText("SURVIVED", GetScreenWidth()/2 - MeasureText("SURVIVED", 96)/2+50, baseY+420, 96, ORANGE);
             }
             else {
                 DrawTexturePro(
@@ -2066,16 +2066,15 @@ int main() {
                         float skipChance = 0.f;//0.25f;
                         float u_damage = u.damage;
                         if(u.faction && (u.faction->technology & TECHNOLOGY_NUCLEAR)) u_damage *= 2.f;
-                        if (oxi >= 0 && oyi >= 0 && oxi < GRID_SIZE && oyi < GRID_SIZE)
-                            skipChance -= terrainGrid[oyi][oxi].extra_sight/2.f;
+                        if (oxi >= 0 && oyi >= 0 && oxi < GRID_SIZE && oyi < GRID_SIZE) skipChance -= terrainGrid[oyi][oxi].extra_sight/2.f;
                         if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && o.max_health>18.f) skipChance += 0.5f;
-                        if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==hero_name) skipChance += 0.5f;
-                        if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==veteran_name) skipChance += 0.25f;
+                        if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==hero_name) skipChance += 0.3f;
+                        if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==veteran_name) skipChance += 0.3f;
                         if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat || u.texture==&tex::snowman)) skipChance += 0.5f;
+                        if(u_damage>=o.health && o.faction && (o.faction->technology & TECHNOLOGY_GRIT)) skipChance += 0.5f;
+                        if(u.faction && (u.faction->technology&TECHNOLOGY_SNIPING)) skipChance -= 0.5f;
                         if(skipChance<0.f) skipChance = 0.f;
                         if(skipChance>0.95f) skipChance = 0.95f;
-                        if(u_damage>=o.health && o.faction && (o.faction->technology & TECHNOLOGY_GRIT)) skipChance = (skipChance+1.f)*0.5f;
-                        if(u.faction && (u.faction->technology&TECHNOLOGY_SNIPING)) skipChance /= 2;
 
                         if ((float)GetRandomValue(0, 1000000) / 1000000.0f >= skipChance) {
                             if(o.capturing && o.faction == u.faction) o.health += 1;
@@ -2333,7 +2332,7 @@ int main() {
             }
             dist = sqrtf(dist);
             float attackSpeed = 3.0f * dt * (u.attack_rate<1.0f?1.0f:u.attack_rate);
-            if(u.faction && (u.faction->technology&TECHNOLOGY_HELLBRINGER) && (u.name==veteran_name || u.name==hero_name)) attackSpeed *= 3.f;
+            if(u.faction && (u.faction->technology&TECHNOLOGY_HELLBRINGER) && (u.name==veteran_name || u.name==hero_name)) attackSpeed *= 2.f;
             u.attack_x += (dx / dist) * attackSpeed;
             u.attack_y += (dy / dist) * attackSpeed;
         }
@@ -2604,6 +2603,7 @@ int main() {
                     if (o.faction==ANIMAL_FACTION) continue;
                     if (o.capturing) continue;
                     if (o.health <= 0) continue;
+                    if (time_norm>0.9f && o.texture!=&tex::oil && o.texture!=&tex::warehouse) continue; // at the last stretch attack the victory locations with all means
                     float dx = o.x - u.x;
                     float dy = o.y - u.y;
                     float d2 = dx*dx + dy*dy;
@@ -3328,11 +3328,11 @@ int main() {
                 DrawTextureEx(tex::tank, {autorepair.x + ICON_DX, autorepair.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TAMING | TECHNOLOGY_HEROICS)) {
-                DrawTechNode(heroics.x, heroics.y, "HEROICS", "Veterans and heroes dodge", tech, TECHNOLOGY_HEROICS);
+                DrawTechNode(heroics.x, heroics.y, "HEROICS", "+30\% dodge to veterans and heroes", tech, TECHNOLOGY_HEROICS);
                 DrawTextureEx(tex::blood, {heroics.x + ICON_DX, heroics.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_GRIT)) {
-                DrawTechNode(grit.x, grit.y, "GRIT", "50\% dodge vs lethal", tech, TECHNOLOGY_GRIT);
+                DrawTechNode(grit.x, grit.y, "GRIT", "+50\% dodge vs lethal", tech, TECHNOLOGY_GRIT);
                 DrawTextureEx(tex::blood, {grit.x + ICON_DX, grit.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TOUGH)) {
@@ -3380,7 +3380,7 @@ int main() {
                 DrawTextureEx(tex::ghost, {bioweapon.x + ICON_DX, bioweapon.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_TRACK | TECHNOLOGY_SNIPING)) {
-                DrawTechNode(sniping.x, sniping.y, "SNIPING", "Double accuracy vs dodgers", tech, TECHNOLOGY_SNIPING);
+                DrawTechNode(sniping.x, sniping.y, "SNIPING", "Double accuracy vs dodge", tech, TECHNOLOGY_SNIPING);
                 DrawTextureEx(tex::blood, {sniping.x + ICON_DX, sniping.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_TRACK | TECHNOLOGY_SNIFFING)) {
