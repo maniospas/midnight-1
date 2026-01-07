@@ -1565,7 +1565,7 @@ int main() {
                 else u.faction->technology_progress += dt*0.0009f;
             }
             if(u.texture==&tex::datacenter &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
-                if((float)GetRandomValue(0, 1000000) / 1000000.0f * 2000.f < dt) {
+                if((float)GetRandomValue(0, 1000000) / 1000000.0f * 300.f < dt) {
                     bool applied = false;
                     for (int j = 0; j < num_units; j++)
                         if (units[j].faction==u.faction && units[j].texture==&tex::blood) {
@@ -1599,7 +1599,7 @@ int main() {
                         last_message_counter = 0.f;
                     }
                 }
-                else if((float)GetRandomValue(0, 1000000) / 1000000.0f * 2000.f < dt) {
+                else if((float)GetRandomValue(0, 1000000) / 1000000.0f * 300.f < dt) {
                     bool applied = false;
                     for (int j = 0; j < num_units; j++)
                         if (units[j].faction==u.faction && units[j].texture==&tex::human && units[j].health<units[j].max_health) {
@@ -1612,7 +1612,7 @@ int main() {
                         last_message_counter = 0.f;
                     }
                 }
-                else if((float)GetRandomValue(0, 1000000) / 1000000.0f * 2000.f < dt) {
+                else if((float)GetRandomValue(0, 1000000) / 1000000.0f * 300.f < dt) {
                     bool applied = false;
                     for (int j = 0; j < num_units; j++)
                         if (units[j].faction==u.faction && units[j].max_health>18.f && units[j].health<units[j].max_health) {
@@ -1647,6 +1647,7 @@ int main() {
                 }
                 if(u.texture==&tex::field) u.faction->industry += 4.f;
                 if(u.texture==&tex::field_little) u.faction->industry += 2.f;
+                if(u.texture==&tex::hide) u.faction->industry += 4.f;
                 if(u.texture==&tex::hide && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 4.f;
                 continue;
             }
