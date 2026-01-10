@@ -141,6 +141,7 @@ enum class MovementMode {
 #define TECHNOLOGY_AIFARM      17592186044416ULL // labs give +9 industry instead
 #define TECHNOLOGY_TECHNOCRACY 35184372088832ULL // 1 utopia per 50 industry, lose half industry
 
+#define is_mecha(u) (u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::railgun)
 
 struct Terrain {
     Texture2D* texture;
@@ -1537,7 +1538,7 @@ int main() {
         if (camera.zoom!=target_zoom) {
             Vector2 mouseWorldBefore = GetScreenToWorld2D(GetMousePosition(), camera);
             if (target_zoom < 0.1f) target_zoom = 0.1f;
-            if (target_zoom > 2.0f) target_zoom = 2.0f;
+            if (target_zoom > 1.5f) target_zoom = 1.5f;
             float diff = camera.zoom-target_zoom;
             camera.zoom -= diff*dt*5*(1+camera.zoom);
             if(diff*(camera.zoom-target_zoom)<=0.00001f) {
@@ -1621,7 +1622,7 @@ int main() {
                 else if((float)GetRandomValue(0, 1000000) / 1000000.0f * 300.f < dt) {
                     bool applied = false;
                     for (int j = 0; j < num_units; j++)
-                        if (units[j].faction==u.faction && units[j].max_health>18.f && units[j].health<units[j].max_health) {
+                        if (units[j].faction==u.faction && is_mecha(units[j]) && units[j].health<units[j].max_health) {
                             units[j].health = units[j].max_health;
                             units[j].popup = "datacenter parts";
                             applied = true;
@@ -1657,7 +1658,7 @@ int main() {
                 if(u.texture==&tex::hide && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 4.f;
                 continue;
             }
-            if(u.max_health>18.f && u.faction) {
+            if(is_mecha(u) && u.faction) {
                 if(u.faction->technology & TECHNOLOGY_MECHANISED) u.faction->industry += u.health/5.f;
                 if(u.faction->technology & TECHNOLOGY_GIGAJOULE) continue;
             }
@@ -1755,7 +1756,7 @@ int main() {
                         factions+1       /* faction */
                     };
                 }
-                else if(u.max_health>18.f) {
+                else if(is_mecha(u)) {
                     terrainGrid[(int)u.y][(int)u.x].speed /= 2; // terrain becomes uneven
                     u = { \
                         &tex::crater,  /* texture */
@@ -1901,8 +1902,9 @@ int main() {
             }
 
             float u_speed = terrainGrid[(int)u.y][(int)u.x].speed;
+            if(u_speed<1.f && u.texture==&tex::snowman && (terrainGrid[(int)u.y][(int)u.x].texture==&tex::mountain || terrainGrid[(int)u.y][(int)u.x].texture==&tex::hill)) u_speed = 2.f;
+            if(u_speed<1.f && is_mecha(u) && u.faction && (u.faction->technology && TECHNOLOGY_DRIVER)) u_speed = 1.f;
             if(u_speed<1.f && u.faction && (u.faction->technology && TECHNOLOGY_AGILE)) u_speed = (1.f+u_speed)*0.5f;
-            if(u_speed<1.f && u.max_health>18.f && u.faction && (u.faction->technology && TECHNOLOGY_DRIVER)) u_speed = 1.f;
             if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_SEAFARERING) && terrainGrid[(int)u.y][(int)u.x].texture==&tex::water) u_speed = 1.5f;
             u_speed *= u.speed;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
@@ -1992,8 +1994,8 @@ int main() {
                 continue;
             }
             // TODO: heal only if not moving, but for now this is hard to properly check
-            if (u.health < u.max_health && (u.max_health<=18.f || (u.faction && (u.faction->technology & TECHNOLOGY_AUTOREPAIRS)))) { // EVERYTHING OVER 18 MAX HEALTH (tWO-SHOTTED BY TANK) IS NOT LIVING
-                if ((float)GetRandomValue(0, 1000000) / 1000000.0f < dt*0.5f && (u.max_health>=18.f || u.faction==nullptr || !(u.faction->technology & TECHNOLOGY_NUCLEAR))) {
+            if (u.health < u.max_health && (!is_mecha(u) || (u.faction && (u.faction->technology & TECHNOLOGY_AUTOREPAIRS)))) { // EVERYTHING OVER 18 MAX HEALTH (tWO-SHOTTED BY TANK) IS NOT LIVING
+                if ((float)GetRandomValue(0, 1000000) / 1000000.0f < dt*0.5f && (is_mecha(u) || u.faction==nullptr || !(u.faction->technology & TECHNOLOGY_NUCLEAR))) {
                     u.health += 1.0f;
                     if (u.health > u.max_health)
                         u.health = u.max_health;
@@ -2136,7 +2138,7 @@ int main() {
                         float u_damage = u.damage;
                         if(u.faction && (u.faction->technology & TECHNOLOGY_NUCLEAR)) u_damage *= 2.f;
                         if (oxi >= 0 && oyi >= 0 && oxi < GRID_SIZE && oyi < GRID_SIZE) skipChance -= terrainGrid[oyi][oxi].extra_sight/2.f;
-                        if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && o.max_health>18.f) skipChance += 0.5f;
+                        if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && is_mecha(o)) skipChance += 0.5f;
                         if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==hero_name) skipChance += 0.3f;
                         if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==veteran_name) skipChance += 0.3f;
                         if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat || u.texture==&tex::snowman)) skipChance += 0.5f;
@@ -2154,7 +2156,7 @@ int main() {
                         else if(u_damage>=o.health && o.faction && (o.faction->technology & TECHNOLOGY_GRIT)) {o.popup = "grit";}
                         else if(o.name==hero_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {o.popup = "heroics";}
                         else if(o.name==veteran_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {o.popup = "heroics";}
-                        else if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && o.max_health>18.f) {o.popup = "mecha";}
+                        else if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && is_mecha(o)) {o.popup = "mecha";}
                         else if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat || u.texture==&tex::snowman)) {o.popup = "pristine";}
                         else {o.popup = "cover";}
                         if (o.health >= o.max_health) o.health = o.max_health;
@@ -2164,7 +2166,7 @@ int main() {
                             if(u.faction && (u.faction->technology&TECHNOLOGY_FIGHT)) experience_bonus *= 2.f;
                             if(u.texture==&tex::ghost && u.faction && (u.faction->technology&TECHNOLOGY_ARTIFICIAL)) experience_bonus *= 5.f;
                             u.experience += experience_bonus;
-                            if(u.experience>=10 && (u.max_health<=18.f || (u.faction && (u.faction->technology & TECHNOLOGY_INDUSTRY)))
+                            if(u.experience>=10 && (!is_mecha(u) || (u.faction && (u.faction->technology & TECHNOLOGY_INDUSTRY)))
                                 && u.name!=veteran_name && u.name!=hero_name) {
                                 u.size *= 1.2;
                                 u.name = veteran_name;
@@ -2206,7 +2208,7 @@ int main() {
                             o.health = o.max_health;
                             o.popup = "homunculi";
                         }
-                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_HIJACK) && o.max_health>18.f) {
+                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_HIJACK) && is_mecha(o)) {
                             o.faction = u.faction;
                             o.health = o.max_health;
                             o.popup = "hijacked";
@@ -2300,7 +2302,7 @@ int main() {
                             if(u.faction && (u.faction->technology & TECHNOLOGY_CONQUER)) {
                                 u.experience += 15.f;
                                 u.animation = 0.f;
-                                if(u.experience>=10 && (u.max_health<=18.f || (u.faction && (u.faction->technology & TECHNOLOGY_INDUSTRY)))
+                                if(u.experience>=10 && (!is_mecha(u) || (u.faction && (u.faction->technology & TECHNOLOGY_INDUSTRY)))
                                     && u.name!=veteran_name && u.name!=hero_name) {
                                     u.size *= 1.2;
                                     u.name = veteran_name;
@@ -2492,8 +2494,8 @@ int main() {
         }
 
         // issue movement order
-        if (!mouseCapturedByUI && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-            Vector2 worldClick = GetScreenToWorld2D(GetMousePosition(), camera);
+        if (!mouseCapturedByUI && (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || IsKeyPressed(KEY_ENTER))) {
+            Vector2 worldClick = IsKeyPressed(KEY_ENTER)?GetScreenToWorld2D({GetScreenWidth()*0.5, GetScreenHeight()*0.5}, camera):GetScreenToWorld2D(GetMousePosition(), camera);
             float tx = worldClick.x / TILE_SIZE;
             float ty = worldClick.y / TILE_SIZE;
             for (int i = 0; i < num_units; i++) {
@@ -2527,6 +2529,22 @@ int main() {
             selectEnd = GetScreenToWorld2D(GetMousePosition(), camera);
         if (!mouseCapturedByUI && IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && selecting) {
             selecting = false;
+            float minX = fminf(selectStart.x, selectEnd.x);
+            float maxX = fmaxf(selectStart.x, selectEnd.x);
+            float minY = fminf(selectStart.y, selectEnd.y);
+            float maxY = fmaxf(selectStart.y, selectEnd.y);
+            for (int i = 0; i < num_units; i++) {
+                Unit &u = units[i];
+                if(u.faction!=factions) {u.selected=false; continue;} //only first faction can be selected
+                float px = u.x * TILE_SIZE;
+                float py = u.y * TILE_SIZE;
+                u.selected = (px >= minX && px <= maxX && py >= minY && py <= maxY);
+            }
+        }
+
+        if (!mouseCapturedByUI && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))) {
+            selectStart = GetScreenToWorld2D({GetScreenWidth()*0,GetScreenHeight()*0}, camera);
+            selectEnd = GetScreenToWorld2D({GetScreenWidth()*1,GetScreenHeight()*1}, camera);
             float minX = fminf(selectStart.x, selectEnd.x);
             float maxX = fmaxf(selectStart.x, selectEnd.x);
             float minY = fminf(selectStart.y, selectEnd.y);
@@ -3767,8 +3785,8 @@ int main() {
                 else if(hovered->texture==&tex::oil) DrawText("+3 utopia", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::datacenter) DrawText("Random benefits", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::warehouse) DrawText("+2 utopia", px + 80, textY, 28, WHITE);
-                else if(hovered->max_health>18.f && hovered->speed==0) DrawText("Mecha", px + 80, textY, 28, WHITE);
-                else if(hovered->max_health>18.f) {
+                else if(is_mecha((*hovered)) && hovered->speed==0) DrawText("Mecha", px + 80, textY, 28, WHITE);
+                else if(is_mecha((*hovered))) {
                     DrawText("Mecha", px + 80, textY, 28, WHITE);
                     DrawText("Needs industry", px + 80, textY+30, 28, WHITE);
                     if(hovered->name==veteran_name)
@@ -3779,7 +3797,7 @@ int main() {
                 else if(hovered->damage) {
                     if(hovered->range<3.f) {
                         DrawText("Animal", px + 80, textY, 28, WHITE);
-                        if(hovered->texture==&tex::snowman) {}
+                        if(hovered->texture==&tex::snowman) DrawText("Fast on high altitudes", px + 80, textY+30, 28, WHITE);
                         else if(hovered->texture==&tex::rat) DrawText("Proliferates", px + 80, textY+30, 28, WHITE);
                         else if(hovered->texture==&tex::wolf) DrawText("50\% taming chance", px + 80, textY+30, 28, WHITE);
                         else DrawText("Drops hide", px + 80, textY+30, 28, WHITE);
