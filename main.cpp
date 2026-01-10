@@ -1250,6 +1250,10 @@ int main() {
         // Spawn base
         CREATE_CAMP(&factions[0], bx-0.3, by);
         CREATE_CAMP(&factions[0], bx+0.3, by);
+        CREATE_RAILGUN(&factions[0], bx-3, by-3);
+        CREATE_RAILGUN(&factions[0], bx-3, by+3);
+        CREATE_RAILGUN(&factions[0], bx+3, by-3);
+        CREATE_RAILGUN(&factions[0], bx+3, by+3);
 
         // Spawn starting humans
         for (int i = 0; i < 8; i++) {
@@ -1355,6 +1359,10 @@ int main() {
                 else if(count_warehouses<3){
                     count_warehouses++;
                     CREATE_WAREHOUSE(&factions[1], x, y);
+                    CREATE_RAILGUN(&factions[1], x-GetRandomValue(0, 5)-2, y-GetRandomValue(0, 5)-2);
+                    CREATE_RAILGUN(&factions[1], x-GetRandomValue(0, 5)-2, y+GetRandomValue(0, 5)+2);
+                    CREATE_RAILGUN(&factions[1], x+GetRandomValue(0, 5)+2, y-GetRandomValue(0, 5)-2);
+                    CREATE_RAILGUN(&factions[1], x+GetRandomValue(0, 5)+2, y+GetRandomValue(0, 5)-2);
                     RevealUnitToAllFactions(num_units - 1);
                 }
                 break;
@@ -1597,7 +1605,7 @@ int main() {
                                     factions+2,   /* faction */
                                     nullptr   /* faction */
                                 };
-                                units[j].popup = "datacenter radiation";
+                                units[j].popup = "radiation";
                                 applied = true;
                             }
                         }
@@ -1611,7 +1619,7 @@ int main() {
                     for (int j = 0; j < num_units; j++)
                         if (units[j].faction==u.faction && units[j].texture==&tex::human && units[j].health<units[j].max_health) {
                             units[j].health = units[j].max_health;
-                            units[j].popup = "datacenter healthcare";
+                            units[j].popup = "healthcare";
                             applied = true;
                         }
                     if(u.faction==factions && applied) {
@@ -1624,7 +1632,7 @@ int main() {
                     for (int j = 0; j < num_units; j++)
                         if (units[j].faction==u.faction && is_mecha(units[j]) && units[j].health<units[j].max_health) {
                             units[j].health = units[j].max_health;
-                            units[j].popup = "datacenter parts";
+                            units[j].popup = "parts";
                             applied = true;
                         }
                     if(u.faction==factions && applied) {
