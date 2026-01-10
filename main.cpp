@@ -786,7 +786,9 @@ int main() {
     SetRandomSeed((unsigned)time(NULL));
     NOISE_SEED = GetRandomValue(1, 1'000'000);
     MaximizeWindow();
+    SetTextureFilter(uiFont.texture, TEXTURE_FILTER_BILINEAR);
     uiFont = LoadFontEx("data/Beholden-Regular.ttf", 96, nullptr, 0);
+    SetTextureFilter(uiFont.texture, TEXTURE_FILTER_BILINEAR);
     tex::grass = LoadTexture("data/grass.png");
     tex::grass2 = LoadTexture("data/grass2.png");
     tex::grass3 = LoadTexture("data/grass3.png");
@@ -1453,11 +1455,11 @@ int main() {
     while (true) {
         float dt = GetFrameTime();
         float polution_speedup = 0.f;// just track this for this frame
-        if (prev_game_time / GAME_DURATION < 0.7f & game_time / GAME_DURATION >= 0.7f ) {
+        if (prev_game_time / GAME_DURATION < 0.7f && game_time / GAME_DURATION >= 0.7f ) {
             last_message_counter = 0.f;
             last_message = "Pollution is coming back! How is our utopia looking?";
         }
-        if (prev_game_time / GAME_DURATION < 0.9f & game_time / GAME_DURATION >= 0.9f ) {
+        if (prev_game_time / GAME_DURATION < 0.9f && game_time / GAME_DURATION >= 0.9f ) {
             last_message_counter = 0.f;
             last_message = "Pollution has peaked! This forray will end soon.";
         }
@@ -1521,6 +1523,10 @@ int main() {
         if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))  camera.target.x -= move;
         if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))    camera.target.y -= move;
         if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))  camera.target.y += move;
+        if(camera.target.x<0) camera.target.x = 0;
+        if(camera.target.y<0) camera.target.y = 0;
+        if(camera.target.x>=GRID_SIZE*TILE_SIZE) camera.target.x = GRID_SIZE*TILE_SIZE;
+        if(camera.target.y>=GRID_SIZE*TILE_SIZE) camera.target.y = GRID_SIZE*TILE_SIZE;
         //camera.zoom += GetMouseWheelMove() * 0.2f;
         //if (camera.zoom < 0.5f) camera.zoom = 0.5f;
         //if (camera.zoom < 0.25f) camera.zoom = 0.25f;
@@ -1530,7 +1536,7 @@ int main() {
         if (wheel) target_zoom += wheel * 0.1f;
         if (camera.zoom!=target_zoom) {
             Vector2 mouseWorldBefore = GetScreenToWorld2D(GetMousePosition(), camera);
-            if (target_zoom < 0.15f) target_zoom = 0.15f;
+            if (target_zoom < 0.1f) target_zoom = 0.1f;
             if (target_zoom > 2.0f) target_zoom = 2.0f;
             float diff = camera.zoom-target_zoom;
             camera.zoom -= diff*dt*5*(1+camera.zoom);
@@ -2211,7 +2217,7 @@ int main() {
                             o.health = o.max_health;
                             o.popup = o.faction==ANIMAL_FACTION?"wild":"tamed";
                         }
-                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_TAMING) && (o.texture==&tex::bison || o.texture==&tex::rat || o.texture==&tex::snowman)) {
+                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_TAMING) && (o.texture==&tex::bison || o.texture==&tex::rat || o.texture==&tex::snowman) && GetRandomValue(0, 99) < 50) {
                             o.faction = u.faction;
                             o.health = o.max_health;
                             o.popup = "tamed";
@@ -2546,7 +2552,7 @@ int main() {
             int ux = (int)u.x;
             int uy = (int)u.y;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
-            if(extra_sight<0 && u.faction->technology&TECHNOLOGY_TRACK) extra_sight /= 2;
+            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.35f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
             if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
@@ -3346,17 +3352,17 @@ int main() {
             DrawTextureEx(tex::research, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
 
 
-            DrawTechNode(taming.x, taming.y, "TAMER", "-50\% research, tame all animals", tech, TECHNOLOGY_TAMING);
+            DrawTechNode(taming.x, taming.y, "TAMER", "-50\% research, 50\% tame animals", tech, TECHNOLOGY_TAMING);
             DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
 
 
             // account for datacenters autonomously adding techs without predecesoors
             if(prev_tech & (TECHNOLOGY_BIOWEAPON | TECHNOLOGY_GRIT | TECHNOLOGY_EVOLUTION)) {
-                DrawTechNode(evolution.x, evolution.y, "EVOLUTION", "10\% of spawn are snowman", tech, TECHNOLOGY_EVOLUTION);
+                DrawTechNode(evolution.x, evolution.y, "EVOLUTION", "10\% of spawn are snowmen", tech, TECHNOLOGY_EVOLUTION);
                 DrawTextureEx(tex::snowman, {evolution.x + ICON_DX, evolution.y + ICON_DY}, 0, ICON_SIZE / tex::snowman.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_TRACK)) {
-                DrawTechNode(track.x, track.y, "TRACKER", "Less reduced visibility", tech, TECHNOLOGY_TRACK);
+                DrawTechNode(track.x, track.y, "TRACKER", "Incrased sight", tech, TECHNOLOGY_TRACK);
                 DrawTextureEx(tex::track, {track.x + ICON_DX, track.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_TAMING | TECHNOLOGY_WONDER)) {
@@ -3759,7 +3765,7 @@ int main() {
                 }
                 else if(hovered->texture==&tex::mine) DrawText("+12 industry", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::oil) DrawText("+3 utopia", px + 80, textY, 28, WHITE);
-                else if(hovered->texture==&tex::datacenter) DrawText("Random events", px + 80, textY, 28, WHITE);
+                else if(hovered->texture==&tex::datacenter) DrawText("Random benefits", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::warehouse) DrawText("+2 utopia", px + 80, textY, 28, WHITE);
                 else if(hovered->max_health>18.f && hovered->speed==0) DrawText("Mecha", px + 80, textY, 28, WHITE);
                 else if(hovered->max_health>18.f) {
