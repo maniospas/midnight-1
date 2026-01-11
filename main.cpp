@@ -178,6 +178,9 @@ Texture* preference_icon[PREFERENCE_COUNT] = {
     &tex::bison,
 };
 
+typedef unsigned long long PrefMask;
+#define PREF_BIT(p) (1ULL << (p))
+
 
 #define is_mecha(u) (u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::railgun)
 
@@ -819,6 +822,17 @@ const int GAME_H = 1600;
 
 
 int main() {
+    PrefMask unlocked_preferences = 0;
+    {
+        PrefMask mask = 0;
+        FILE* f = fopen("midnight-save.dat", "rb");
+        if(f) {
+            if(fread(&unlocked_preferences, sizeof(unlocked_preferences), 1, f)!=1)
+                unlocked_preferences = 0;
+            fclose(f);
+        }
+    }
+
     SetTraceLogLevel(LOG_NONE); // disable raylib logs
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), "MIDNIGHT - next morn");
@@ -981,26 +995,30 @@ int main() {
                        Rectangle{GetScreenWidth()/2+200, btnStart.y+5, 80, 80},
                        {0,0}, 0, WHITE);
         // Preferences
-        for (int i=0; i<2; ++i) {
-            bool hover = CheckCollisionPointRec(mouse, prefBox[i]);
-            DrawRectangleRec(prefBox[i], hover ? Fade(YELLOW,0.22f) : Fade(YELLOW,0.12f));
-            DrawRectangleLinesEx(prefBox[i], 2, GRAY);
-            DrawTextSmall(i == 0 ? "Start perk" : "Start perk",prefBox[i].x + 20,prefBox[i].y + 6,28,GRAY);
-            int pref = player_preferred_start[i];
-            DrawTextSmall(preference_desc[pref], prefBox[i].x + 20, prefBox[i].y + 36, 26, WHITE);
+        if(unlocked_preferences)
+            for (int i=0; i<2; ++i) {
+                bool hover = CheckCollisionPointRec(mouse, prefBox[i]);
+                DrawRectangleRec(prefBox[i], hover ? Fade(YELLOW,0.22f) : Fade(YELLOW,0.12f));
+                DrawRectangleLinesEx(prefBox[i], 2, GRAY);
+                DrawTextSmall(i == 0 ? "Start perk" : "Start perk",prefBox[i].x + 20,prefBox[i].y + 6,28,GRAY);
+                int pref = player_preferred_start[i];
+                DrawTextSmall(preference_desc[pref], prefBox[i].x + 20, prefBox[i].y + 36, 26, WHITE);
 
-            float rot = 0;//GetTime() * 120.0f;
-            Rectangle src = {0, 0, (float)preference_icon[pref]->width, (float)preference_icon[pref]->height};
-            Rectangle dst = {prefBox[i].x + prefBox[i].width - 64,prefBox[i].y + 9, 48, 48};
-            Vector2 origin = { dst.width / 2.0f, dst.height / 2.0f };
-            dst.x += origin.x;
-            dst.y += origin.y;
-            DrawTexturePro(*preference_icon[pref], src, dst, origin, rot, WHITE);
-            if (hover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                player_preferred_start[i] =
-                (player_preferred_start[i] + 1) % PREFERENCE_COUNT;
+                float rot = 0;//GetTime() * 120.0f;
+                Rectangle src = {0, 0, (float)preference_icon[pref]->width, (float)preference_icon[pref]->height};
+                Rectangle dst = {prefBox[i].x + prefBox[i].width - 64,prefBox[i].y + 9, 48, 48};
+                Vector2 origin = { dst.width / 2.0f, dst.height / 2.0f };
+                dst.x += origin.x;
+                dst.y += origin.y;
+                DrawTexturePro(*preference_icon[pref], src, dst, origin, rot, WHITE);
+                if (hover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    int p = player_preferred_start[i];
+                    do {
+                        p = (p + 1) % PREFERENCE_COUNT;
+                    } while (!(unlocked_preferences & (1ULL << p)) && p!=PREFERENCE_RAILGUN);
+                    player_preferred_start[i] = p;
+                }
             }
-        }
 
         // Quit button
         bool hoverQuit = CheckCollisionPointRec(mouse, btnQuit);
@@ -1012,8 +1030,7 @@ int main() {
             showTechTree = false;
             goto START_GAME;
         }
-        if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
-            IsKeyPressed(KEY_ESCAPE)) {
+        if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
             CloseWindow();
             return 0;
         }
@@ -1031,6 +1048,29 @@ int main() {
         if(player_points<0) player_points = -player_points;
         const int baseY = GetScreenHeight()/2 - 600;
         Rectangle btnOk = {GetScreenWidth()/2 - 200, baseY+820,400, 80};
+
+        const char* badTechNames[8];
+        int badTechCount = 0;
+        auto player_techs = factions[0].technology;
+        if (player_techs & TECHNOLOGY_BIOWEAPON) badTechNames[badTechCount++] = "BIOWEAPONS";
+        if (player_techs & TECHNOLOGY_PROPAGANDA) badTechNames[badTechCount++] = "PROPAGANDA";
+        if (player_techs & TECHNOLOGY_SUPERIORITY) badTechNames[badTechCount++] = "SUPERIORITY";
+        if (player_techs & TECHNOLOGY_ARTIFICIAL) badTechNames[badTechCount++] = "HIVEMENIND";
+        if (player_techs & TECHNOLOGY_AIFARM) badTechNames[badTechCount++] = "AI FARMS";
+        bool ethical_victory = victory && (badTechCount == 0);
+        int unlocking_perk = 0; // zero = railgun = always unlocked = used to signify that we unlocked nothing
+        if(victory && !badTechCount) {
+            unlocking_perk = GetRandomValue(1, PREFERENCE_COUNT - 1);
+            if (unlocked_preferences & (1ULL << unlocking_perk)) unlocking_perk = 0;
+            else unlocked_preferences |= (1ULL << unlocking_perk);
+        }
+        {
+            FILE* f = fopen("midnight-save.dat", "wb");
+            if(f) {
+                fwrite(&unlocked_preferences, sizeof(unlocked_preferences), 1, f);
+                fclose(f);
+            }
+        }
         while (true) {
             BeginDrawing();
             ClearBackground(BLACK);
@@ -1078,18 +1118,14 @@ int main() {
             if (game_time >= GAME_DURATION) DrawText(score, GetScreenWidth()/2 - MeasureText(score, 42)/2+40, baseY+540, 42, WHITE);
 
             // --- Ethical tech disclosure ---
-            const char* badTechNames[8];
-            int badTechCount = 0;
-            auto player_techs = factions[0].technology;
-            if (player_techs & TECHNOLOGY_BIOWEAPON) badTechNames[badTechCount++] = "BIOWEAPONS";
-            if (player_techs & TECHNOLOGY_PROPAGANDA) badTechNames[badTechCount++] = "PROPAGANDA";
-            if (player_techs & TECHNOLOGY_SUPERIORITY) badTechNames[badTechCount++] = "SUPERIORITY";
-            if (player_techs & TECHNOLOGY_ARTIFICIAL) badTechNames[badTechCount++] = "HIVEMENIND";
-            if (player_techs & TECHNOLOGY_AIFARM) badTechNames[badTechCount++] = "AI FARMS";
-            if (badTechCount > 0) {
-                DrawText("Was it really worth it?",GetScreenWidth()/2 - MeasureText("Was it really worth it?", 28)/2,baseY+610,28,ORANGE);
+            if(unlocking_perk) {
+                DrawTextSmall("You avoided iffy techs! New start perk awarded.",GetScreenWidth()/2 - MeasureText("You avoided iffy techs! New start perk awarded.", 28)/2+60,baseY+610,28,Fade(GREEN, 0.8f));
+                //DrawTextSmall(preference_desc[unlocking_perk],GetScreenWidth()/2 - MeasureText(preference_desc[unlocking_perk], 28)/2+50,baseY+650,28,Fade(GREEN, 0.8f));
+            }
+            else if (badTechCount) {
+                DrawTextSmall("Was it really worth it?",GetScreenWidth()/2 - MeasureText("Was it really worth it?", 28)/2,baseY+610,28,ORANGE);
                 for (int i = 0; i < badTechCount; i++)
-                    DrawText(TextFormat("- %s", badTechNames[i]),GetScreenWidth()/2 - 260,baseY+650 + i * 28,24,DARKGRAY);
+                    DrawTextSmall(TextFormat("- %s", badTechNames[i]),GetScreenWidth()/2 - 260,baseY+650 + i * 28,24,DARKGRAY);
             }
 
             // --- OK button ---
