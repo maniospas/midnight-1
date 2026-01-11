@@ -1821,8 +1821,8 @@ int main() {
                 factions[i].victory_points += factions[i].industry*0.01f;
                 //factions[i].industry *= 0.5f;
             }
-            game_time += dt*(factions[i].industry/300.f);
-            polution_speedup += factions[i].industry/300.f;
+            game_time += dt*0.08f*factions[i].industry/300.f;
+            polution_speedup += 0.08f*factions[i].industry/300.f;
         }
 
         // process units
@@ -2393,7 +2393,7 @@ int main() {
                             o.health = o.max_health;
                             o.popup = "homunculi";
                         }
-                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_HIJACK) && is_mecha(o)) {
+                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_HIJACK) && is_mecha(o) && GetRandomValue(0, 99) < 50) {
                             o.faction = u.faction;
                             o.health = o.max_health;
                             o.popup = "hijacked";
@@ -3698,7 +3698,7 @@ int main() {
                 DrawTextureEx(tex::ghost, {artificial.x + ICON_DX, artificial.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_HIJACK)) {
-                DrawTechNode(hijack.x, hijack.y, "HIJACK", "Capture destroyed mecha", tech, TECHNOLOGY_HIJACK);
+                DrawTechNode(hijack.x, hijack.y, "HIJACK", "50\% destroyed mecha capture", tech, TECHNOLOGY_HIJACK);
                 DrawTextureEx(tex::tank, {hijack.x + ICON_DX, hijack.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
 
@@ -3878,7 +3878,7 @@ int main() {
                 DrawRectangleRec(bar_bg, bg);
                 DrawRectangleRec(bar_fg, fg);
 
-                if(polution_speedup<-0.1f)
+                if(polution_speedup<-0.2f)
                     DrawText("Pollution slowed down", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
                 else if(polution_speedup>0.2f)
                     DrawText("Pollution sped up from industry", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
