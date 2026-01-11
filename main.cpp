@@ -2043,6 +2043,27 @@ int main() {
                 }
                 continue;
             }
+            if(u.faction && (u.faction->technology & TECHNOLOGY_MOBILE_FORTRESS) && u.texture==&tex::railgun) {
+                u = { \
+                    &tex::tank,   /* texture */ \
+                    "Tank",       /* name */ \
+                    3.0,          /* speed */ \
+                    (float)(u.x),   /* x */ \
+                    (float)(u.y),   /* y */ \
+                    0.5,          /* attack_rate */ \
+                    6.0,         /* range */ \
+                    8.0,          /* damage */ \
+                    0.0,          /* experience */ \
+                    0.0,          /* angle */ \
+                    0.8,          /* size */ \
+                    20.0,         /* health */ \
+                    20.0,         /* max_health */ \
+                    (u.faction),    /* faction */ \
+                    nullptr,    /* faction */ \
+                    0.3           /* extra scale*/\
+                };
+                u.popup = "mobile fort";
+            }
 
             float u_speed = terrainGrid[(int)u.y][(int)u.x].speed;
             if(u_speed<1.f && u.texture==&tex::snowman && (terrainGrid[(int)u.y][(int)u.x].texture==&tex::mountain || terrainGrid[(int)u.y][(int)u.x].texture==&tex::hill)) u_speed = 2.f;
@@ -2517,28 +2538,8 @@ int main() {
                                 if(o.texture==&tex::railgun) o.capturing = nullptr; // only capture railguns once
                             }
 
-                            if(u.faction && (u.faction->technology & TECHNOLOGY_MOBILE_FORTRESS) && (o.texture==&tex::railgun || o.texture==&tex::van)) {
-                                units[j] = { \
-                                    &tex::tank,   /* texture */ \
-                                    "Tank",       /* name */ \
-                                    3.0,          /* speed */ \
-                                    (float)(o.x),   /* x */ \
-                                    (float)(o.y),   /* y */ \
-                                    0.5,          /* attack_rate */ \
-                                    6.0,         /* range */ \
-                                    8.0,          /* damage */ \
-                                    0.0,          /* experience */ \
-                                    0.0,          /* angle */ \
-                                    0.8,          /* size */ \
-                                    20.0,         /* health */ \
-                                    20.0,         /* max_health */ \
-                                    (u.faction),    /* faction */ \
-                                    nullptr,    /* faction */ \
-                                    0.3           /* extra scale*/\
-                                };
-                                units[j].popup = "mobile fortress";
-                            }
-                            else if(u.faction && (u.faction->technology & TECHNOLOGY_TERRAFORIMING)) {
+
+                            if(u.faction && (u.faction->technology & TECHNOLOGY_TERRAFORIMING)) {
                                 units[j] = { \
                                     &tex::field,   /* texture */ \
                                     "Field",       /* name */ \
@@ -3652,7 +3653,7 @@ int main() {
                 DrawTextureEx(tex::blood, {nuclear.x + ICON_DX, nuclear.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_MOBILE_FORTRESS)) {
-                DrawTechNode(mobile.x, mobile.y, "MOBILE FORT", "Captured mechas turn to tanks", tech, TECHNOLOGY_MOBILE_FORTRESS);
+                DrawTechNode(mobile.x, mobile.y, "MOBILE FORT", "Your railguns turn to tanks", tech, TECHNOLOGY_MOBILE_FORTRESS);
                 DrawTextureEx(tex::tank, {mobile.x + ICON_DX, mobile.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_WONDER | TECHNOLOGY_LUXURY)) {
