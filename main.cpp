@@ -1060,9 +1060,12 @@ int main() {
         bool ethical_victory = victory && (badTechCount == 0);
         int unlocking_perk = 0; // zero = railgun = always unlocked = used to signify that we unlocked nothing
         if(victory && !badTechCount) {
-            unlocking_perk = GetRandomValue(1, PREFERENCE_COUNT - 1);
-            if (unlocked_preferences & (1ULL << unlocking_perk)) unlocking_perk = 0;
-            else unlocked_preferences |= (1ULL << unlocking_perk);
+            for(int repeat=0;repeat<3;repeat++) {
+                unlocking_perk = GetRandomValue(1, PREFERENCE_COUNT - 1);
+                if (unlocked_preferences & (1ULL << unlocking_perk)) unlocking_perk = 0;
+                else unlocked_preferences |= (1ULL << unlocking_perk);
+                if(unlocking_perk) break;
+            }
         }
         {
             FILE* f = fopen("midnight-save.dat", "wb");
@@ -2060,7 +2063,9 @@ int main() {
                 if(u.faction && (u.faction->technology&TECHNOLOGY_HELLBRINGER) && (u.name==veteran_name || u.name==hero_name)) u_attack_rate *= 3.f;
                 if (r < dt * mul * u_attack_rate) {
                     float bestDist = 999999.0f;
+                    float bestCaptureDist = bestDist;
                     Unit* best = nullptr;
+                    Unit* bestCapture = nullptr;
                     // find closest enemy in range
                     for (int j = 0; j < num_units; j++) {
                         if (i == j) continue;
@@ -2084,14 +2089,25 @@ int main() {
                             }
                             u.faction->visible_knowledge.set(j);
                         }
-                        if (o.faction == u.faction) continue;
-                        if (in_range && d2 < bestDist &&  (!best || best->capturing)) {
-                            // we re going to try to capture only if there's no enemy
-                            bestDist = d2;
-                            best = &o;
+                        if(o.faction == u.faction) continue;
+                        if(in_range) {
+                            if(o.capturing) {
+                                if(d2 < bestCaptureDist) {
+                                    bestCaptureDist = d2;
+                                    bestCapture = &o;
+                                }
+                            }
+                            else {
+                                if(d2 < bestDist) {
+                                    bestDist = d2;
+                                    best = &o;
+                                }
+                            }
                         }
                     }
-                    if (best) {
+                    // we re going to try to capture only if there's no enemy
+                    if(!best) best = bestCapture;
+                    if(best) {
                         u.attack_target_x = best->x;
                         u.attack_target_y = best->y;
                         u.attack_x = 0;
