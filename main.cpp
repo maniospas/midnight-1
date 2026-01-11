@@ -32,8 +32,11 @@ namespace tex {
     static Texture2D hill4;
     static Texture2D hill_transition;
     static Texture2D hill_transition2;
+    static Texture2D hill_outline;
+    static Texture2D hill_wedge;
     static Texture2D mountain;
     static Texture2D mountain_transition;
+    static Texture2D mountain_transition2;
     static Texture2D road;
     static Texture2D road_transition;
     static Texture2D human;
@@ -186,7 +189,6 @@ typedef unsigned long long PrefMask;
 
 struct Terrain {
     Texture2D* texture;
-    const char* name;
     float speed;
     float extra_sight;
 };
@@ -400,13 +402,15 @@ int NOISE_SEED = 0;
         };
 
 #define CREATE_CAMP(faction, x, y) \
-    if (num_units < MAX_UNITS) \
+    if (num_units < MAX_UNITS) { \
+        float bbx = x; \
+        float bby = y; \
         units[num_units++] = { \
             &tex::camp,   /* texture */ \
             "Camp",       /* name */ \
             0.0,          /* speed */ \
-            (float)(x),   /* x */ \
-            (float)(y),   /* y */ \
+            (float)(bbx),   /* x */ \
+            (float)(bby),   /* y */ \
             4.0,          /* attack_rate (4 per min)*/ \
             1.0,          /* range */ \
             0.0,          /* damage */ \
@@ -417,28 +421,38 @@ int NOISE_SEED = 0;
             20.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction)     /* can only be captured */ \
-        };
+        }; \
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(bby+0.5f)+ppy][(int)(bbx+0.5f)+ppx] = { &tex::grass, 1.0 }; \
+    }
 
 #define CREATE_FIELD(faction, x, y) \
-    if (num_units < MAX_UNITS) \
-        units[num_units++] = { \
-            &tex::field,   /* texture */ \
-            "Field",       /* name */ \
-            0.0,          /* speed */ \
-            (float)(x),   /* x */ \
-            (float)(y),   /* y */ \
-            0.0,          /* attack_rate (store industry state here)*/ \
-            4.0,          /* range */ \
-            0.0,          /* damage */ \
-            0.0,          /* experience */ \
-            0.0,          /* angle */ \
-            1.3,          /* size */ \
-            15.0,         /* health */ \
-            15.0,         /* max_health */ \
-            (faction),    /* faction */ \
-            (faction),    /* can only be captured */ \
-            -0.1f \
-        };
+        if (num_units < MAX_UNITS) { \
+            float bbx = x; \
+            float bby = y; \
+            units[num_units++] = { \
+                &tex::field,   /* texture */ \
+                "Field",       /* name */ \
+                0.0,          /* speed */ \
+                (float)(bbx),   /* x */ \
+                (float)(bby),   /* y */ \
+                0.0,          /* attack_rate (store industry state here)*/ \
+                4.0,          /* range */ \
+                0.0,          /* damage */ \
+                0.0,          /* experience */ \
+                0.0,          /* angle */ \
+                1.3,          /* size */ \
+                15.0,         /* health */ \
+                15.0,         /* max_health */ \
+                (faction),    /* faction */ \
+                (faction),    /* can only be captured */ \
+                -0.1f \
+            }; \
+            for(int ppy=-2;ppy<=2;ppy++) \
+                for(int ppx=-2;ppx<=2;ppx++) \
+                    if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(bby+0.5f)+ppy][(int)(bbx+0.5f)+ppx] = { &tex::grass, 1.0 }; \
+        }
 #define CREATE_DATACENTER(faction, x, y) \
     if (num_units < MAX_UNITS) \
         units[num_units++] = { \
@@ -574,27 +588,10 @@ inline bool IsMountain(Texture2D* t) {
 inline bool IsDesert(Texture2D* t) {
     return t==&tex::desert;
 }
-inline void DrawRot(Texture2D tex, int px, int py, float rot)
-{
-    Rectangle src = {
-        0.0f,
-        0.0f,
-        (float)tex.width,
-        (float)tex.height
-    };
-
-    Rectangle dst = {
-        (float)px + tex.width  * 0.5f,
-        (float)py + tex.height * 0.5f,
-        (float)tex.width,
-        (float)tex.height
-    };
-
-    Vector2 origin = {
-        tex.width  * 0.5f,
-        tex.height * 0.5f
-    };
-
+inline void DrawRot(Texture2D tex, int px, int py, float rot){
+    Rectangle src = {0.0f,0.0f,(float)tex.width,(float)tex.height};
+    Rectangle dst = {(float)px + tex.width  * 0.5f,(float)py + tex.height * 0.5f,(float)tex.width,(float)tex.height};
+    Vector2 origin = {tex.width  * 0.5f, tex.height * 0.5f};
     DrawTexturePro(tex, src, dst, origin, rot, WHITE);
 }
 
@@ -736,8 +733,6 @@ static float BiasCurve(float v, float bias) {
     return powf(v, bias);
 }
 
-static const char* mountaintop_name = "Mountaintop"; // is treated as a mountain mostly everywhere
-
 static void GenerateHillsAndDesert(Terrain** terrainGrid) {
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
@@ -755,7 +750,6 @@ static void GenerateHillsAndDesert(Terrain** terrainGrid) {
             if (hillValue > 0.67f) {
                 terrainGrid[y][x] = {
                     &tex::mountain,
-                    mountaintop_name,
                     0.4f,
                     1.0f
                 };
@@ -765,7 +759,6 @@ static void GenerateHillsAndDesert(Terrain** terrainGrid) {
             if (hillValue > 0.62f) {
                 terrainGrid[y][x] = {
                     &tex::mountain,
-                    "Mountain",
                     0.4f,
                     1.0f
                 };
@@ -781,7 +774,6 @@ static void GenerateHillsAndDesert(Terrain** terrainGrid) {
 
                 terrainGrid[y][x] = {
                     tex,
-                    "Hill",
                     0.7f,
                     0.5f
                 };
@@ -791,7 +783,6 @@ static void GenerateHillsAndDesert(Terrain** terrainGrid) {
             if (desertValue > 0.65f) {
                 terrainGrid[y][x] = {
                     &tex::desert,
-                    "Desert",
                     0.8f,
                     -0.7f
                 };
@@ -824,7 +815,6 @@ const int GAME_H = 1600;
 int main() {
     PrefMask unlocked_preferences = 0;
     {
-        PrefMask mask = 0;
         FILE* f = fopen("midnight-save.dat", "rb");
         if(f) {
             if(fread(&unlocked_preferences, sizeof(unlocked_preferences), 1, f)!=1)
@@ -857,8 +847,11 @@ int main() {
     tex::hill4 = LoadTexture("data/hill4.png");
     tex::hill_transition = LoadTexture("data/hill_transition.png");
     tex::hill_transition2 = LoadTexture("data/hill_transition2.png");
+    tex::hill_outline = LoadTexture("data/hill_outline.png");
+    tex::hill_wedge = LoadTexture("data/hill_wedge.png");
     tex::mountain = LoadTexture("data/mountain.png");
     tex::mountain_transition = LoadTexture("data/mountain_transition.png");
+    tex::mountain_transition2 = LoadTexture("data/mountain_transition2.png");
     tex::snow = LoadTexture("data/snow.png");
     tex::tree = LoadTexture("data/tree.png");
     tex::desert = LoadTexture("data/desert.png");
@@ -963,12 +956,12 @@ int main() {
 
     // main loop
     MAIN_MENU:
-    const int baseY = GetScreenHeight()/2 - 600;
-    const Rectangle btnStart = {GetScreenWidth()/2 - 300, baseY+720,600, 80};
-    const Rectangle btnQuit = {GetScreenWidth()/2 - 300, baseY+820,600, 80};
+    const float baseY = (float)GetScreenHeight()/2 - 600;
+    const Rectangle btnStart = {(float)GetScreenWidth()/2 - 300, baseY+720,600, 80};
+    const Rectangle btnQuit = {(float)GetScreenWidth()/2 - 300, baseY+820,600, 80};
     Rectangle prefBox[2] = {
-        { GetScreenWidth()/2 - 300+30, baseY + 635, 300-40, 70 },
-        { GetScreenWidth()/2+10, baseY + 635, 300-40, 70 }
+        { (float)GetScreenWidth()/2 - 300+30, baseY + 635, 300-40, 70 },
+        { (float)GetScreenWidth()/2+10, baseY + 635, 300-40, 70 }
     };
 
     while (true) {
@@ -978,7 +971,7 @@ int main() {
         DrawTexturePro(
             tex::sun,
             Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
-            Rectangle{GetScreenWidth()/2-256, baseY+100, 512, 256},
+            Rectangle{(float)GetScreenWidth()/2-256, baseY+100, 512, 256},
             {0,0}, 0, WHITE);
         DrawText("MIDNIGHT", GetScreenWidth()/2 - 300, baseY+400, 128, WHITE);
         DrawText("next", GetScreenWidth()/2 +260, baseY+400, 64, WHITE);
@@ -992,7 +985,7 @@ int main() {
         DrawText("New expedition", btnStart.x + 30, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
         DrawTexturePro(tex::utopia,
                        Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height},
-                       Rectangle{GetScreenWidth()/2+200, btnStart.y+5, 80, 80},
+                       Rectangle{(float)GetScreenWidth()/2+200, btnStart.y+5, 80, 80},
                        {0,0}, 0, WHITE);
         // Preferences
         if(unlocked_preferences)
@@ -1046,8 +1039,8 @@ int main() {
 
         bool victory = (player_points > best_ai_points) && factions[0].count_members;
         if(player_points<0) player_points = -player_points;
-        const int baseY = GetScreenHeight()/2 - 600;
-        Rectangle btnOk = {GetScreenWidth()/2 - 200, baseY+820,400, 80};
+        const float baseY = (float)GetScreenHeight()/2 - 600;
+        Rectangle btnOk = {(float)GetScreenWidth()/2 - 200, baseY+820,400, 80};
 
         const char* badTechNames[8];
         int badTechCount = 0;
@@ -1057,7 +1050,6 @@ int main() {
         if (player_techs & TECHNOLOGY_SUPERIORITY) badTechNames[badTechCount++] = "SUPERIORITY";
         if (player_techs & TECHNOLOGY_ARTIFICIAL) badTechNames[badTechCount++] = "HIVEMENIND";
         if (player_techs & TECHNOLOGY_AIFARM) badTechNames[badTechCount++] = "AI FARMS";
-        bool ethical_victory = victory && (badTechCount == 0);
         int unlocking_perk = 0; // zero = railgun = always unlocked = used to signify that we unlocked nothing
         if(victory && !badTechCount) {
             for(int repeat=0;repeat<3;repeat++) {
@@ -1081,39 +1073,45 @@ int main() {
                 DrawTexturePro(
                     tex::sun,
                     Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
-                    Rectangle{GetScreenWidth()/2-256, baseY+100, 512, 256},
+                    Rectangle{(float)GetScreenWidth()/2-256, baseY+100, 512, 256},
                     {0,0}, 0, WHITE);
                 DrawText("BEST UTOPIA", GetScreenWidth()/2 - MeasureText("BEST UTOPIA", 96)/2+70, baseY+420, 96, GREEN);
             }
             else if (game_time >= GAME_DURATION) {
                 DrawTexturePro(
                     tex::blood,
-                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-128, baseY+100, 256, 256},
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height},
+                    Rectangle{(float)GetScreenWidth()/2-128, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
                 DrawTexturePro(
                     tex::blood,
-                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-256+32, baseY+100, 256, 256},
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height},
+                    Rectangle{(float)GetScreenWidth()/2-256+32, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
                 DrawTexturePro(
                     tex::blood,
-                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-32, baseY+100, 256, 256},
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height},
+                    Rectangle{(float)GetScreenWidth()/2-32, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
                 DrawText("SURVIVED", GetScreenWidth()/2 - MeasureText("SURVIVED", 96)/2+50, baseY+420, 96, ORANGE);
             }
             else {
                 DrawTexturePro(
                     tex::blood,
-                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-128, baseY+100, 256, 256},
-                               {0,0}, 0, WHITE);
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height},
+                    Rectangle{(float)GetScreenWidth()/2-128, baseY+100, 256, 256},
+                    {0,0}, 0, WHITE);
                 DrawTexturePro(
                     tex::blood,
-                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-256+32, baseY+100, 256, 256},
-                               {0,0}, 0, WHITE);
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height},
+                    Rectangle{(float)GetScreenWidth()/2-256+32, baseY+100, 256, 256},
+                    {0,0}, 0, WHITE);
                 DrawTexturePro(
                     tex::blood,
-                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{GetScreenWidth()/2-32, baseY+100, 256, 256},
-                               {0,0}, 0, WHITE);
-                DrawText("ELIMINATED", GetScreenWidth()/2 - MeasureText("ELIMINATED", 96)/2+50, baseY+420, 96, RED);
+                    Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height},
+                    Rectangle{(float)GetScreenWidth()/2-32, baseY+100, 256, 256},
+                    {0,0}, 0, WHITE);
+                DrawText("ELIMINATED", (float)GetScreenWidth()/2 - MeasureText("ELIMINATED", 96)/2+50, baseY+420, 96, RED);
             }
             // --- Score ---
             char score[128];
@@ -1172,13 +1170,13 @@ int main() {
     for (int y = 0; y < GRID_SIZE; y++)
         for (int x = 0; x < GRID_SIZE; x++)
             if (GetRandomValue(1, 100) <= 90)
-                terrainGrid[y][x] = { &tex::grass, "Grass", 1.0 };
+                terrainGrid[y][x] = { &tex::grass, 1.0 };
             else {
                 int alt = GetRandomValue(2, 4); // 2,3,4
                 switch (alt) {
-                    case 2: terrainGrid[y][x] = { &tex::grass2, "Grass", 1.0 }; break;
-                    case 3: terrainGrid[y][x] = { &tex::grass3, "Grass", 1.0 }; break;
-                    case 4: terrainGrid[y][x] = { &tex::grass4, "Grass", 1.0 }; break;
+                    case 2: terrainGrid[y][x] = { &tex::grass2, 1.0 }; break;
+                    case 3: terrainGrid[y][x] = { &tex::grass3, 1.0 }; break;
+                    case 4: terrainGrid[y][x] = { &tex::grass4, 1.0 }; break;
                 }
             }
     GenerateHillsAndDesert(terrainGrid);
@@ -1210,7 +1208,6 @@ int main() {
             Terrain &T = terrainGrid[y][x];
             if (!IsDesert(T.texture)) {
                 T.texture = &tex::water;
-                T.name = "Water";
                 T.speed = 0.2f;
                 T.extra_sight = -0.7f;
             }
@@ -1227,7 +1224,6 @@ int main() {
                 Terrain &W = terrainGrid[wy][wx];
                 if (!IsDesert(W.texture)) {
                     W.texture = &tex::water;
-                    W.name = "Water";
                     W.speed = 0.2f;
                     W.extra_sight = -0.7f;
                 }
@@ -1249,7 +1245,6 @@ int main() {
                     Terrain &C = terrainGrid[cy][cx];
                     if (!IsDesert(C.texture)) {
                         C.texture = &tex::water;
-                        C.name = "Water";
                         C.speed = 0.3f;
                         C.extra_sight = -0.7f;
                     }
@@ -1264,7 +1259,6 @@ int main() {
                         Terrain &B = terrainGrid[by][bx];
                         if (!IsDesert(B.texture)) {
                             B.texture = &tex::water;
-                            B.name = "Water";
                             B.speed = 0.3f;
                             B.extra_sight = -0.7f;
                         }
@@ -1331,25 +1325,22 @@ int main() {
     // 1. PLAYER BASE (force spawn on speed == 1.0 tile)
     // ====================================================================
     {
-        float bx = 0.0f, by = 0.0f;
+        float bx = 0.f;
+        float by = 0.f;
         bool placed = false;
 
         // Hard cap to avoid infinite loops
         for (int attempt = 0; attempt < 2000 && !placed; ++attempt) {
             int tx = GetRandomValue(20, GRID_SIZE - 20);
             int ty = GetRandomValue(20, GRID_SIZE - 20);
-
             Terrain &T = terrainGrid[ty][tx];
-
             // Require exactly neutral movement
             if (fabsf(T.speed - 1.0f) > 0.001f)
                 continue;
-
             bx = (float)tx;
             by = (float)ty;
             placed = true;
         }
-
         // Absolute fallback (should basically never happen)
         if (!placed) {
             for (int y = 20; y < GRID_SIZE - 20 && !placed; ++y)
@@ -1360,10 +1351,10 @@ int main() {
                         placed = true;
                     }
         }
-
         // Spawn base
         CREATE_CAMP(&factions[0], bx-(player_preferred_start[0]==PREFERENCE_SPACING?8.f:0.3f), by);
         CREATE_CAMP(&factions[0], bx+(player_preferred_start[1]==PREFERENCE_SPACING?8.f:0.3f), by);
+
         for(int p=0;p<2;++p) {
             float px = p==0?(bx-3):(bx+3);
             int pref = player_preferred_start[p];
@@ -1597,6 +1588,7 @@ int main() {
     float prev_game_time = 0.f;
 
     while (true) {
+        //factions[0].technology |= TECHNOLOGY_EXPLORE; // for debug
         float dt = GetFrameTime();
         float polution_speedup = 0.f;// just track this for this frame
         if (prev_game_time / GAME_DURATION < 0.7f && game_time / GAME_DURATION >= 0.7f ) {
@@ -1675,8 +1667,8 @@ int main() {
         //if (camera.zoom < 0.5f) camera.zoom = 0.5f;
         //if (camera.zoom < 0.25f) camera.zoom = 0.25f;
         float wheel = GetMouseWheelMove();
-        if (IsKeyDown(KEY_Q))  wheel += dt*10.f;
-        if (IsKeyDown(KEY_E))  wheel -= dt*10.f;
+        if (IsKeyDown(KEY_Q))  wheel += dt*20.f;
+        if (IsKeyDown(KEY_E))  wheel -= dt*20.f;
         if (wheel) target_zoom += wheel * 0.1f;
         if (camera.zoom!=target_zoom) {
             Vector2 mouseWorldBefore = GetScreenToWorld2D(GetMousePosition(), camera);
@@ -1821,8 +1813,8 @@ int main() {
                 factions[i].victory_points += factions[i].industry*0.01f;
                 //factions[i].industry *= 0.5f;
             }
-            game_time += dt*0.08f*factions[i].industry/300.f;
-            polution_speedup += 0.08f*factions[i].industry/300.f;
+            game_time += dt*0.08f*factions[i].industry/200.f;
+            polution_speedup += 0.08f*factions[i].industry/200.f;
         }
 
         // process units
@@ -2043,7 +2035,7 @@ int main() {
                 }
                 continue;
             }
-            if(u.faction && (u.faction->technology & TECHNOLOGY_MOBILE_FORTRESS) && u.texture==&tex::railgun) {
+            if(u.faction && (u.faction->technology & TECHNOLOGY_MOBILE_FORTRESS) && u.texture==&tex::railgun && (float)GetRandomValue(0, 1000000) / 1000000.0f<dt*0.015) {
                 u = { \
                     &tex::tank,   /* texture */ \
                     "Tank",       /* name */ \
@@ -2063,6 +2055,7 @@ int main() {
                     0.3           /* extra scale*/\
                 };
                 u.popup = "mobile fort";
+                continue;
             }
 
             float u_speed = terrainGrid[(int)u.y][(int)u.x].speed;
@@ -2660,9 +2653,11 @@ int main() {
 
         // issue movement order
         if (!mouseCapturedByUI && (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || IsKeyPressed(KEY_ENTER))) {
-            Vector2 worldClick = IsKeyPressed(KEY_ENTER)?GetScreenToWorld2D({GetScreenWidth()*0.5, GetScreenHeight()*0.5}, camera):GetScreenToWorld2D(GetMousePosition(), camera);
-            float tx = worldClick.x / TILE_SIZE;
-            float ty = worldClick.y / TILE_SIZE;
+            Vector2 worldClick = IsKeyPressed(KEY_ENTER)
+                ?GetScreenToWorld2D({(float)GetScreenWidth()*0.5f, (float)GetScreenHeight()*0.5f}, camera)
+                :GetScreenToWorld2D(GetMousePosition(), camera);
+            float tx = (worldClick.x / TILE_SIZE);
+            float ty = (worldClick.y / TILE_SIZE);
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
 
@@ -2708,8 +2703,8 @@ int main() {
         }
 
         if (!mouseCapturedByUI && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))) {
-            selectStart = GetScreenToWorld2D({GetScreenWidth()*0,GetScreenHeight()*0}, camera);
-            selectEnd = GetScreenToWorld2D({GetScreenWidth()*1,GetScreenHeight()*1}, camera);
+            selectStart = GetScreenToWorld2D({(float)GetScreenWidth()*0,(float)GetScreenHeight()*0}, camera);
+            selectEnd = GetScreenToWorld2D({(float)GetScreenWidth()*1,(float)GetScreenHeight()*1}, camera);
             float minX = fminf(selectStart.x, selectEnd.x);
             float maxX = fmaxf(selectStart.x, selectEnd.x);
             float minY = fminf(selectStart.y, selectEnd.y);
@@ -2979,10 +2974,10 @@ int main() {
 
         for (int y = yMin; y < yMax; y++)
             for (int x = xMin; x < xMax; x++) {
-                int px = x * TILE_SIZE;
-                int py = y * TILE_SIZE;
+                int px = x * TILE_SIZE - TILE_SIZE/2;
+                int py = y * TILE_SIZE - TILE_SIZE/2;
                 if(!explored[y][x]) continue;
-                if (terrainGrid[y][x].texture == &tex::water) continue;
+                if(terrainGrid[y][x].texture==&tex::water) continue;
                 DrawTexture(*terrainGrid[y][x].texture, px, py, WHITE);
             }
 
@@ -2991,24 +2986,21 @@ int main() {
         SetShaderValue(waterShader, waterTimeLoc, &tsec, SHADER_UNIFORM_FLOAT);
         for (int y = yMin; y < yMax; y++)
             for (int x = xMin; x < xMax; x++) {
-                int px = x * TILE_SIZE;
-                int py = y * TILE_SIZE;
+                int px = x * TILE_SIZE - TILE_SIZE/2;
+                int py = y * TILE_SIZE - TILE_SIZE/2;
                 if(!explored[y][x]) continue;
-                if (terrainGrid[y][x].texture != &tex::water) continue;
+                if(terrainGrid[y][x].texture!=&tex::water) continue;
                 DrawTexture(tex::water, px, py, WHITE);
             }
-
         EndShaderMode();
 
 
         for (int y = yMin; y < yMax; y++)
             for (int x = xMin; x < xMax; x++) {
-
                 if (!explored[y][x]) continue;
-
                 Texture2D* tx = terrainGrid[y][x].texture;
-                int px = x * TILE_SIZE;
-                int py = y * TILE_SIZE;
+                int px = x * TILE_SIZE - TILE_SIZE/2;
+                int py = y * TILE_SIZE - TILE_SIZE/2;
 
                 bool hasN = (y > 0);
                 bool hasS = (y < GRID_SIZE - 1);
@@ -3036,11 +3028,47 @@ int main() {
                     bool sS  = IsHill(s);
                     bool sW  = IsHill(w);
                     bool sE  = IsHill(e);
-                    Texture2D &transition = (x+y)%2?tex::hill_transition:tex::hill_transition2;
-                    if (sN && sW && !sE && !sS) DrawRot(transition,  px, py,   0);
-                    if (sN && sE && !sW && !sS) DrawRot(transition, px, py,  90);
-                    if (sS && sW && !sE && !sN) DrawRot(transition,  px, py, 270);
-                    if (sS && sE && !sW && !sN) DrawRot(transition, px, py, 180);
+                    Texture2D *transition = (x+y)%2?&tex::hill_transition:&tex::hill_transition2;
+
+                    bool drawn = false;
+                    if (sN && sW && !sE && !sS) {
+                        DrawRot(*transition,  px, py,0);
+                        drawn=true;
+                    }
+                    if(sN && sW) {
+                        if(x<GRID_SIZE-1) DrawRot(tex::hill_wedge,  px+TILE_SIZE, py,0);
+                        if(y<GRID_SIZE-1) DrawRot(tex::hill_wedge,  px, py+TILE_SIZE,0);
+                    }
+                    if(sN && sE && !sW && !sS) {
+                        DrawRot(*transition, px, py, 90);
+                        drawn=true;
+                    }
+                    if(sN && sE) {
+                        if(y<GRID_SIZE-1) DrawRot(tex::hill_wedge,  px, py+TILE_SIZE,90);
+                        if(x) DrawRot(tex::hill_wedge,  px-TILE_SIZE, py,90);
+                    }
+                    if (sS && sW && !sE && !sN) {
+                        DrawRot(*transition,  px, py,270);
+                        drawn=true;
+                    }
+                    if(sS && sW) {
+                        if(x) DrawRot(tex::hill_wedge,  px, py-TILE_SIZE,270);
+                        if(x<GRID_SIZE-1)DrawRot(tex::hill_wedge,  px+TILE_SIZE, py,270);
+                    }
+                    if (sS && sE && !sW && !sN) {
+                        DrawRot(*transition, px, py, 180);
+                        drawn=true;
+                    }
+                    if(sS && sE) {
+                        if(x) DrawRot(tex::hill_wedge,  px-TILE_SIZE, py,180);
+                        if(y) DrawRot(tex::hill_wedge,  px, py-TILE_SIZE,180);
+                    }
+                    if(!drawn) {
+                        if(sN) DrawRot(tex::hill_outline, px, py, 90);
+                        if(sE) DrawRot(tex::hill_outline, px, py, 180);
+                        if(sW) DrawRot(tex::hill_outline, px, py, 0);
+                        if(sS) DrawRot(tex::hill_outline, px, py, 270);
+                    }
                 }
                 if (!IsDesert(tx) && !IsHill(tx) && !IsMountain(tx)) {
                     bool sN  = IsDesert(n);
@@ -3053,16 +3081,52 @@ int main() {
                     if (sS && sW && !sE && !sN) DrawRot(transition,  px, py, 270);
                     if (sS && sE && !sW && !sN) DrawRot(transition, px, py, 180);
                 }
-                if (!IsHill(tx) && !IsMountain(tx)) {
+                if (!IsMountain(tx)) {
                     bool sN  = IsMountain(n);
                     bool sS  = IsMountain(s);
                     bool sW  = IsMountain(w);
                     bool sE  = IsMountain(e);
-                    Texture2D &transition = tex::mountain_transition;
-                    if (sN && sW && !sE && !sS) DrawRot(transition,  px, py,   0);
-                    if (sN && sE && !sW && !sS) DrawRot(transition, px, py,  90);
-                    if (sS && sW && !sE && !sN) DrawRot(transition,  px, py, 270);
-                    if (sS && sE && !sW && !sN) DrawRot(transition, px, py, 180);
+                    Texture2D *transition = (x+y)%2?&tex::mountain_transition:&tex::mountain_transition2;
+
+                    bool drawn = false;
+                    if (sN && sW && !sE && !sS) {
+                        DrawRot(*transition,  px, py,0);
+                        drawn=true;
+                    }
+                    if(sN && sW) {
+                        if(x<GRID_SIZE-1) DrawRot(tex::hill_wedge,  px+TILE_SIZE, py,0);
+                        if(y<GRID_SIZE-1) DrawRot(tex::hill_wedge,  px, py+TILE_SIZE,0);
+                    }
+                    if(sN && sE && !sW && !sS) {
+                        DrawRot(*transition, px, py, 90);
+                        drawn=true;
+                    }
+                    if(sN && sE) {
+                        if(y<GRID_SIZE-1) DrawRot(tex::hill_wedge,  px, py+TILE_SIZE,90);
+                        if(x) DrawRot(tex::hill_wedge,  px-TILE_SIZE, py,90);
+                    }
+                    if (sS && sW && !sE && !sN) {
+                        DrawRot(*transition,  px, py,270);
+                        drawn=true;
+                    }
+                    if(sS && sW) {
+                        if(x) DrawRot(tex::hill_wedge,  px, py-TILE_SIZE,270);
+                        if(x<GRID_SIZE-1)DrawRot(tex::hill_wedge,  px+TILE_SIZE, py,270);
+                    }
+                    if (sS && sE && !sW && !sN) {
+                        DrawRot(*transition, px, py, 180);
+                        drawn=true;
+                    }
+                    if(sS && sE) {
+                        if(x) DrawRot(tex::hill_wedge,  px-TILE_SIZE, py,180);
+                        if(y) DrawRot(tex::hill_wedge,  px, py-TILE_SIZE,180);
+                    }
+                    if(!drawn) {
+                        if(sN) DrawRot(tex::hill_outline, px, py, 90);
+                        if(sE) DrawRot(tex::hill_outline, px, py, 180);
+                        if(sW) DrawRot(tex::hill_outline, px, py, 0);
+                        if(sS) DrawRot(tex::hill_outline, px, py, 270);
+                    }
                 }
 
             }
@@ -3217,9 +3281,28 @@ int main() {
                 TILE_SIZE * d.size
             };
             Vector2 origin = { 0, 0 };
-
             DrawTexturePro(*tex, src, dst, origin, 0.0f, visible[y][x]?transparent:WHITE);
         }
+
+
+        // {
+        //     Vector2 worldMouse = GetScreenToWorld2D(GetMousePosition(), camera);
+        //     int x = (int)(worldMouse.x / (float)TILE_SIZE + 0.5f);
+        //     int y = (int)(worldMouse.y / (float)TILE_SIZE + 0.5f);
+        //     if (x >= 0 && y >= 0 && x < GRID_SIZE && y < GRID_SIZE) {
+        //         Terrain &ter = terrainGrid[y][x];
+        //         float px = x * TILE_SIZE - TILE_SIZE/2;
+        //         float py = y * TILE_SIZE - TILE_SIZE/2;
+        //         Color bg = Fade(BLACK, 0.55f);
+        //         DrawRectangle(px, py, TILE_SIZE, TILE_SIZE, bg);
+        //         DrawRectangleLines(px, py, TILE_SIZE, TILE_SIZE, Fade(WHITE, 0.4f));
+        //         int fontSize = 24;
+        //         int pad = 4;
+        //         DrawText(TextFormat("Cover: %.0f\%", ter.speed>0.f?(1.0-ter.speed)*100:0.f), px + pad, py + pad, fontSize, WHITE);
+        //         DrawText(TextFormat("Sight: +%.0f\%", ter.extra_sight*100), px + pad, py + pad + fontSize + 2, fontSize,WHITE);
+        //     }
+        // }
+
 
 
         EndMode2D(); // camera
@@ -3653,7 +3736,7 @@ int main() {
                 DrawTextureEx(tex::blood, {nuclear.x + ICON_DX, nuclear.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_MOBILE_FORTRESS)) {
-                DrawTechNode(mobile.x, mobile.y, "MOBILE FORT", "Your railguns turn to tanks", tech, TECHNOLOGY_MOBILE_FORTRESS);
+                DrawTechNode(mobile.x, mobile.y, "MOBILE FORT", "Railguns eventually become tanks", tech, TECHNOLOGY_MOBILE_FORTRESS);
                 DrawTextureEx(tex::tank, {mobile.x + ICON_DX, mobile.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_WONDER | TECHNOLOGY_LUXURY)) {
@@ -4044,10 +4127,13 @@ int main() {
     UnloadTexture(tex::hill4);
     UnloadTexture(tex::hill_transition);
     UnloadTexture(tex::hill_transition2);
+    UnloadTexture(tex::hill_outline);
+    UnloadTexture(tex::hill_wedge);
     UnloadTexture(tex::desert);
     UnloadTexture(tex::desert_transition);
     UnloadTexture(tex::mountain);
     UnloadTexture(tex::mountain_transition);
+    UnloadTexture(tex::mountain_transition2);
     UnloadTexture(tex::human);
     UnloadTexture(tex::scout);
     UnloadTexture(tex::tank);
