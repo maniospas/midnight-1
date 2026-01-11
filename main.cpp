@@ -5,6 +5,7 @@
 #include <cstring>
 
 #define DrawText(txt, x, y, size, col) DrawTextEx(uiFont, txt, (Vector2){ (float)(x), (float)(y) }, (float)(size), 2.0f, col)
+#define DrawTextSmall(txt, x, y, size, col) DrawTextEx(smallerFont, txt, (Vector2){ (float)(x), (float)(y) }, (float)(size), 1.0f, col)
 static const int GRID_SIZE = 196;
 static const int MAX_UNITS = 80000; // up to 200kb worth of units
 static const int MAX_DECORATORS = 1000000;
@@ -14,6 +15,7 @@ static const float movement_speed_multiplier = 0.5f;
 static const float CAPTURE_RATE = 0.5f;
 
 Font uiFont;
+Font smallerFont;
 namespace tex {
     static Texture2D grass;
     static Texture2D grass2;
@@ -140,6 +142,42 @@ enum class MovementMode {
 #define TECHNOLOGY_HYPERMAGNET 8796093022208ULL // double industry cost and movement
 #define TECHNOLOGY_AIFARM      17592186044416ULL // labs give +9 industry instead
 #define TECHNOLOGY_TECHNOCRACY 35184372088832ULL // 1 utopia per 50 industry, lose half industry
+
+#define PREFERENCE_RAILGUN     0
+#define PREFERENCE_TANK        1
+#define PREFERENCE_FARM        2
+#define PREFERENCE_LAB         3
+#define PREFERENCE_WAREHOUSE   4
+#define PREFERENCE_SPACING     5
+#define PREFERENCE_EXPERIENCE  6
+#define PREFERENCE_HUMAN       7
+#define PREFERENCE_ANIMAL      8
+#define PREFERENCE_COUNT       9
+
+const char* preference_desc[PREFERENCE_COUNT] = {
+    "near railguns",
+    "near vehicle",
+    "near fields",
+    "near old tech",
+    "near warehouse",
+    "+camp spacing",
+    "+experience",
+    "+5 humans",
+    "near animals",
+};
+
+Texture* preference_icon[PREFERENCE_COUNT] = {
+    &tex::railgun,
+    &tex::tank,
+    &tex::field,
+    &tex::lab,
+    &tex::warehouse,
+    &tex::camp,
+    &tex::track,
+    &tex::human,
+    &tex::bison,
+};
+
 
 #define is_mecha(u) (u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::railgun)
 
@@ -402,7 +440,7 @@ int NOISE_SEED = 0;
     if (num_units < MAX_UNITS) \
         units[num_units++] = { \
             &tex::datacenter,   /* texture */ \
-            "Datacenter",       /* name */ \
+            "Databank",       /* name */ \
             0.0,          /* speed */ \
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
@@ -790,6 +828,9 @@ int main() {
     SetTextureFilter(uiFont.texture, TEXTURE_FILTER_BILINEAR);
     uiFont = LoadFontEx("data/Beholden-Regular.ttf", 96, nullptr, 0);
     SetTextureFilter(uiFont.texture, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(smallerFont.texture, TEXTURE_FILTER_BILINEAR);
+    smallerFont = LoadFontEx("data/Beholden-Regular.ttf", 32, nullptr, 0);
+    SetTextureFilter(smallerFont.texture, TEXTURE_FILTER_BILINEAR);
     tex::grass = LoadTexture("data/grass.png");
     tex::grass2 = LoadTexture("data/grass2.png");
     tex::grass3 = LoadTexture("data/grass3.png");
@@ -896,12 +937,25 @@ int main() {
         { BROWN,     "AI", 0 }
     };
     Faction* ANIMAL_FACTION = &factions[2];
+    int player_preferred_start[2] = {
+        PREFERENCE_RAILGUN,
+        PREFERENCE_RAILGUN
+    };
+    auto RevealUnitToAllFactions = [&](int unitIndex) {
+        for (int fi = 0; fi < max_factions; fi++) {
+            factions[fi].visible_knowledge.set(unitIndex);
+        }
+    };
 
     // main loop
     MAIN_MENU:
     const int baseY = GetScreenHeight()/2 - 600;
     const Rectangle btnStart = {GetScreenWidth()/2 - 300, baseY+720,600, 80};
     const Rectangle btnQuit = {GetScreenWidth()/2 - 300, baseY+820,600, 80};
+    Rectangle prefBox[2] = {
+        { GetScreenWidth()/2 - 300+30, baseY + 635, 300-40, 70 },
+        { GetScreenWidth()/2+10, baseY + 635, 300-40, 70 }
+    };
 
     while (true) {
         BeginDrawing();
@@ -917,7 +971,7 @@ int main() {
         DrawText("morn", GetScreenWidth()/2 +260, baseY+450, 64, WHITE);
         Vector2 mouse = GetMousePosition();
 
-        // --- Start button ---
+        // Start button
         bool hoverStart = CheckCollisionPointRec(mouse, btnStart);
         DrawRectangleRec(btnStart, hoverStart ? DARKGRAY : BLACK);
         DrawRectangleLinesEx(btnStart, 2, GRAY);
@@ -926,8 +980,29 @@ int main() {
                        Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height},
                        Rectangle{GetScreenWidth()/2+200, btnStart.y+5, 80, 80},
                        {0,0}, 0, WHITE);
+        // Preferences
+        for (int i=0; i<2; ++i) {
+            bool hover = CheckCollisionPointRec(mouse, prefBox[i]);
+            DrawRectangleRec(prefBox[i], hover ? Fade(YELLOW,0.22f) : Fade(YELLOW,0.12f));
+            DrawRectangleLinesEx(prefBox[i], 2, GRAY);
+            DrawTextSmall(i == 0 ? "Start perk" : "Start perk",prefBox[i].x + 20,prefBox[i].y + 6,28,GRAY);
+            int pref = player_preferred_start[i];
+            DrawTextSmall(preference_desc[pref], prefBox[i].x + 20, prefBox[i].y + 36, 26, WHITE);
 
-        // --- Quit button ---
+            float rot = 0;//GetTime() * 120.0f;
+            Rectangle src = {0, 0, (float)preference_icon[pref]->width, (float)preference_icon[pref]->height};
+            Rectangle dst = {prefBox[i].x + prefBox[i].width - 64,prefBox[i].y + 9, 48, 48};
+            Vector2 origin = { dst.width / 2.0f, dst.height / 2.0f };
+            dst.x += origin.x;
+            dst.y += origin.y;
+            DrawTexturePro(*preference_icon[pref], src, dst, origin, rot, WHITE);
+            if (hover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                player_preferred_start[i] =
+                (player_preferred_start[i] + 1) % PREFERENCE_COUNT;
+            }
+        }
+
+        // Quit button
         bool hoverQuit = CheckCollisionPointRec(mouse, btnQuit);
         DrawRectangleRec(btnQuit, hoverQuit ? Fade(RED, 0.85) : BLACK);
         DrawRectangleLinesEx(btnQuit, 2, DARKGRAY);
@@ -1248,18 +1323,46 @@ int main() {
         }
 
         // Spawn base
-        CREATE_CAMP(&factions[0], bx-0.3, by);
-        CREATE_CAMP(&factions[0], bx+0.3, by);
-        CREATE_RAILGUN(&factions[0], bx-3, by-3);
-        CREATE_RAILGUN(&factions[0], bx-3, by+3);
-        CREATE_RAILGUN(&factions[0], bx+3, by-3);
-        CREATE_RAILGUN(&factions[0], bx+3, by+3);
+        CREATE_CAMP(&factions[0], bx-(player_preferred_start[0]==PREFERENCE_SPACING?8.f:0.3f), by);
+        CREATE_CAMP(&factions[0], bx+(player_preferred_start[1]==PREFERENCE_SPACING?8.f:0.3f), by);
+        for(int p=0;p<2;++p) {
+            float px = p==0?(bx-3):(bx+3);
+            int pref = player_preferred_start[p];
+            if(pref==PREFERENCE_RAILGUN) {
+                CREATE_RAILGUN(&factions[1], px, by-3);
+                CREATE_RAILGUN(&factions[1], px, by+3);
+            }
+            else if(pref==PREFERENCE_FARM) {
+                CREATE_FIELD(&factions[1], px, by-0.7f);
+                CREATE_FIELD(&factions[1], px, by+0.7f);
+            }
+            else if(pref==PREFERENCE_ANIMAL) {
+                if(GetRandomValue(0,99)<50) {CREATE_BISON(&factions[2], px, by-4);}
+                else CREATE_WOLF(&factions[2], px, by-4);
+                if(GetRandomValue(0,99)<50) {CREATE_BISON(&factions[2], px, by+4);}
+                else CREATE_WOLF(&factions[2], px, by+4);
+            }
+            else if(pref==PREFERENCE_TANK) {
+                if(GetRandomValue(0,99)<50) {CREATE_TANK(&factions[1], px, by);}
+                else {CREATE_VAN(&factions[1], px, by);}
+            }
+            else if(pref==PREFERENCE_WAREHOUSE) {
+                CREATE_WAREHOUSE(&factions[1], px, by);
+                RevealUnitToAllFactions(num_units - 1);
+            }
+            else if(pref==PREFERENCE_LAB) {
+                if(GetRandomValue(0,99)<50) {CREATE_LAB(&factions[1], px, by);}
+                else CREATE_DATACENTER(&factions[1], px, by);
+            }
+        }
 
         // Spawn starting humans
-        for (int i = 0; i < 8; i++) {
+        for (int i=0; i<8+(player_preferred_start[0]==PREFERENCE_HUMAN?5:0)+(player_preferred_start[1]==PREFERENCE_HUMAN?5:0); i++) {
             float sx = bx + (GetRandomValue(-5000, 5000) * 0.0002f);
             float sy = by + (GetRandomValue(-5000, 5000) * 0.0002f);
             CREATE_HUMAN(&factions[0], sx, sy);
+            if(player_preferred_start[0]==PREFERENCE_EXPERIENCE) units[num_units-1].experience += 8.f;
+            if(player_preferred_start[1]==PREFERENCE_EXPERIENCE) units[num_units-1].experience += 8.f;
         }
 
         camera.target = {
@@ -1310,13 +1413,6 @@ int main() {
     int NUM_NEUTRAL_TANKS = GRID_SIZE*GRID_SIZE/512*2;
     int NUM_WILD_ANIMALS= GRID_SIZE*GRID_SIZE/512/8;
     float AVOID_BASE_RADIUS = 7.0f;
-
-    auto RevealUnitToAllFactions = [&](int unitIndex) {
-        for (int fi = 0; fi < max_factions; fi++) {
-            factions[fi].visible_knowledge.set(unitIndex);
-        }
-    };
-
 
     auto tooCloseToAnyCamp = [&](float x, float y) {return campExistsTooClose(x, y, AVOID_BASE_RADIUS);};
     int count_warehouses = 0;
@@ -1610,7 +1706,7 @@ int main() {
                             }
                         }
                     if(u.faction==factions && applied) {
-                        last_message = "Datacenter: released radiation that turned nearby blood to bloo.";
+                        last_message = "Databank: released radiation that turned nearby blood to bloo.";
                         last_message_counter = 0.f;
                     }
                 }
@@ -1623,7 +1719,7 @@ int main() {
                             applied = true;
                         }
                     if(u.faction==factions && applied) {
-                        last_message = "Datacenter: found healthcare products and healed your humans.";
+                        last_message = "Databank: found healthcare products and healed your humans.";
                         last_message_counter = 0.f;
                     }
                 }
@@ -1636,7 +1732,7 @@ int main() {
                             applied = true;
                         }
                     if(u.faction==factions && applied) {
-                        last_message = "Datacenter: found spare parts and fixed your mechas.";
+                        last_message = "Databank: found spare parts and fixed your mechas.";
                         last_message_counter = 0.f;
                     }
                 }
@@ -1646,7 +1742,7 @@ int main() {
                         u.faction->technology = u.faction->technology | candidate;
                         u.popup = "new tech";
                         if(u.faction==factions) {
-                            last_message = "Datacenter: recovered a tech";
+                            last_message = "Databank: recovered a tech";
                             last_message_counter = 0.f;
                         }
                     }
@@ -1686,8 +1782,8 @@ int main() {
                 factions[i].victory_points += factions[i].industry*0.01f;
                 //factions[i].industry *= 0.5f;
             }
-            game_time += dt*(factions[i].industry/300);
-            polution_speedup += factions[i].industry/300;
+            game_time += dt*(factions[i].industry/300.f);
+            polution_speedup += factions[i].industry/300.f;
         }
 
         // process units
@@ -2180,6 +2276,7 @@ int main() {
                                 u.name = veteran_name;
                                 u.damage *= 1.5;
                                 u.max_health += 5;
+                                u.health += 5;
                                 u.popup = "new veteran";
                             }
                             if(u.experience>=20 && u.name==veteran_name) {
@@ -2187,6 +2284,7 @@ int main() {
                                 u.name = hero_name;
                                 u.damage *= 1.5;
                                 u.max_health += 5;
+                                u.health += 5;
                                 u.popup = "new hero";
                             }
                             if(u.experience>50 && u.name==hero_name) {
