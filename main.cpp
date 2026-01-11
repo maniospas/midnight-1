@@ -284,12 +284,12 @@ int NOISE_SEED = 0;
             1.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            0.5,          /* size */ \
+            0.7,          /* size */ \
             20.0,         /* health */ \
             20.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),    /* faction */ \
-            0.2           /* extra scale*/\
+            0.3           /* extra scale*/\
         };
 
 
@@ -631,7 +631,7 @@ static bool DrawTechNode(
     DrawRectangleRoundedLines(rect, 0.2f, 6, edge);
 
     DrawText(title, x + 12, y + 6, W/10, WHITE);
-    DrawText(desc,  x + 12, y + W/8, W/18, Fade(WHITE, 0.85f));
+    DrawTextSmall(desc,  x + 12, y + W/8, (H-W/10)/1.7f, Fade(WHITE, 0.85f));
 
     // --- hover hint ---
     // if (hovered && !owned) {
@@ -1000,7 +1000,7 @@ int main() {
                 bool hover = CheckCollisionPointRec(mouse, prefBox[i]);
                 DrawRectangleRec(prefBox[i], hover ? Fade(YELLOW,0.22f) : Fade(YELLOW,0.12f));
                 DrawRectangleLinesEx(prefBox[i], 2, GRAY);
-                DrawTextSmall(i == 0 ? "Start perk" : "Start perk",prefBox[i].x + 20,prefBox[i].y + 6,28,GRAY);
+                DrawTextSmall(i == 0 ? "Start perk A" : "Start perk B",prefBox[i].x + 20,prefBox[i].y + 6,28,GRAY);
                 int pref = player_preferred_start[i];
                 DrawTextSmall(preference_desc[pref], prefBox[i].x + 20, prefBox[i].y + 36, 26, WHITE);
 
@@ -2077,15 +2077,16 @@ int main() {
                         if (in_range && o.capturing) {
                             if(u.faction && !u.faction->visible_knowledge[j] && (u.faction->technology & TECHNOLOGY_WONDER)) {
                                 u.faction->technology_progress += 0.02f;
-                                if(u.faction==factions) {
-                                    last_message_counter = 0.f;
-                                    last_message = "Wonder: bonus research from new discovery";
-                                }
+                                // if(u.faction==factions) {
+                                //     last_message_counter = 0.f;
+                                //     last_message = "Wonder: research from new discovery";
+                                // }
                             }
                             u.faction->visible_knowledge.set(j);
                         }
                         if (o.faction == u.faction) continue;
-                        if (in_range && d2 < bestDist) {
+                        if (in_range && d2 < bestDist &&  (!best || best->capturing)) {
+                            // we re going to try to capture only if there's no enemy
                             bestDist = d2;
                             best = &o;
                         }
@@ -2113,6 +2114,7 @@ int main() {
                 if (fabs(diff) > AIM_THRESHOLD) {
                     float rot = TURN_RATE * dt * (u_speed?u_speed:1.f);
                     if(u.texture==&tex::human) rot *= 3.f; // humans turn very fast
+                    if(is_mecha(u) && (u.faction->technology&TECHNOLOGY_DRIVER)) rot *= 2.f;
                     if(u.faction && (u.faction->technology&TECHNOLOGY_SPEEDY)) rot *= 3.f; // even faster turning for speedy
                     if (diff > 0) {
                         u.angle += rot;
@@ -2168,6 +2170,7 @@ int main() {
             if (fabs(diff) > AIM_THRESHOLD) {
                 float rot = TURN_RATE * dt * u_speed * 2;
                 if(u.texture==&tex::human) rot *= 3.f; // humans turn very fast
+                if(is_mecha(u) && (u.faction->technology&TECHNOLOGY_DRIVER)) rot *= 2.f;
                 if(u.faction && (u.faction->technology&TECHNOLOGY_SPEEDY)) rot *= 3.f; // even faster turning for speedy
                 if (diff > 0) {
                     u.angle += rot;
@@ -2291,7 +2294,10 @@ int main() {
                             if(o.capturing && o.faction == u.faction) o.health += 1;
                             else if(o.capturing && o.capturing==factions+1) o.health -= CAPTURE_RATE*u_damage;
                             else if(o.capturing) o.health -= CAPTURE_RATE*u_damage*0.5f;
-                            else  o.health -= u_damage;
+                            else {
+                                if(is_mecha(o)) u_damage *= 0.33f;
+                                o.health -= u_damage;
+                            }
                         }
                         else if(u_damage>=o.health && o.faction && (o.faction->technology & TECHNOLOGY_GRIT)) {o.popup = "grit";}
                         else if(o.name==hero_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {o.popup = "heroics";}
@@ -3512,7 +3518,7 @@ int main() {
             DrawTextureEx(tex::research, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
 
 
-            DrawTechNode(taming.x, taming.y, "TAMER", "-50\% research, 50\% tame animals", tech, TECHNOLOGY_TAMING);
+            DrawTechNode(taming.x, taming.y, "TAMER", "-50\% research, 50\% taming", tech, TECHNOLOGY_TAMING);
             DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
 
 
@@ -3538,7 +3544,7 @@ int main() {
                 DrawTextureEx(tex::gear, {farming.x + ICON_DX, farming.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_DRIVER)) {
-                DrawTechNode(driver.x, driver.y, "DRIVER", "Mechas are never slowed", tech, TECHNOLOGY_DRIVER);
+                DrawTechNode(driver.x, driver.y, "DRIVER", "Mechas not slowed and turn fast", tech, TECHNOLOGY_DRIVER);
                 DrawTextureEx(tex::tank, {driver.x + ICON_DX, driver.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_FIGHT)) {
