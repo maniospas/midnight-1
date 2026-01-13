@@ -1291,7 +1291,7 @@ int main() {
             if (f > 0.62f && num_decorators<MAX_DECORATORS-1) {
                 float ox = ((float)GetRandomValue(-5000, 5000) / 5000.0f) * 0.25f;  // ±0.25 tile
                 float oy = ((float)GetRandomValue(-5000, 5000) / 5000.0f) * 0.25f;  // ±0.25 tile
-                decorators[num_decorators++] = {&tex::tree,(float)x+ox,(float)y+oy,1.0f};
+                decorators[num_decorators++] = {&tex::tree,(float)x+ox-0.5f,(float)y+oy-0.5f,1.0f};
                 T.extra_sight -= 0.7f;
                 if(T.extra_sight<-0.7f) T.extra_sight = -0.7f;
                 T.speed = 0.4f;
@@ -1513,11 +1513,18 @@ int main() {
         if (tooCloseToAnyCamp(x, y)) continue;
         Terrain &T = terrainGrid[(int)y][(int)x];
         bool isDesert = (T.texture == &tex::desert);
+        if(T.texture==&tex::water) continue;
         if (T.texture == &tex::mountain || T.texture == &tex::hill
             || T.texture == &tex::hill2 || T.texture == &tex::hill3 || T.texture == &tex::hill4)
             {CREATE_RAILGUN(&factions[1], x, y);continue;}
-        if (!isDesert && GetRandomValue(0, 99) < 50) continue;
-        {CREATE_TANK(&factions[1], x, y);}
+        if (!isDesert && GetRandomValue(0, 99) < 50) continue; // more tanks in the desert - very few elsewhere
+        if (GetRandomValue(0, 99) < 70) continue; // too many mechas saturate the early game, so make them rarer without droping firepire by clustering
+        {
+            //cluster some tanks - the player should feel lucky to find something like this
+            CREATE_TANK(&factions[1], x-0.3f, y-0.3f);
+            CREATE_TANK(&factions[1], x+0.3f, y-0.3f);
+            CREATE_TANK(&factions[1], x, y+0.3f);
+        }
     }
 
     for (int i = 0; i < NUM_WILD_ANIMALS; i++) {
@@ -1790,6 +1797,7 @@ int main() {
                 if(u.texture==&tex::field) u.faction->industry += 4.f;
                 if(u.texture==&tex::field_little) u.faction->industry += 2.f;
                 if(u.texture==&tex::hide) u.faction->industry += 4.f;
+                if(u.texture==&tex::mine) u.faction->industry += 12.f;
                 if(u.texture==&tex::hide && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 4.f;
                 continue;
             }
