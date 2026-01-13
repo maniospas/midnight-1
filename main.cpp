@@ -540,7 +540,7 @@ int NOISE_SEED = 0;
     if (num_units < MAX_UNITS) \
         units[num_units++] = { \
             &tex::oil,   /* texture */ \
-            "Black gold",       /* name */ \
+            "Oil",       /* name */ \
             0.0,          /* speed */ \
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
@@ -1518,7 +1518,7 @@ int main() {
             || T.texture == &tex::hill2 || T.texture == &tex::hill3 || T.texture == &tex::hill4)
             {CREATE_RAILGUN(&factions[1], x, y);continue;}
         if (!isDesert && GetRandomValue(0, 99) < 50) continue; // more tanks in the desert - very few elsewhere
-        if (GetRandomValue(0, 99) < 70) continue; // too many mechas saturate the early game, so make them rarer without droping firepire by clustering
+        if (GetRandomValue(0, 99) < 85) continue; // too many mechas saturate the early game, so make them rarer without droping firepire by clustering
         {
             //cluster some tanks - the player should feel lucky to find something like this
             CREATE_TANK(&factions[1], x-0.3f, y-0.3f);
@@ -1845,6 +1845,7 @@ int main() {
                 if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.005f * dt) {
                     num_units--;
                     u = units[num_units];
+                    i--;
                     continue;
                 }
                 else if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.005f * dt) {
@@ -1879,7 +1880,12 @@ int main() {
                 if(!u.speed || !u.faction) {
                     u.health = u.max_health;
                 }
-                if(u.texture==&tex::bison){// || u.texture==&tex::wolf) {
+                else if(terrainGrid[(int)u.y][(int)u.x].texture==&tex::water){
+                    num_units--;
+                    u = units[num_units];
+                    i--;
+                }
+                else if(u.texture==&tex::bison){// || u.texture==&tex::wolf) {
                     terrainGrid[(int)u.y][(int)u.x].speed /= 2; // terrain becomes uneven
                     u = { \
                         &tex::hide,  /* texture */
@@ -1922,7 +1928,7 @@ int main() {
                     num_units--;
                     u = units[num_units];
                 }
-                else// if(terrainGrid[(int)u.y][(int)u.x].texture!=&tex::water)
+                else
                     u = { \
                         &tex::blood,  /* texture */
                         "Blood",      /* name */
@@ -2462,7 +2468,7 @@ int main() {
                                     last_message_counter = 0.f;
                                 }
                                 else if(o.texture==&tex::oil) {
-                                    last_message = "Important loss: Black Gold";
+                                    last_message = "Important loss: Oil";
                                     last_message_counter = 0.f;
                                 }
                                 else if(o.texture==&tex::warehouse) {
@@ -2476,7 +2482,7 @@ int main() {
                                     last_message_counter = 0.f;
                                 }
                                 else if(o.texture==&tex::oil) {
-                                    last_message = "Nice capture: Black Gold";
+                                    last_message = "Nice capture: Oil";
                                     last_message_counter = 0.f;
                                 }
                                 else if(o.texture==&tex::warehouse) {
@@ -3615,28 +3621,28 @@ int main() {
             DrawConnector(sniffing.x+actual_cell_width, sniffing.y+actual_cell_height, conquer.x, conquer.y+actual_cell_height, tech & TECHNOLOGY_SNIFFING);
 
 
-            DrawTechNode(explore.x, explore.y, "CHARTED", "Sight from camps and storages", tech, TECHNOLOGY_EXPLORE);
+            DrawTechNode(explore.x, explore.y, "CHARTED", "Wide camp & storage sight", tech, TECHNOLOGY_EXPLORE);
             DrawTextureEx(tex::track, {explore.x + ICON_DX, explore.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
 
 
-            DrawTechNode(hunting.x, hunting.y, "HUNTING", "+4 industry from camps and hides", tech, TECHNOLOGY_HUNTING);
+            DrawTechNode(hunting.x, hunting.y, "HUNTING", "+4 camp & hide industry", tech, TECHNOLOGY_HUNTING);
             DrawTextureEx(tex::gear, {hunting.x + ICON_DX, hunting.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
 
-            DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "+33\% research, -1 spawn HP", tech, TECHNOLOGY_NERDS);
+            DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "More research, -1 spawn HP", tech, TECHNOLOGY_NERDS);
             DrawTextureEx(tex::research, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
 
 
-            DrawTechNode(taming.x, taming.y, "TAMER", "-50\% research, 50\% taming", tech, TECHNOLOGY_TAMING);
+            DrawTechNode(taming.x, taming.y, "TAMER", "Bad research, tame animals", tech, TECHNOLOGY_TAMING);
             DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
 
 
             // account for datacenters autonomously adding techs without predecesoors
             if(prev_tech & (TECHNOLOGY_BIOWEAPON | TECHNOLOGY_GRIT | TECHNOLOGY_EVOLUTION)) {
-                DrawTechNode(evolution.x, evolution.y, "EVOLUTION", "10\% of spawn are snowmen", tech, TECHNOLOGY_EVOLUTION);
+                DrawTechNode(evolution.x, evolution.y, "EVOLUTION", "Some spawn are snowmen", tech, TECHNOLOGY_EVOLUTION);
                 DrawTextureEx(tex::snowman, {evolution.x + ICON_DX, evolution.y + ICON_DY}, 0, ICON_SIZE / tex::snowman.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_TRACK)) {
-                DrawTechNode(track.x, track.y, "TRACKER", "Incrased sight", tech, TECHNOLOGY_TRACK);
+                DrawTechNode(track.x, track.y, "TRACKER", "Wider unit sight", tech, TECHNOLOGY_TRACK);
                 DrawTextureEx(tex::track, {track.x + ICON_DX, track.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_TAMING | TECHNOLOGY_WONDER)) {
@@ -3648,11 +3654,11 @@ int main() {
                 DrawTextureEx(tex::track, {agile.x + ICON_DX, agile.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_FARMING)) {
-                DrawTechNode(farming.x, farming.y, "FARMING", "Fields stay mostly in bloom", tech, TECHNOLOGY_FARMING);
+                DrawTechNode(farming.x, farming.y, "FARMING", "Fields stay long in bloom", tech, TECHNOLOGY_FARMING);
                 DrawTextureEx(tex::gear, {farming.x + ICON_DX, farming.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_DRIVER)) {
-                DrawTechNode(driver.x, driver.y, "DRIVER", "Mechas not slowed and turn fast", tech, TECHNOLOGY_DRIVER);
+                DrawTechNode(driver.x, driver.y, "DRIVER", "Mechas often faster", tech, TECHNOLOGY_DRIVER);
                 DrawTextureEx(tex::tank, {driver.x + ICON_DX, driver.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_FIGHT)) {
@@ -3660,7 +3666,7 @@ int main() {
                 DrawTextureEx(tex::blood, {fight.x + ICON_DX, fight.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_RESEARCH)) {
-                DrawTechNode(research.x, research.y, "RESEARCH", "+33\% research", tech, TECHNOLOGY_RESEARCH);
+                DrawTechNode(research.x, research.y, "RESEARCH", "More research", tech, TECHNOLOGY_RESEARCH);
                 DrawTextureEx(tex::research, {research.x + ICON_DX, research.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_HOMUNCULI)) {
@@ -3668,7 +3674,7 @@ int main() {
                 DrawTextureEx(tex::ghost, {homunculi.x + ICON_DX, homunculi.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_MECHA)) {
-                DrawTechNode(mecha.x, mecha.y, "MECHA", "50\% mecha dodge", tech, TECHNOLOGY_MECHA);
+                DrawTechNode(mecha.x, mecha.y, "MECHA", "Mecha dodge often", tech, TECHNOLOGY_MECHA);
                 DrawTextureEx(tex::tank, {mecha.x + ICON_DX, mecha.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_MECHA | TECHNOLOGY_AUTOREPAIRS)) {
@@ -3676,11 +3682,11 @@ int main() {
                 DrawTextureEx(tex::tank, {autorepair.x + ICON_DX, autorepair.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TAMING | TECHNOLOGY_HEROICS)) {
-                DrawTechNode(heroics.x, heroics.y, "HEROICS", "+30\% dodge to veterans and heroes", tech, TECHNOLOGY_HEROICS);
+                DrawTechNode(heroics.x, heroics.y, "HEROICS", "Vet/s and heroes may dodge", tech, TECHNOLOGY_HEROICS);
                 DrawTextureEx(tex::blood, {heroics.x + ICON_DX, heroics.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_GRIT)) {
-                DrawTechNode(grit.x, grit.y, "GRIT", "+50\% dodge vs lethal", tech, TECHNOLOGY_GRIT);
+                DrawTechNode(grit.x, grit.y, "GRIT", "Often dodge vs lethal", tech, TECHNOLOGY_GRIT);
                 DrawTextureEx(tex::blood, {grit.x + ICON_DX, grit.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TOUGH)) {
@@ -3700,7 +3706,7 @@ int main() {
                 DrawTextureEx(tex::track, {seafaring.x + ICON_DX, seafaring.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_FARMING | TECHNOLOGY_RESEARCH | TECHNOLOGY_INFRASTRUCTURE)) {
-                DrawTechNode(infrastructure.x, infrastructure.y, "MEDIA", "Increased radio sight", tech, TECHNOLOGY_INFRASTRUCTURE);
+                DrawTechNode(infrastructure.x, infrastructure.y, "MEDIA", "Wide radio sight", tech, TECHNOLOGY_INFRASTRUCTURE);
                 DrawTextureEx(tex::track, {infrastructure.x + ICON_DX, infrastructure.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_SEAFARERING | TECHNOLOGY_INFRASTRUCTURE | TECHNOLOGY_OWNERSHIP)) {
@@ -3712,7 +3718,7 @@ int main() {
                 DrawTextureEx(tex::ghost, {unstable.x + ICON_DX, unstable.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_INFRASTRUCTURE | TECHNOLOGY_AIFARM)) {
-                DrawTechNode(aifarm.x, aifarm.y, "AI FARM", "+ 16 industry from labs", tech, TECHNOLOGY_AIFARM);
+                DrawTechNode(aifarm.x, aifarm.y, "AI FARM", "+16 industry from labs", tech, TECHNOLOGY_AIFARM);
                 DrawTextureEx(tex::gear, {aifarm.x + ICON_DX, aifarm.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AIFARM | TECHNOLOGY_MECHANISED | TECHNOLOGY_TECHNOCRACY)) {
@@ -3724,7 +3730,7 @@ int main() {
                 DrawTextureEx(tex::tank, {industry.x + ICON_DX, industry.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_UNSTABLE | TECHNOLOGY_BIOWEAPON)) {
-                DrawTechNode(bioweapon.x, bioweapon.y, "BIOWEAPON", "Your kills become bloo", tech, TECHNOLOGY_BIOWEAPON);
+                DrawTechNode(bioweapon.x, bioweapon.y, "BIOWEAPON", "Kills become bloo", tech, TECHNOLOGY_BIOWEAPON);
                 DrawTextureEx(tex::ghost, {bioweapon.x + ICON_DX, bioweapon.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_TRACK | TECHNOLOGY_SNIPING)) {
@@ -3732,7 +3738,7 @@ int main() {
                 DrawTextureEx(tex::blood, {sniping.x + ICON_DX, sniping.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_TRACK | TECHNOLOGY_SNIFFING)) {
-                DrawTechNode(sniffing.x, sniffing.y, "BOTNET", "Autonomous non-selected units", tech, TECHNOLOGY_SNIFFING);
+                DrawTechNode(sniffing.x, sniffing.y, "BOTNET", "Autonomous units", tech, TECHNOLOGY_SNIFFING);
                 DrawTextureEx(tex::track, {sniffing.x + ICON_DX, sniffing.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_SNIFFING | TECHNOLOGY_CONQUER)) {
@@ -3744,20 +3750,20 @@ int main() {
                 DrawTextureEx(tex::blood, {nuclear.x + ICON_DX, nuclear.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_MOBILE_FORTRESS)) {
-                DrawTechNode(mobile.x, mobile.y, "MOBILE FORT", "Railguns eventually become tanks", tech, TECHNOLOGY_MOBILE_FORTRESS);
+                DrawTechNode(mobile.x, mobile.y, "MOBILE FORT", "Railguns may become tanks", tech, TECHNOLOGY_MOBILE_FORTRESS);
                 DrawTextureEx(tex::tank, {mobile.x + ICON_DX, mobile.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_WONDER | TECHNOLOGY_LUXURY)) {
-                DrawTechNode(luxury.x, luxury.y, "PRISTINE", "+50\% dodge vs animal and bloo", tech, TECHNOLOGY_LUXURY);
+                DrawTechNode(luxury.x, luxury.y, "PRISTINE", "Often dodge animal and bloo", tech, TECHNOLOGY_LUXURY);
                 DrawTextureEx(tex::research, {luxury.x + ICON_DX, luxury.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_GIGAJOULE | TECHNOLOGY_TERRAFORIMING)) {
                 DrawTechNode(terraforming.x, terraforming.y, "TERRAFORMING", "Captures become fields", tech, TECHNOLOGY_TERRAFORIMING);
                 DrawTextureEx(tex::field, {terraforming.x + ICON_DX, terraforming.y + ICON_DY}, 0, ICON_SIZE / tex::field.width, WHITE);
             }
-            if(prev_tech & TECHNOLOGY_TERRAFORIMING) DrawTechNode(atmosphere.x, atmosphere.y, "ATMOSPHERE v2.0", "Fields delay polution by 8\%", tech, TECHNOLOGY_ATMOSPHERE);
+            if(prev_tech & TECHNOLOGY_TERRAFORIMING) DrawTechNode(atmosphere.x, atmosphere.y, "ATMOSPHERE v2.0", "Fields delay polution", tech, TECHNOLOGY_ATMOSPHERE);
             if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_GIGAJOULE | TECHNOLOGY_REFINERY)) {
-                DrawTechNode(refinery.x, refinery.y, "REFINERY", "+25 industry per oil", tech, TECHNOLOGY_REFINERY);
+                DrawTechNode(refinery.x, refinery.y, "REFINERY", "+25 industry from oil", tech, TECHNOLOGY_REFINERY);
                 DrawTextureEx(tex::gear, {refinery.x + ICON_DX, refinery.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_HEROICS | TECHNOLOGY_PROPAGANDA)) {
@@ -3773,7 +3779,7 @@ int main() {
                 DrawTextureEx(tex::gear, {gigajoule.x + ICON_DX, gigajoule.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_GIGAJOULE | TECHNOLOGY_MECHANISED)) {
-                DrawTechNode(mechanised.x, mechanised.y, "MECHANIZATION", "+1 industry per 5 mecha health", tech, TECHNOLOGY_MECHANISED);
+                DrawTechNode(mechanised.x, mechanised.y, "MECHANIZATION", "+1 industry per 5 mecha HP", tech, TECHNOLOGY_MECHANISED);
                 DrawTextureEx(tex::gear, {mechanised.x + ICON_DX, mechanised.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_NUCLEAR | TECHNOLOGY_REACTOR)) {
@@ -3781,15 +3787,15 @@ int main() {
                 DrawTextureEx(tex::gear, {reactor.x + ICON_DX, reactor.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_REACTOR | TECHNOLOGY_HYPERMAGNET)) {
-                DrawTechNode(hypermagnet.x, hypermagnet.y, "HYPERMAGNET", "x2 industry cost and movement", tech, TECHNOLOGY_HYPERMAGNET);
+                DrawTechNode(hypermagnet.x, hypermagnet.y, "HYPERMAGNET", "x2 industry cost and speed", tech, TECHNOLOGY_HYPERMAGNET);
                 DrawTextureEx(tex::track, {hypermagnet.x + ICON_DX, hypermagnet.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_BIOWEAPON | TECHNOLOGY_ARTIFICIAL)) {
-                DrawTechNode(artificial.x, artificial.y, "HIVEMIND", "x5 bloo experience", tech, TECHNOLOGY_ARTIFICIAL);
+                DrawTechNode(artificial.x, artificial.y, "HIVEMIND", "Fast bloo experience", tech, TECHNOLOGY_ARTIFICIAL);
                 DrawTextureEx(tex::ghost, {artificial.x + ICON_DX, artificial.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_HIJACK)) {
-                DrawTechNode(hijack.x, hijack.y, "HIJACK", "50\% destroyed mecha capture", tech, TECHNOLOGY_HIJACK);
+                DrawTechNode(hijack.x, hijack.y, "HIJACK", "Often capture mechas", tech, TECHNOLOGY_HIJACK);
                 DrawTextureEx(tex::tank, {hijack.x + ICON_DX, hijack.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
 
