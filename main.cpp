@@ -1880,7 +1880,7 @@ int main() {
                 if(!u.speed || !u.faction) {
                     u.health = u.max_health;
                 }
-                else if(terrainGrid[(int)u.y][(int)u.x].texture==&tex::water){
+                if(terrainGrid[(int)u.y][(int)u.x].texture==&tex::water){
                     num_units--;
                     u = units[num_units];
                     i--;
