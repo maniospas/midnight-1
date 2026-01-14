@@ -1112,7 +1112,7 @@ int main() {
         int rank_index = 0;
         double rank_progress = 0;
         {
-            double K = (game_time < GAME_DURATION || victory)?32.0:16.0; // if we lose but ran until the end, we get smaller penalty
+            double K = (game_time < GAME_DURATION || victory)?48.0:24.0; // if we lose but ran until the end, we get smaller penalty
             double E = 1.0 / (1.0 + std::pow(10.0, (AI_ELO - player_rating) / 400.0));
             if(victory) player_rating += K * (1.0 - E);
             else player_rating -= K * E;
