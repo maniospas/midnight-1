@@ -14,6 +14,7 @@ static const float CAMERA_ZOOM = 0.8f;
 static const float movement_speed_multiplier = 0.5f;
 static const float CAPTURE_RATE = 0.5f;
 
+
 Font uiFont;
 Font smallerFont;
 namespace tex {
@@ -79,6 +80,22 @@ namespace tex {
     static Texture2D research;
     static Texture2D rat;
 }
+
+
+struct RankDef {
+    const char* name;
+    double min;
+    double max;
+    Texture2D* tex;
+    Color color;
+};
+
+RankDef ranks[] = {
+    {"STRUGGLER",  1200, 1400, &tex::gear, BROWN},
+    {"SURVIVOR",   1400, 1600, &tex::gear, ORANGE},
+    {"LEADER",     1600, 1800, &tex::gear, YELLOW},
+    {"UTOPIC",     1800, 2200, &tex::utopia, WHITE}
+};
 
 static void DrawTechProgressBar(
     float x, float y,
@@ -814,11 +831,15 @@ const int GAME_H = 1600;
 
 int main() {
     PrefMask unlocked_preferences = 0;
+    const double AI_ELO = 1500;
+    double player_rating = 1200;
     {
         FILE* f = fopen("midnight-save.dat", "rb");
         if(f) {
             if(fread(&unlocked_preferences, sizeof(unlocked_preferences), 1, f)!=1)
                 unlocked_preferences = 0;
+            if(fread(&player_rating, sizeof(player_rating), 1, f)!=1)
+                player_rating = 0;
             fclose(f);
         }
     }
@@ -957,11 +978,11 @@ int main() {
     // main loop
     MAIN_MENU:
     const float baseY = (float)GetScreenHeight()/2 - 600;
-    const Rectangle btnStart = {(float)GetScreenWidth()/2 - 300, baseY+720,600, 80};
-    const Rectangle btnQuit = {(float)GetScreenWidth()/2 - 300, baseY+820,600, 80};
+    const Rectangle btnStart = {(float)GetScreenWidth()/2 - 400, baseY+720,900, 80};
+    const Rectangle btnQuit = {(float)GetScreenWidth()/2 - 400, baseY+820,900, 80};
     Rectangle prefBox[2] = {
-        { (float)GetScreenWidth()/2 - 300+30, baseY + 635, 300-40, 70 },
-        { (float)GetScreenWidth()/2+10, baseY + 635, 300-40, 70 }
+        { (float)GetScreenWidth()/2+480-440-10, baseY + 720-60-10, 220, 60 },
+        { (float)GetScreenWidth()/2+480-220, baseY + 720-60-10, 220, 60 }
     };
 
     while (true) {
@@ -983,23 +1004,23 @@ int main() {
         DrawRectangleRec(btnStart, hoverStart ? DARKGRAY : BLACK);
         DrawRectangleLinesEx(btnStart, 2, GRAY);
         DrawText("New expedition", btnStart.x + 30, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
-        DrawTexturePro(tex::utopia,
-                       Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height},
-                       Rectangle{(float)GetScreenWidth()/2+200, btnStart.y+5, 80, 80},
-                       {0,0}, 0, WHITE);
-        // Preferences
+        // DrawTexturePro(tex::utopia,
+        //                Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height},
+        //                Rectangle{(float)GetScreenWidth()/2+200, btnStart.y+5, 80, 80},
+        //                {0,0}, 0, WHITE);
+        // preferences
         if(unlocked_preferences)
             for (int i=0; i<2; ++i) {
                 bool hover = CheckCollisionPointRec(mouse, prefBox[i]);
-                DrawRectangleRec(prefBox[i], hover ? Fade(YELLOW,0.22f) : Fade(YELLOW,0.12f));
-                DrawRectangleLinesEx(prefBox[i], 2, GRAY);
-                DrawTextSmall(i == 0 ? "Start perk A" : "Start perk B",prefBox[i].x + 20,prefBox[i].y + 6,28,GRAY);
+                DrawRectangleRec(prefBox[i], hover ? Fade(YELLOW,0.12f) : BLACK);
+                DrawRectangleLinesEx(prefBox[i], 2, hover?GRAY:BLACK);
+                DrawTextSmall(i == 0 ? "Start perk A" : "Start perk B",prefBox[i].x + 10,prefBox[i].y + 6,26,GRAY);
                 int pref = player_preferred_start[i];
-                DrawTextSmall(preference_desc[pref], prefBox[i].x + 20, prefBox[i].y + 36, 26, WHITE);
+                DrawTextSmall(preference_desc[pref], prefBox[i].x + 10, prefBox[i].y + 28, 26, GRAY);
 
                 float rot = 0;//GetTime() * 120.0f;
                 Rectangle src = {0, 0, (float)preference_icon[pref]->width, (float)preference_icon[pref]->height};
-                Rectangle dst = {prefBox[i].x + prefBox[i].width - 64,prefBox[i].y + 9, 48, 48};
+                Rectangle dst = {prefBox[i].x + prefBox[i].width - 48,prefBox[i].y + 9, 42, 42};
                 Vector2 origin = { dst.width / 2.0f, dst.height / 2.0f };
                 dst.x += origin.x;
                 dst.y += origin.y;
@@ -1013,7 +1034,38 @@ int main() {
                 }
             }
 
-        // Quit button
+        // rank
+        {
+            int rank_index = 0;
+            double rank_progress = 0;
+            if(player_rating<1200) player_rating = 1200;
+            if(player_rating>2200) player_rating = 2200;
+            for (int i=0;i<4;i++)
+                if (rank_index>=ranks[i].min && player_rating<ranks[i].max) {
+                    rank_index = i;
+                    break;
+                }
+            rank_progress = (player_rating - ranks[rank_index].min) / (ranks[rank_index].max - ranks[rank_index].min);
+            if (rank_progress < 0) rank_progress = 0;
+            if (rank_progress > 1) rank_progress = 1;
+
+            float size = 64.f;
+            float radius = size*0.55f;
+            float end_angle = (float)(rank_progress * 360.0) - 90;
+            float cx = GetScreenWidth() * 0.5f - 400 + 32;
+            float cy = prefBox[0].y+28;
+            DrawRing({cx, cy}, radius - 8, radius, -90, end_angle, 64, ranks[rank_index].color);
+            DrawRing({cx, cy}, radius - 8, radius, end_angle, 360-90, 64, Fade(ranks[rank_index].color, 0.4f));
+            DrawTexturePro(
+                *ranks[rank_index].tex,
+                {0,0,(float)ranks[rank_index].tex->width,(float)ranks[rank_index].tex->height},
+                           {cx - size/2, cy - size/2, size, size},
+                           {0,0}, 0, ranks[rank_index].color
+            );
+            DrawText(ranks[rank_index].name, cx+40, cy-22, 48, ranks[rank_index].color);
+        }
+
+        // quit button
         bool hoverQuit = CheckCollisionPointRec(mouse, btnQuit);
         DrawRectangleRec(btnQuit, hoverQuit ? Fade(RED, 0.85) : BLACK);
         DrawRectangleLinesEx(btnQuit, 2, DARKGRAY);
@@ -1052,17 +1104,34 @@ int main() {
         if (player_techs & TECHNOLOGY_AIFARM) badTechNames[badTechCount++] = "AI FARMS";
         int unlocking_perk = 0; // zero = railgun = always unlocked = used to signify that we unlocked nothing
         if(victory && !badTechCount) {
-            for(int repeat=0;repeat<3;repeat++) {
-                unlocking_perk = GetRandomValue(1, PREFERENCE_COUNT - 1);
-                if (unlocked_preferences & (1ULL << unlocking_perk)) unlocking_perk = 0;
-                else unlocked_preferences |= (1ULL << unlocking_perk);
-                if(unlocking_perk) break;
-            }
+            unlocking_perk = GetRandomValue(1, PREFERENCE_COUNT - 1);
+            if (unlocked_preferences & (1ULL << unlocking_perk)) unlocking_perk = 0;
+            else unlocked_preferences |= (1ULL << unlocking_perk);
+        }
+
+        int rank_index = 0;
+        double rank_progress = 0;
+        {
+            double K = (game_time < GAME_DURATION || victory)?32.0:16.0; // if we lose but ran until the end, we get smaller penalty
+            double E = 1.0 / (1.0 + std::pow(10.0, (AI_ELO - player_rating) / 400.0));
+            if(victory) player_rating += K * (1.0 - E);
+            else player_rating -= K * E;
+            if(player_rating<1200) player_rating = 1200;
+            if(player_rating>2200) player_rating = 2200;
+            for (int i=0;i<4;i++)
+                if (rank_index>=ranks[i].min && player_rating<ranks[i].max) {
+                    rank_index = i;
+                    break;
+                }
+            rank_progress = (player_rating - ranks[rank_index].min) / (ranks[rank_index].max - ranks[rank_index].min);
+            if (rank_progress < 0) rank_progress = 0;
+            if (rank_progress > 1) rank_progress = 1;
         }
         {
             FILE* f = fopen("midnight-save.dat", "wb");
             if(f) {
                 fwrite(&unlocked_preferences, sizeof(unlocked_preferences), 1, f);
+                fwrite(&player_rating, sizeof(player_rating), 1, f);
                 fclose(f);
             }
         }
@@ -1113,17 +1182,14 @@ int main() {
                     {0,0}, 0, WHITE);
                 DrawText("ELIMINATED", (float)GetScreenWidth()/2 - MeasureText("ELIMINATED", 96)/2+50, baseY+420, 96, RED);
             }
+
             // --- Score ---
             char score[128];
             snprintf(score, sizeof(score), "Your utopia: %d   |   Best AI: %d", player_points, best_ai_points);
             if (game_time >= GAME_DURATION) DrawText(score, GetScreenWidth()/2 - MeasureText(score, 42)/2+40, baseY+540, 42, WHITE);
 
             // --- Ethical tech disclosure ---
-            if(unlocking_perk) {
-                DrawTextSmall("You avoided iffy techs! New start perk awarded.",GetScreenWidth()/2 - MeasureText("You avoided iffy techs! New start perk awarded.", 28)/2+60,baseY+610,28,Fade(GREEN, 0.8f));
-                //DrawTextSmall(preference_desc[unlocking_perk],GetScreenWidth()/2 - MeasureText(preference_desc[unlocking_perk], 28)/2+50,baseY+650,28,Fade(GREEN, 0.8f));
-            }
-            else if (badTechCount) {
+            if (badTechCount) {
                 DrawTextSmall("Was it really worth it?",GetScreenWidth()/2 - MeasureText("Was it really worth it?", 28)/2,baseY+610,28,ORANGE);
                 for (int i = 0; i < badTechCount; i++)
                     DrawTextSmall(TextFormat("- %s", badTechNames[i]),GetScreenWidth()/2 - 260,baseY+650 + i * 28,24,DARKGRAY);
@@ -1134,7 +1200,59 @@ int main() {
             bool hoverOk = CheckCollisionPointRec(mouse, btnOk);
             DrawRectangleRec(btnOk, hoverOk ? DARKGRAY : BLACK);
             DrawRectangleLinesEx(btnOk, 2, GRAY);
-            DrawText("OK", btnOk.x + btnOk.width/2 - MeasureText("OK", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
+            DrawText("NEW RANK", btnOk.x + btnOk.width/2 - MeasureText("NEW RANK", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
+            EndDrawing();
+            if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
+                IsKeyPressed(KEY_ESCAPE)) {
+                goto CLAIM_REWARDS;
+            }
+        }
+
+        CLAIM_REWARDS:
+        while (true) {
+            BeginDrawing();
+            ClearBackground(BLACK);
+            DrawTexturePro(
+                tex::sun,
+                Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
+                Rectangle{(float)GetScreenWidth()/2-256, baseY+100, 512, 256},
+                {0,0}, 0, WHITE);
+            float size = 128.f;
+            float radius = size*0.55f;
+            float end_angle = (float)(rank_progress * 360.0) - 90;
+            float cx = GetScreenWidth() * 0.5f - MeasureText(ranks[rank_index].name, 96)/2+100-70;
+            float cy = baseY+420+45;
+            DrawRing({cx, cy}, radius - 14, radius, -90, end_angle, 64, ranks[rank_index].color);
+            DrawRing({cx, cy}, radius - 14, radius, end_angle, 360-90, 64, Fade(ranks[rank_index].color, 0.4f));
+            DrawTexturePro(
+                *ranks[rank_index].tex,
+                {0,0,(float)ranks[rank_index].tex->width,(float)ranks[rank_index].tex->height},
+                {cx - size/2, cy - size/2, size, size},
+                {0,0}, 0, ranks[rank_index].color
+            );
+
+            DrawText(ranks[rank_index].name, GetScreenWidth()/2 - MeasureText(ranks[rank_index].name, 96)/2+100, baseY+420, 96, ranks[rank_index].color);
+
+            // --- Ethical tech disclosure ---
+            if(unlocking_perk) {
+                DrawTextSmall("You avoided iffy techs. New start perk!",
+                GetScreenWidth()/2 - MeasureText("Avoided iffy techs. New start perk!.", 32)/2+60,
+                baseY+610,32,Fade(GREEN, 0.8f));
+            }
+            else if(badTechCount){
+                DrawTextSmall("No rewards after using iffy techs.",GetScreenWidth()/2 - MeasureText("No rewards after using iffy techs.", 28)/2,baseY+610,28,ORANGE);
+            }
+            else {
+                DrawTextSmall("You avoided iffy techs. Good job!",
+                              GetScreenWidth()/2 - MeasureText("You avoided iffy techs. Good job!", 32)/2+60,
+                              baseY+610,32,Fade(ORANGE, 0.8f));
+            }
+            // --- OK button ---
+            Vector2 mouse = GetMousePosition();
+            bool hoverOk = CheckCollisionPointRec(mouse, btnOk);
+            DrawRectangleRec(btnOk, hoverOk ? DARKGRAY : BLACK);
+            DrawRectangleLinesEx(btnOk, 2, GRAY);
+            DrawText("DONE", btnOk.x + btnOk.width/2 - MeasureText("DONE", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
             EndDrawing();
             if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
                 IsKeyPressed(KEY_ESCAPE)) {
@@ -1415,6 +1533,10 @@ int main() {
                 continue;
             CREATE_CAMP(&factions[fi], bx-0.3, by);
             CREATE_CAMP(&factions[fi], bx+0.3, by);
+            CREATE_RAILGUN(&factions[fi], bx-3, by-3);
+            CREATE_RAILGUN(&factions[fi], bx-3, by+3);
+            CREATE_RAILGUN(&factions[fi], bx+3, by-3);
+            CREATE_RAILGUN(&factions[fi], bx+3, by+3);
             for (int i = 0; i < 8; i++) {
                 float sx = bx + (GetRandomValue(-5000, 5000) * 0.0002f);
                 float sy = by + (GetRandomValue(-5000, 5000) * 0.0002f);
@@ -3658,7 +3780,7 @@ int main() {
                 DrawTextureEx(tex::gear, {farming.x + ICON_DX, farming.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_DRIVER)) {
-                DrawTechNode(driver.x, driver.y, "DRIVER", "Mechas often faster", tech, TECHNOLOGY_DRIVER);
+                DrawTechNode(driver.x, driver.y, "DRIVER", "Mechas are often faster", tech, TECHNOLOGY_DRIVER);
                 DrawTextureEx(tex::tank, {driver.x + ICON_DX, driver.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_FIGHT)) {
@@ -3682,7 +3804,7 @@ int main() {
                 DrawTextureEx(tex::tank, {autorepair.x + ICON_DX, autorepair.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TAMING | TECHNOLOGY_HEROICS)) {
-                DrawTechNode(heroics.x, heroics.y, "HEROICS", "Vet/s and heroes may dodge", tech, TECHNOLOGY_HEROICS);
+                DrawTechNode(heroics.x, heroics.y, "HEROICS", "Vets & heroes may dodge", tech, TECHNOLOGY_HEROICS);
                 DrawTextureEx(tex::blood, {heroics.x + ICON_DX, heroics.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_GRIT)) {
@@ -3754,7 +3876,7 @@ int main() {
                 DrawTextureEx(tex::tank, {mobile.x + ICON_DX, mobile.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_WONDER | TECHNOLOGY_LUXURY)) {
-                DrawTechNode(luxury.x, luxury.y, "PRISTINE", "Often dodge animal and bloo", tech, TECHNOLOGY_LUXURY);
+                DrawTechNode(luxury.x, luxury.y, "PRISTINE", "Often dodge animal & bloo", tech, TECHNOLOGY_LUXURY);
                 DrawTextureEx(tex::research, {luxury.x + ICON_DX, luxury.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_GIGAJOULE | TECHNOLOGY_TERRAFORIMING)) {
