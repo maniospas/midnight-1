@@ -3072,6 +3072,7 @@ int main() {
                         (o.speed == 0 && o.capturing) &&
                         (o.health < o.max_health*0.8f);
                     if (!isEnemyCapturable && !isOwnDamagedStructure && o.faction) continue;
+                    if (time_norm>0.85f && o.texture!=&tex::oil && o.texture!=&tex::warehouse) continue; // at the last stretch attack the victory locations with all means
                     float dx = o.x - u.x;
                     float dy = o.y - u.y;
                     float d2 = dx*dx + dy*dy;
