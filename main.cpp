@@ -1531,12 +1531,38 @@ int main() {
             float by = GetRandomValue(20, GRID_SIZE - 20);
             if (campExistsTooClose(bx, by, BASE_MIN_DIST))
                 continue;
-            CREATE_CAMP(&factions[fi], bx-0.3, by);
-            CREATE_CAMP(&factions[fi], bx+0.3, by);
-            CREATE_RAILGUN(&factions[fi], bx-3, by-3);
-            CREATE_RAILGUN(&factions[fi], bx-3, by+3);
-            CREATE_RAILGUN(&factions[fi], bx+3, by-3);
-            CREATE_RAILGUN(&factions[fi], bx+3, by+3);
+            for(int p=0;p<2;++p) {
+                float px = p==0?(bx-3):(bx+3);
+                int pref = GetRandomValue(0,PREFERENCE_COUNT-1);
+                if(p==0) {CREATE_CAMP(&factions[fi], bx-(pref==PREFERENCE_SPACING?8.f:0.3f), by);}
+                else {CREATE_CAMP(&factions[fi], bx+(pref==PREFERENCE_SPACING?8.f:0.3f), by);}
+                if(pref==PREFERENCE_RAILGUN) {
+                    CREATE_RAILGUN(&factions[1], px, by-3);
+                    CREATE_RAILGUN(&factions[1], px, by+3);
+                }
+                else if(pref==PREFERENCE_FARM) {
+                    CREATE_FIELD(&factions[1], px, by-0.7f);
+                    CREATE_FIELD(&factions[1], px, by+0.7f);
+                }
+                else if(pref==PREFERENCE_ANIMAL) {
+                    if(GetRandomValue(0,99)<50) {CREATE_BISON(&factions[2], px, by-4);}
+                    else CREATE_WOLF(&factions[2], px, by-4);
+                    if(GetRandomValue(0,99)<50) {CREATE_BISON(&factions[2], px, by+4);}
+                    else CREATE_WOLF(&factions[2], px, by+4);
+                }
+                else if(pref==PREFERENCE_TANK) {
+                    if(GetRandomValue(0,99)<50) {CREATE_TANK(&factions[1], px, by);}
+                    else {CREATE_VAN(&factions[1], px, by);}
+                }
+                else if(pref==PREFERENCE_WAREHOUSE) {
+                    CREATE_WAREHOUSE(&factions[1], px, by);
+                    RevealUnitToAllFactions(num_units - 1);
+                }
+                else if(pref==PREFERENCE_LAB) {
+                    if(GetRandomValue(0,99)<50) {CREATE_LAB(&factions[1], px, by);}
+                    else CREATE_DATACENTER(&factions[1], px, by);
+                }
+            }
             for (int i = 0; i < 8; i++) {
                 float sx = bx + (GetRandomValue(-5000, 5000) * 0.0002f);
                 float sy = by + (GetRandomValue(-5000, 5000) * 0.0002f);
