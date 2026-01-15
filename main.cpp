@@ -77,6 +77,7 @@ namespace tex {
     static Texture2D utopia;
     static Texture2D track;
     static Texture2D sun;
+    static Texture2D reward;
     static Texture2D earth;
     static Texture2D research;
     static Texture2D rat;
@@ -1029,6 +1030,7 @@ int main() {
     tex::utopia = LoadTexture("data/utopia.png");
     tex::track = LoadTexture("data/track.png");
     tex::sun = LoadTexture("data/sun.png");
+    tex::reward = LoadTexture("data/reward.png");
     tex::earth = LoadTexture("data/earth.png");
     tex::research = LoadTexture("data/research.png");
     tex::snowman = LoadTexture("data/snowman.png");
@@ -1121,10 +1123,14 @@ int main() {
     };
 
     // main loop
-    int main_menu_transition_mode = 0; // don't animate first entry'
+    int main_menu_transition_mode = 0; // don't animate first entry (-1 from next menu, -2 from end game)
     int new_game_transition_mode = -1;
+    int game_over_transition_mode = 0;
+    int reward_transition_mode = -1;
     float main_menu_progress = 0;
     float new_game_progress = 0;
+    float game_over_progress = 0;
+    float reward_progress = 0;
 
     MAIN_MENU:
     while (true) {
@@ -1132,7 +1138,8 @@ int main() {
             main_menu_progress += GetFrameTime()*5.f;
         if(main_menu_progress>1.f) {
             main_menu_progress = 0.f;
-            if (main_menu_transition_mode==-1) {main_menu_transition_mode=0;}
+            if (main_menu_transition_mode==-2) {main_menu_transition_mode=0;}
+            else if (main_menu_transition_mode==-1) {main_menu_transition_mode=0;}
             else if (main_menu_transition_mode==1) {
                 new_game_transition_mode = -1;
                 main_menu_transition_mode = -1;
@@ -1148,7 +1155,8 @@ int main() {
 
         float baseY = (float)GetScreenHeight()/2 - 600;
         float baseX = (float)GetScreenWidth()/2;
-        if(main_menu_transition_mode==-1) baseX -= (1.0f-main_menu_progress)*(1.0f-main_menu_progress)*GetScreenWidth();
+        if(main_menu_transition_mode==-2) baseX += (1.0f-main_menu_progress)*(1.0f-main_menu_progress)*GetScreenWidth();
+        else if(main_menu_transition_mode==-1) baseX -= (1.0f-main_menu_progress)*(1.0f-main_menu_progress)*GetScreenWidth();
         else if(main_menu_transition_mode==2) baseX -= main_menu_progress*main_menu_progress*GetScreenWidth();
         else baseX -= main_menu_progress*main_menu_progress*GetScreenWidth();
         const Rectangle btnStart = {baseX - 400, baseY+720,900, 80};
@@ -1337,8 +1345,6 @@ int main() {
 
         bool victory = (player_points > best_ai_points) && factions[0].count_members;
         if(player_points<0) player_points = -player_points;
-        const float baseY = (float)GetScreenHeight()/2 - 600;
-        Rectangle btnOk = {(float)GetScreenWidth()/2 - 200, baseY+820,400, 80};
 
         const char* badTechNames[8];
         int badTechCount = 0;
@@ -1382,13 +1388,29 @@ int main() {
             }
         }
         while (true) {
+            if(game_over_transition_mode)
+                game_over_progress += GetFrameTime()*5.f;
+            if(game_over_progress>1.f) {
+                game_over_progress = 0.f;
+                game_over_transition_mode = 0;
+                if(unlocking_perk) {
+                    goto CLAIM_REWARDS;
+                }
+                main_menu_transition_mode = -2;
+                goto MAIN_MENU;
+            }
+            float baseY = (float)GetScreenHeight()/2 - 600;
+            float baseX = (float)GetScreenWidth()/2;
+            if(game_over_transition_mode) baseX -= game_over_progress*game_over_progress*GetScreenWidth();
+            Rectangle btnOk = {baseX - 400, baseY+820,800, 80};
+
             BeginDrawing();
             ClearBackground(BLACK);
             if(victory) {
                 DrawTexturePro(
                     tex::sun,
                     Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
-                    Rectangle{(float)GetScreenWidth()/2-256, baseY+100, 512, 256},
+                    Rectangle{baseX-256, baseY+100, 512, 256},
                     {0,0}, 0, WHITE);
                 DrawText("BEST UTOPIA", GetScreenWidth()/2 - MeasureText("BEST UTOPIA", 96)/2+70, baseY+420, 96, GREEN);
             }
@@ -1396,101 +1418,127 @@ int main() {
                 DrawTexturePro(
                     tex::blood,
                     Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height},
-                    Rectangle{(float)GetScreenWidth()/2-128, baseY+100, 256, 256},
+                    Rectangle{baseX-128, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
                 DrawTexturePro(
                     tex::blood,
                     Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height},
-                    Rectangle{(float)GetScreenWidth()/2-256+32, baseY+100, 256, 256},
+                    Rectangle{baseX-256+32, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
                 DrawTexturePro(
                     tex::blood,
                     Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height},
-                    Rectangle{(float)GetScreenWidth()/2-32, baseY+100, 256, 256},
+                    Rectangle{baseX-32, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
-                DrawText("SURVIVED", GetScreenWidth()/2 - MeasureText("SURVIVED", 96)/2+50, baseY+420, 96, ORANGE);
+                DrawText("SURVIVED", baseX - MeasureText("SURVIVED", 96)/2+50, baseY+420, 96, ORANGE);
             }
             else {
                 DrawTexturePro(
                     tex::blood,
                     Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height},
-                    Rectangle{(float)GetScreenWidth()/2-128, baseY+100, 256, 256},
+                    Rectangle{baseX-128, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
                 DrawTexturePro(
                     tex::blood,
                     Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height},
-                    Rectangle{(float)GetScreenWidth()/2-256+32, baseY+100, 256, 256},
+                    Rectangle{baseX-256+32, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
                 DrawTexturePro(
                     tex::blood,
                     Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height},
-                    Rectangle{(float)GetScreenWidth()/2-32, baseY+100, 256, 256},
+                    Rectangle{baseX-32, baseY+100, 256, 256},
                     {0,0}, 0, WHITE);
-                DrawText("ELIMINATED", (float)GetScreenWidth()/2 - MeasureText("ELIMINATED", 96)/2+50, baseY+420, 96, RED);
+                DrawText("ELIMINATED", baseX - MeasureText("ELIMINATED", 96)/2+50, baseY+420, 96, RED);
             }
 
             // --- Score ---
             char score[128];
             snprintf(score, sizeof(score), "Your utopia: %d   |   Best AI: %d", player_points, best_ai_points);
-            if (game_time >= GAME_DURATION) DrawText(score, GetScreenWidth()/2 - MeasureText(score, 42)/2+40, baseY+540, 42, WHITE);
+            if (game_time >= GAME_DURATION) DrawText(score, baseX - MeasureText(score, 42)/2+40, baseY+540, 42, WHITE);
 
             // --- Ethical tech disclosure ---
             if (badTechCount) {
-                DrawTextSmall("Was it really worth it?",GetScreenWidth()/2 - MeasureText("Was it really worth it?", 28)/2,baseY+610,28,ORANGE);
+                DrawTextSmall("Was it really worth it?",baseX - MeasureText("Was it really worth it?", 28)/2,baseY+610,28,ORANGE);
                 for (int i = 0; i < badTechCount; i++)
-                    DrawTextSmall(TextFormat("- %s", badTechNames[i]),GetScreenWidth()/2 - 260,baseY+650 + i * 28,24,DARKGRAY);
+                    DrawTextSmall(TextFormat("- %s", badTechNames[i]), baseX - 260,baseY+650 + i * 28,24, DARKGRAY);
             }
 
             // --- OK button ---
             Vector2 mouse = GetMousePosition();
-            bool hoverOk = CheckCollisionPointRec(mouse, btnOk);
+            bool hoverOk = !game_over_transition_mode && CheckCollisionPointRec(mouse, btnOk);
             DrawRectangleRec(btnOk, hoverOk ? DARKGRAY : BLACK);
             DrawRectangleLinesEx(btnOk, 2, GRAY);
-            DrawText("NEW RANK", btnOk.x + btnOk.width/2 - MeasureText("NEW RANK", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
+            DrawText("OK", btnOk.x + btnOk.width/2 - MeasureText("OK", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
             EndDrawing();
-            if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
-                IsKeyPressed(KEY_ESCAPE)) {
-                goto CLAIM_REWARDS;
-            }
+            if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE))
+                game_over_transition_mode = 1;
         }
 
         CLAIM_REWARDS:
         while (true) {
+            if(reward_transition_mode)
+                reward_progress += GetFrameTime()*5.f;
+            if(reward_progress>1.f) {
+                reward_progress = 0.f;
+                if (reward_transition_mode==-1) {reward_transition_mode=0;}
+                else if (reward_transition_mode==1) {
+                    reward_progress = 0;
+                    reward_transition_mode = -1;
+                    main_menu_transition_mode = -2;
+                    goto MAIN_MENU;
+                }
+            }
+            float baseY = (float)GetScreenHeight()/2 - 600;
+            float baseX = (float)GetScreenWidth()/2;
+            if(reward_transition_mode==-1) baseX += (1.0f-reward_progress)*(1.0f-reward_progress)*GetScreenWidth();
+            else baseX -= reward_progress*reward_progress*GetScreenWidth();
+            Rectangle btnOk = {baseX - 400, baseY+820,800, 80};
+
             BeginDrawing();
             ClearBackground(BLACK);
-            DrawTexturePro(
-                tex::sun,
-                Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
-                Rectangle{(float)GetScreenWidth()/2-256, baseY+100, 512, 256},
-                {0,0}, 0, WHITE);
+            if(unlocking_perk) {
+                DrawTexturePro(
+                    tex::reward,
+                    Rectangle{0,0,(float)tex::reward.width,(float)tex::reward.height},
+                    Rectangle{baseX-256, baseY+100, 512, 256},
+                    {0,0}, 0, WHITE);
+            }
+            else {
+                DrawTexturePro(
+                    tex::sun,
+                    Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
+                    Rectangle{baseX-256, baseY+100, 512, 256},
+                    {0,0}, 0, WHITE);
+            }
             float size = 128.f;
             float radius = size*0.55f;
             float end_angle = (float)(rank_progress * 360.0) - 90;
-            float cx = GetScreenWidth() * 0.5f - MeasureText(ranks[rank_index].name, 96)/2+100-70;
+            float cx = baseX - MeasureText(ranks[rank_index].name, 96)/2+100-70;
             float cy = baseY+420+45;
-            DrawRing({cx, cy}, radius - 14, radius, -90, end_angle, 64, ranks[rank_index].color);
-            DrawRing({cx, cy}, radius - 14, radius, end_angle, 360-90, 64, Fade(ranks[rank_index].color, 0.4f));
-            DrawTexturePro(
-                *ranks[rank_index].tex,
-                {0,0,(float)ranks[rank_index].tex->width,(float)ranks[rank_index].tex->height},
-                {cx - size/2, cy - size/2, size, size},
-                {0,0}, 0, ranks[rank_index].color
-            );
-
-            DrawText(ranks[rank_index].name, GetScreenWidth()/2 - MeasureText(ranks[rank_index].name, 96)/2+100, baseY+420, 96, ranks[rank_index].color);
+            // DrawRing({cx, cy}, radius - 14, radius, -90, end_angle, 64, ranks[rank_index].color);
+            // DrawRing({cx, cy}, radius - 14, radius, end_angle, 360-90, 64, Fade(ranks[rank_index].color, 0.4f));
+            // DrawTexturePro(
+            //     *ranks[rank_index].tex,
+            //     {0,0,(float)ranks[rank_index].tex->width,(float)ranks[rank_index].tex->height},
+            //     {cx - size/2, cy - size/2, size, size},
+            //     {0,0}, 0, ranks[rank_index].color
+            // );
+            //
+            // DrawText(ranks[rank_index].name, baseX - MeasureText(ranks[rank_index].name, 96)/2+100, baseY+420, 96, ranks[rank_index].color);
 
             // --- Ethical tech disclosure ---
             if(unlocking_perk) {
-                DrawTextSmall("You avoided iffy techs. New start perk!",
-                GetScreenWidth()/2 - MeasureText("Avoided iffy techs. New start perk!.", 32)/2+60,
-                baseY+610,32,Fade(GREEN, 0.8f));
+                DrawText("New start perk!", baseX - MeasureText("New start perk!", 96)/2+75, baseY+420, 96, GREEN);
+
+                DrawTextSmall("This may appear only if you avoided iffy techs.", baseX - MeasureText("This may appear only if you avoided iffy techs.", 32)/2+75,
+                baseY+550,32,GRAY);
             }
             else if(badTechCount){
-                DrawTextSmall("No rewards after using iffy techs.",GetScreenWidth()/2 - MeasureText("No rewards after using iffy techs.", 28)/2,baseY+610,28,ORANGE);
+                DrawTextSmall("No rewards after using iffy techs.", baseX - MeasureText("No rewards after using iffy techs.", 28)/2,baseY+610,28,ORANGE);
             }
             else {
                 DrawTextSmall("You avoided iffy techs. Good job!",
-                              GetScreenWidth()/2 - MeasureText("You avoided iffy techs. Good job!", 32)/2+60,
+                              baseX - MeasureText("You avoided iffy techs. Good job!", 32)/2+60,
                               baseY+610,32,Fade(ORANGE, 0.8f));
             }
             // --- OK button ---
@@ -1498,12 +1546,10 @@ int main() {
             bool hoverOk = CheckCollisionPointRec(mouse, btnOk);
             DrawRectangleRec(btnOk, hoverOk ? DARKGRAY : BLACK);
             DrawRectangleLinesEx(btnOk, 2, GRAY);
-            DrawText("DONE", btnOk.x + btnOk.width/2 - MeasureText("DONE", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
+            DrawText("OK", btnOk.x + btnOk.width/2 - MeasureText("OK", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
             EndDrawing();
-            if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
-                IsKeyPressed(KEY_ESCAPE)) {
-                goto MAIN_MENU;
-            }
+            if ((!reward_transition_mode && hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE))
+                reward_transition_mode = 1;
         }
     }
 
@@ -4369,7 +4415,7 @@ int main() {
                 else if(hovered->texture==&tex::datacenter) DrawText("Random benefits", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::warehouse) DrawText("+2 utopia", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::railgun) {
-                    DrawText("Mecha", px + 80, textY, 28, WHITE);
+                    DrawText("Mecha stationary", px + 80, textY, 28, WHITE);
                     DrawText("No sight penalty", px + 80, textY+30, 28, WHITE);
                     if(hovered->name==veteran_name)
                         DrawText("Stronger", px + 80, textY+60, 28, WHITE);
@@ -4377,8 +4423,8 @@ int main() {
                         DrawText("Mighty", px + 80, textY+60, 28, WHITE);
                 }
                 else if(hovered->texture==&tex::roomba) {
-                    DrawText("Mecha", px + 80, textY, 28, WHITE);
-                    DrawText("Vs animals & bloo", px + 80, textY+30, 28, WHITE);
+                    DrawText("Mecha that attacks", px + 80, textY, 28, WHITE);
+                    DrawText("only animals & bloo", px + 80, textY+30, 28, WHITE);
                     if(hovered->name==veteran_name)
                         DrawText("Stronger", px + 80, textY+60, 28, WHITE);
                     if(hovered->name==hero_name)
@@ -4463,6 +4509,7 @@ int main() {
 
     UnloadTexture(tex::gear);
     UnloadTexture(tex::sun);
+    UnloadTexture(tex::reward);
     UnloadTexture(tex::research);
     UnloadTexture(tex::utopia);
     UnloadTexture(tex::track);
