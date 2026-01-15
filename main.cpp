@@ -282,7 +282,7 @@ int NOISE_SEED = 0;
             6.0,         /* range */ \
             8.0,          /* damage */ \
             0.0,          /* experience */ \
-            0.0,          /* angle */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
             0.8,          /* size */ \
             20.0,         /* health */ \
             20.0,         /* max_health */ \
@@ -303,7 +303,7 @@ int NOISE_SEED = 0;
             3.0,          /* range */ \
             2.0,          /* damage */ \
             0.0,          /* experience */ \
-            0.0,          /* angle */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
             0.4,          /* size */ \
             10.0,          /* health */ \
             10.0,          /* max_health */ \
@@ -324,7 +324,7 @@ int NOISE_SEED = 0;
             6.0,          /* range */ \
             1.0,          /* damage */ \
             0.0,          /* experience */ \
-            0.0,          /* angle */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
             0.7,          /* size */ \
             20.0,         /* health */ \
             20.0,         /* max_health */ \
@@ -346,7 +346,7 @@ int NOISE_SEED = 0;
             2.5,          /* range */ \
             1.0,          /* damage */ \
             0.0,          /* experience */ \
-            0.0,          /* angle */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
             0.6,          /* size */ \
             10.0,         /* health */ \
             10.0,         /* max_health */ \
@@ -367,7 +367,7 @@ int NOISE_SEED = 0;
             1.0,          /* range */ \
             3.0,          /* damage */ \
             0.0,          /* experience */ \
-            0.0,          /* angle */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
             0.6,          /* size */ \
             15.0,         /* health */ \
             15.0,         /* max_health */ \
@@ -389,7 +389,7 @@ int NOISE_SEED = 0;
             1.0,          /* range */ \
             1.0,          /* damage */ \
             0.0,          /* experience */ \
-            0.0,          /* angle */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
             0.2,          /* size */ \
             2.0,         /* health */ \
             2.0,         /* max_health */ \
@@ -411,7 +411,7 @@ int NOISE_SEED = 0;
             1.0,          /* range */ \
             3.0,          /* damage */ \
             0.0,          /* experience */ \
-            0.0,          /* angle */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
             0.4,          /* size */ \
             5.0,          /* health */ \
             5.0,          /* max_health */ \
@@ -432,12 +432,13 @@ int NOISE_SEED = 0;
             6.0,         /* range */ \
             2.0,          /* damage */ \
             0.0,          /* experience */ \
-            0.0,          /* angle */ \
-            0.6,          /* size */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
+            0.7,          /* size */ \
             20.0,         /* health */ \
             20.0,         /* max_health */ \
             (faction),    /* faction */ \
-            (faction)     /* faction */ \
+            (faction),     /* faction */ \
+            0.0           /* extra scale*/\
         };
 
 #define CREATE_CAMP(faction, x, y) \
@@ -1527,7 +1528,7 @@ int main() {
             }
             else if(pref==PREFERENCE_ROOMBA) {
                 CREATE_ROOMBA(&factions[1], px, by-3);
-                CREATE_ROOMBA(&factions[1], px, by);
+                CREATE_ROOMBA(&factions[1], px*0.5f+bx*0.5f, by);
                 CREATE_ROOMBA(&factions[1], px, by+3);
             }
         }
@@ -1592,7 +1593,7 @@ int main() {
                 }
                 else if(pref==PREFERENCE_ROOMBA) {
                     CREATE_ROOMBA(&factions[1], px, by-3);
-                    CREATE_ROOMBA(&factions[1], px, by);
+                    CREATE_ROOMBA(&factions[1], px*0.5f+bx*0.5f, by);
                     CREATE_ROOMBA(&factions[1], px, by+3);
                 }
             }
@@ -1702,7 +1703,6 @@ int main() {
             if(T.texture==&tex::grass && T.speed<1.f) { // roombas in the forest
                 CREATE_ROOMBA(&factions[1], x-0.3f, y-0.3f);
                 CREATE_ROOMBA(&factions[1], x+0.3f, y-0.3f);
-                CREATE_ROOMBA(&factions[1], x, y);
                 CREATE_ROOMBA(&factions[1], x-0.3f, y+0.3f);
                 CREATE_ROOMBA(&factions[1], x+0.3f, y+0.3f);
             }
@@ -3524,7 +3524,9 @@ int main() {
             if (u.faction != &factions[0] && u.texture!=&tex::warehouse) continue;
             Vector2 world = { u.x * TILE_SIZE, u.y * TILE_SIZE };
             Vector2 screen = GetWorldToScreen2D(world, camera);
-            float u_range = u.range*(1+terrainGrid[(int)u.y][(int)u.x].extra_sight);
+            float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
+            if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
+            float u_range = u.range*(1+extra_sight);
             // important that here we extend the sight range only for stuff controlled by the player
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
             if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
@@ -4252,7 +4254,7 @@ int main() {
                 }
                 else if(hovered->texture==&tex::roomba) {
                     DrawText("Mecha", px + 80, textY, 28, WHITE);
-                    DrawText("Attacks animals & bloo", px + 80, textY+30, 28, WHITE);
+                    DrawText("Vs animals & bloo", px + 80, textY+30, 28, WHITE);
                     if(hovered->name==veteran_name)
                         DrawText("Stronger", px + 80, textY+60, 28, WHITE);
                     if(hovered->name==hero_name)
