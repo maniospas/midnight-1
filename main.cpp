@@ -2227,6 +2227,7 @@ int main() {
             if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_SEAFARERING) && terrainGrid[(int)u.y][(int)u.x].texture==&tex::water) u_speed = 1.5f;
             u_speed *= u.speed;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
+            if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range = 25.f;
             if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
@@ -2892,6 +2893,7 @@ int main() {
             int ux = (int)u.x;
             int uy = (int)u.y;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
+            if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.35f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
@@ -4196,6 +4198,14 @@ int main() {
                 else if(hovered->texture==&tex::oil) DrawText("+3 utopia", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::datacenter) DrawText("Random benefits", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::warehouse) DrawText("+2 utopia", px + 80, textY, 28, WHITE);
+                else if(hovered->texture==&tex::railgun) {
+                    DrawText("Mecha", px + 80, textY, 28, WHITE);
+                    DrawText("No sight penalty", px + 80, textY+30, 28, WHITE);
+                    if(hovered->name==veteran_name)
+                        DrawText("Stronger", px + 80, textY+60, 28, WHITE);
+                    if(hovered->name==hero_name)
+                        DrawText("Mighty", px + 80, textY+60, 28, WHITE);
+                }
                 else if(is_mecha((*hovered)) && hovered->speed==0) DrawText("Mecha", px + 80, textY, 28, WHITE);
                 else if(is_mecha((*hovered))) {
                     DrawText("Mecha", px + 80, textY, 28, WHITE);
