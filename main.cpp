@@ -79,6 +79,7 @@ namespace tex {
     static Texture2D sun;
     static Texture2D research;
     static Texture2D rat;
+    static Texture2D roomba;
 }
 
 
@@ -171,8 +172,9 @@ enum class MovementMode {
 #define PREFERENCE_SPACING     5
 #define PREFERENCE_EXPERIENCE  6
 #define PREFERENCE_HUMAN       7
-#define PREFERENCE_ANIMAL      8
-#define PREFERENCE_COUNT       9
+#define PREFERENCE_ROOMBA      8
+#define PREFERENCE_ANIMAL      9
+#define PREFERENCE_COUNT       10
 
 const char* preference_desc[PREFERENCE_COUNT] = {
     "near railguns",
@@ -183,7 +185,8 @@ const char* preference_desc[PREFERENCE_COUNT] = {
     "+camp spacing",
     "+experience",
     "+5 humans",
-    "near animals",
+    "near roombas",
+    "near animals"
 };
 
 Texture* preference_icon[PREFERENCE_COUNT] = {
@@ -195,14 +198,13 @@ Texture* preference_icon[PREFERENCE_COUNT] = {
     &tex::camp,
     &tex::track,
     &tex::human,
+    &tex::roomba,
     &tex::bison,
 };
 
 typedef unsigned long long PrefMask;
 #define PREF_BIT(p) (1ULL << (p))
-
-
-#define is_mecha(u) (u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::railgun)
+#define is_mecha(u) (u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::railgun || u.texture==&tex::roomba)
 
 struct Terrain {
     Texture2D* texture;
@@ -289,6 +291,26 @@ int NOISE_SEED = 0;
             0.3           /* extra scale*/\
         };
 
+#define CREATE_ROOMBA(faction, x, y) \
+    if (num_units < MAX_UNITS) \
+        units[num_units++] = { \
+            &tex::roomba, /* texture */ \
+            "Roomba",     /* name */ \
+            7.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            1.0,          /* attack_rate */ \
+            3.0,          /* range */ \
+            2.0,          /* damage */ \
+            0.0,          /* experience */ \
+            0.0,          /* angle */ \
+            0.4,          /* size */ \
+            10.0,          /* health */ \
+            10.0,          /* max_health */ \
+            (faction),    /* faction */ \
+            (faction),    /* faction */ \
+            0.2           /* extra scale*/\
+        };
 
 #define CREATE_VAN(faction, x, y) \
     if (num_units < MAX_UNITS) \
@@ -891,6 +913,7 @@ int main() {
     tex::railgun = LoadTexture("data/railgun.png");
     tex::hide = LoadTexture("data/hide.png");
     tex::rat = LoadTexture("data/rat.png");
+    tex::roomba = LoadTexture("data/roomba.png");
     tex::bison = LoadTexture("data/bison.png");
     tex::wolf = LoadTexture("data/wolf.png");
     tex::heal = LoadTexture("data/heal.png");
@@ -1502,6 +1525,11 @@ int main() {
                 if(GetRandomValue(0,99)<50) {CREATE_LAB(&factions[1], px, by);}
                 else CREATE_DATACENTER(&factions[1], px, by);
             }
+            else if(pref==PREFERENCE_ROOMBA) {
+                CREATE_ROOMBA(&factions[1], px, by-3);
+                CREATE_ROOMBA(&factions[1], px, by);
+                CREATE_ROOMBA(&factions[1], px, by+3);
+            }
         }
 
         // Spawn starting humans
@@ -1561,6 +1589,11 @@ int main() {
                 else if(pref==PREFERENCE_LAB) {
                     if(GetRandomValue(0,99)<50) {CREATE_LAB(&factions[1], px, by);}
                     else CREATE_DATACENTER(&factions[1], px, by);
+                }
+                else if(pref==PREFERENCE_ROOMBA) {
+                    CREATE_ROOMBA(&factions[1], px, by-3);
+                    CREATE_ROOMBA(&factions[1], px, by);
+                    CREATE_ROOMBA(&factions[1], px, by+3);
                 }
             }
             for (int i = 0; i < 8; i++) {
@@ -1665,14 +1698,22 @@ int main() {
         if (T.texture == &tex::mountain || T.texture == &tex::hill
             || T.texture == &tex::hill2 || T.texture == &tex::hill3 || T.texture == &tex::hill4)
             {CREATE_RAILGUN(&factions[1], x, y);continue;}
-        if (!isDesert && GetRandomValue(0, 99) < 50) continue; // more tanks in the desert - very few elsewhere
-        if (GetRandomValue(0, 99) < 85) continue; // too many mechas saturate the early game, so make them rarer without droping firepire by clustering
-        {
-            //cluster some tanks - the player should feel lucky to find something like this
-            CREATE_TANK(&factions[1], x-0.3f, y-0.3f);
-            CREATE_TANK(&factions[1], x+0.3f, y-0.3f);
-            CREATE_TANK(&factions[1], x, y+0.3f);
+        if (!isDesert && GetRandomValue(0, 99) < 50) {
+            if(T.texture==&tex::grass && T.speed<1.f) { // roombas in the forest
+                CREATE_ROOMBA(&factions[1], x-0.3f, y-0.3f);
+                CREATE_ROOMBA(&factions[1], x+0.3f, y-0.3f);
+                CREATE_ROOMBA(&factions[1], x, y);
+                CREATE_ROOMBA(&factions[1], x-0.3f, y+0.3f);
+                CREATE_ROOMBA(&factions[1], x+0.3f, y+0.3f);
+            }
+            continue; // more tanks in the desert - roombas elsewhere
         }
+        if (GetRandomValue(0, 99) < 70) continue; // too many mechas saturate the early game, so make them rarer without droping firepire by clustering
+        if (GetRandomValue(0, 99) < 85) continue;
+        //cluster some tanks - the player should feel lucky to find something like this
+        CREATE_TANK(&factions[1], x-0.3f, y-0.3f);
+        CREATE_TANK(&factions[1], x+0.3f, y-0.3f);
+        CREATE_TANK(&factions[1], x, y+0.3f);
     }
 
     for (int i = 0; i < NUM_WILD_ANIMALS; i++) {
@@ -1956,7 +1997,7 @@ int main() {
             if(!u.faction) continue;
             if(u.capturing) continue;
             if(!u.speed) continue;
-            if(u.texture!=&tex::bison && u.texture!=&tex::wolf && u.texture!=&tex::rat && u.texture!=&tex::snowman) { // don't count animals for industry needs'
+            if(u.texture!=&tex::bison && u.texture!=&tex::wolf && u.texture!=&tex::rat && u.texture!=&tex::snowman && u.texture!=&tex::roomba) { // don't count animals or roombas for industry needs'
                 u.faction->count_members += u.max_health/5.f;
                 if(u.faction->technology & TECHNOLOGY_HYPERMAGNET) u.faction->count_members += u.max_health/5.f;
             }
@@ -2243,20 +2284,21 @@ int main() {
                     float bestCaptureDist = bestDist;
                     Unit* best = nullptr;
                     Unit* bestCapture = nullptr;
+                    bool is_roomba = u.texture==&tex::roomba;
                     // find closest enemy in range
                     for (int j = 0; j < num_units; j++) {
-                        if (i == j) continue;
+                        if(i == j) continue;
                         Unit &o = units[j];
                         //if (o.capturing) continue;
                         //if (o.faction == u.faction && (!o.capturing || o.health>=o.max_health)) continue;
-                        if (o.health <=0) continue;
+                        if(o.health <=0) continue;
                         float dx = o.x - u.x;
                         float dy = o.y - u.y;
                         float d2 = dx*dx + dy*dy;
                         float effective_range = (u_range+1+o.size);
                         effective_range *= effective_range;
                         bool in_range = d2 < effective_range;
-                        if (in_range && o.capturing) {
+                        if(in_range && o.capturing) {
                             if(u.faction && !u.faction->visible_knowledge[j] && (u.faction->technology & TECHNOLOGY_WONDER)) {
                                 u.faction->technology_progress += 0.02f;
                                 // if(u.faction==factions) {
@@ -2266,6 +2308,7 @@ int main() {
                             }
                             u.faction->visible_knowledge.set(j);
                         }
+                        if(is_roomba && o.texture!=&tex::ghost && o.texture!=&tex::wolf && o.texture!=&tex::rat && o.texture!=&tex::bison) continue;
                         if(o.faction == u.faction) continue;
                         if(in_range) {
                             if(o.capturing) {
@@ -2692,6 +2735,7 @@ int main() {
                                 if(o.texture==&tex::tank) o.capturing = nullptr; // only capture tanks once
                                 if(o.texture==&tex::van) o.capturing = nullptr; // only capture vans once
                                 if(o.texture==&tex::railgun) o.capturing = nullptr; // only capture railguns once
+                                if(o.texture==&tex::roomba) o.capturing = nullptr; // only capture roombas once
                             }
 
 
@@ -4206,6 +4250,14 @@ int main() {
                     if(hovered->name==hero_name)
                         DrawText("Mighty", px + 80, textY+60, 28, WHITE);
                 }
+                else if(hovered->texture==&tex::roomba) {
+                    DrawText("Mecha", px + 80, textY, 28, WHITE);
+                    DrawText("Attacks animals & bloo", px + 80, textY+30, 28, WHITE);
+                    if(hovered->name==veteran_name)
+                        DrawText("Stronger", px + 80, textY+60, 28, WHITE);
+                    if(hovered->name==hero_name)
+                        DrawText("Mighty", px + 80, textY+60, 28, WHITE);
+                }
                 else if(is_mecha((*hovered)) && hovered->speed==0) DrawText("Mecha", px + 80, textY, 28, WHITE);
                 else if(is_mecha((*hovered))) {
                     DrawText("Mecha", px + 80, textY, 28, WHITE);
@@ -4321,6 +4373,7 @@ int main() {
     UnloadTexture(tex::blood);
     UnloadTexture(tex::bison);
     UnloadTexture(tex::rat);
+    UnloadTexture(tex::roomba);
     UnloadTexture(tex::wolf);
     UnloadTexture(tex::warehouse);
     UnloadTexture(tex::ghost);
