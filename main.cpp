@@ -810,6 +810,8 @@ static void GenerateGrass(Terrain** terrainGrid) {
 
 static void GenerateRivers(Terrain** terrainGrid) {
     int NUM_ROADS = 80 * GRID_SIZE * GRID_SIZE / 512 / 512;
+    if(GetRandomValue(0,2)) NUM_ROADS /= 2;
+    if(GetRandomValue(0,2)) NUM_ROADS /= 2;
     int MAX_LEN   = 600;
 
     int dirX[4] = { 1, -1, 0, 0 };
