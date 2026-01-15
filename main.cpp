@@ -77,6 +77,7 @@ namespace tex {
     static Texture2D utopia;
     static Texture2D track;
     static Texture2D sun;
+    static Texture2D earth;
     static Texture2D research;
     static Texture2D rat;
     static Texture2D roomba;
@@ -116,6 +117,23 @@ enum class MovementMode {
     Scattered,
     Explore
 };
+
+
+static Color ColorForTile(Texture* texture) {
+    if (texture == &tex::water)
+        return (Color){ 40, 120, 160, 255 };
+    if (texture == &tex::grass || texture == &tex::grass2 ||
+        texture == &tex::grass3 || texture == &tex::grass4)
+        return (Color){ 60, 196, 40, 255 };
+    if (texture == &tex::hill || texture == &tex::hill2 ||
+        texture == &tex::hill3 || texture == &tex::hill4)
+        return (Color){ 140, 80, 40, 255 };
+    if (texture == &tex::desert)
+        return (Color){ 196, 196, 64, 255 };
+    if (texture == &tex::mountain)
+        return (Color){ 90, 52, 24, 255 };
+    return (Color){ 80, 80, 80, 255 };
+}
 
 
 #define TECHNOLOGY_TRACK            1ULL  // increased sight in low-visibility areas
@@ -176,12 +194,13 @@ enum class MovementMode {
 #define PREFERENCE_ANIMAL      9
 #define PREFERENCE_COUNT       10
 
+
 const char* preference_desc[PREFERENCE_COUNT] = {
     "near railguns",
     "near vehicle",
     "near fields",
     "near old tech",
-    "near warehouse",
+    "near storage",
     "+camp spacing",
     "+experience",
     "+5 humans",
@@ -773,6 +792,108 @@ static float BiasCurve(float v, float bias) {
     return powf(v, bias);
 }
 
+static void GenerateGrass(Terrain** terrainGrid) {
+    for (int y = 0; y < GRID_SIZE; y++)
+        for (int x = 0; x < GRID_SIZE; x++)
+            if (GetRandomValue(1, 100) <= 90)
+                terrainGrid[y][x] = { &tex::grass, 1.0 };
+    else {
+        int alt = GetRandomValue(2, 4); // 2,3,4
+        switch (alt) {
+            case 2: terrainGrid[y][x] = { &tex::grass2, 1.0 }; break;
+            case 3: terrainGrid[y][x] = { &tex::grass3, 1.0 }; break;
+            case 4: terrainGrid[y][x] = { &tex::grass4, 1.0 }; break;
+        }
+    }
+}
+
+static void GenerateRivers(Terrain** terrainGrid) {
+    int NUM_ROADS = 80 * GRID_SIZE * GRID_SIZE / 512 / 512;
+    int MAX_LEN   = 600;
+
+    int dirX[4] = { 1, -1, 0, 0 };
+    int dirY[4] = { 0, 0, 1, -1 };
+
+    for (int r = 0; r < NUM_ROADS; r++) {
+        int x = 0, y = 0, dir = 0;
+        switch (GetRandomValue(0,3)) {
+            case 0: x = GetRandomValue(0, GRID_SIZE-1); y = 3;             dir = 2; break;
+            case 1: x = GetRandomValue(0, GRID_SIZE-1); y = GRID_SIZE-4;   dir = 3; break;
+            case 2: y = GetRandomValue(0, GRID_SIZE-1); x = 3;             dir = 0; break;
+            case 3: y = GetRandomValue(0, GRID_SIZE-1); x = GRID_SIZE-4;   dir = 1; break;
+        }
+
+        for (int i = 0; i < MAX_LEN; i++) {
+            if (x <= 2 || y <= 2 || x >= GRID_SIZE-3 || y >= GRID_SIZE-3)
+                break;
+
+            // --- MAIN TILE ---
+            Terrain &T = terrainGrid[y][x];
+            if (!IsDesert(T.texture)) {
+                T.texture = &tex::water;
+                T.speed = 0.2f;
+                T.extra_sight = -0.7f;
+            }
+
+            // --- SECOND TILE (perpendicular, width = 2) ---
+            int px = 0, py = 0;
+            if (dirX[dir] != 0) py = 1;  // horizontal → widen vertically
+            else  px = 1;  // vertical → widen horizontally
+
+            int wx = x + px;
+            int wy = y + py;
+
+            if (wx > 2 && wy > 2 && wx < GRID_SIZE-3 && wy < GRID_SIZE-3) {
+                Terrain &W = terrainGrid[wy][wx];
+                if (!IsDesert(W.texture)) {
+                    W.texture = &tex::water;
+                    W.speed = 0.2f;
+                    W.extra_sight = -0.7f;
+                }
+            }
+
+            // --- RARE TURN ---
+            if (GetRandomValue(0,100) < 6) {
+                if (dir<2) dir = GetRandomValue(0,1)?2:3;
+                else dir = GetRandomValue(0,1)?0:1;
+            }
+
+            // --- RARE CROSSROAD (also 2 tiles wide) ---
+            if (GetRandomValue(0,100) < 2) {
+                int cd = GetRandomValue(0,3);
+                int cx = x + dirX[cd];
+                int cy = y + dirY[cd];
+
+                if (cx > 2 && cy > 2 && cx < GRID_SIZE-3 && cy < GRID_SIZE-3) {
+                    Terrain &C = terrainGrid[cy][cx];
+                    if (!IsDesert(C.texture)) {
+                        C.texture = &tex::water;
+                        C.speed = 0.3f;
+                        C.extra_sight = -0.7f;
+                    }
+                    int bpx = 0, bpy = 0;
+                    if(dirX[cd] != 0) bpy = 1;
+                    else bpx = 1;
+                    if (GetRandomValue(0,1)) { bpx = -bpx; bpy = -bpy; }
+                    int bx = cx + bpx;
+                    int by = cy + bpy;
+
+                    if (bx > 2 && by > 2 && bx < GRID_SIZE-3 && by < GRID_SIZE-3) {
+                        Terrain &B = terrainGrid[by][bx];
+                        if (!IsDesert(B.texture)) {
+                            B.texture = &tex::water;
+                            B.speed = 0.3f;
+                            B.extra_sight = -0.7f;
+                        }
+                    }
+                }
+            }
+            x += dirX[dir];
+            y += dirY[dir];
+        }
+    }
+}
+
 static void GenerateHillsAndDesert(Terrain** terrainGrid) {
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
@@ -871,7 +992,6 @@ int main() {
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), "MIDNIGHT - next morn");
     SetRandomSeed((unsigned)time(NULL));
-    NOISE_SEED = GetRandomValue(1, 1'000'000);
     MaximizeWindow();
     SetTextureFilter(uiFont.texture, TEXTURE_FILTER_BILINEAR);
     uiFont = LoadFontEx("data/Beholden-Regular.ttf", 96, nullptr, 0);
@@ -909,6 +1029,7 @@ int main() {
     tex::utopia = LoadTexture("data/utopia.png");
     tex::track = LoadTexture("data/track.png");
     tex::sun = LoadTexture("data/sun.png");
+    tex::earth = LoadTexture("data/earth.png");
     tex::research = LoadTexture("data/research.png");
     tex::snowman = LoadTexture("data/snowman.png");
     tex::railgun = LoadTexture("data/railgun.png");
@@ -1000,63 +1121,60 @@ int main() {
     };
 
     // main loop
-    MAIN_MENU:
-    const float baseY = (float)GetScreenHeight()/2 - 600;
-    const Rectangle btnStart = {(float)GetScreenWidth()/2 - 400, baseY+720,900, 80};
-    const Rectangle btnQuit = {(float)GetScreenWidth()/2 - 400, baseY+820,900, 80};
-    Rectangle prefBox[2] = {
-        { (float)GetScreenWidth()/2+480-440-10, baseY + 720-60-10, 220, 60 },
-        { (float)GetScreenWidth()/2+480-220, baseY + 720-60-10, 220, 60 }
-    };
+    int main_menu_transition_mode = 0; // don't animate first entry'
+    int new_game_transition_mode = -1;
+    float main_menu_progress = 0;
+    float new_game_progress = 0;
 
+    MAIN_MENU:
     while (true) {
+        if(main_menu_transition_mode)
+            main_menu_progress += GetFrameTime()*5.f;
+        if(main_menu_progress>1.f) {
+            main_menu_progress = 0.f;
+            if (main_menu_transition_mode==-1) {main_menu_transition_mode=0;}
+            else if (main_menu_transition_mode==1) {
+                new_game_transition_mode = -1;
+                main_menu_transition_mode = -1;
+                showTechTree = false;
+                goto NEW_GAME;
+            }
+            else if (main_menu_transition_mode==2) {
+                main_menu_transition_mode = -1;
+                CloseWindow();
+                return 0;
+            }
+        }
+
+        float baseY = (float)GetScreenHeight()/2 - 600;
+        float baseX = (float)GetScreenWidth()/2;
+        if(main_menu_transition_mode==-1) baseX -= (1.0f-main_menu_progress)*(1.0f-main_menu_progress)*GetScreenWidth();
+        else if(main_menu_transition_mode==2) baseX -= main_menu_progress*main_menu_progress*GetScreenWidth();
+        else baseX -= main_menu_progress*main_menu_progress*GetScreenWidth();
+        const Rectangle btnStart = {baseX - 400, baseY+720,900, 80};
+        const Rectangle btnQuit = {baseX - 400, baseY+820,900, 80};
         BeginDrawing();
         ClearBackground(BLACK);
 
         DrawTexturePro(
             tex::sun,
             Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
-            Rectangle{(float)GetScreenWidth()/2-256, baseY+100, 512, 256},
+            Rectangle{baseX-256, baseY+100, 512, 256},
             {0,0}, 0, WHITE);
-        DrawText("MIDNIGHT", GetScreenWidth()/2 - 300, baseY+400, 128, WHITE);
-        DrawText("next", GetScreenWidth()/2 +260, baseY+400, 64, WHITE);
-        DrawText("morn", GetScreenWidth()/2 +260, baseY+450, 64, WHITE);
+        DrawText("MIDNIGHT", baseX - 300, baseY+400, 128, WHITE);
+        DrawText("next", baseX +260, baseY+400, 64, WHITE);
+        DrawText("morn", baseX +260, baseY+450, 64, WHITE);
         Vector2 mouse = GetMousePosition();
 
         // Start button
-        bool hoverStart = CheckCollisionPointRec(mouse, btnStart);
+        bool hoverStart = !main_menu_transition_mode && CheckCollisionPointRec(mouse, btnStart);
         DrawRectangleRec(btnStart, hoverStart ? DARKGRAY : BLACK);
-        DrawRectangleLinesEx(btnStart, 2, GRAY);
+        DrawRectangleLinesEx(btnStart, 2, DARKGRAY);
         DrawText("New expedition", btnStart.x + 30, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
         // DrawTexturePro(tex::utopia,
         //                Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height},
-        //                Rectangle{(float)GetScreenWidth()/2+200, btnStart.y+5, 80, 80},
+        //                Rectangle{baseX+400, btnStart.y+5, 80, 80},
         //                {0,0}, 0, WHITE);
-        // preferences
-        if(unlocked_preferences)
-            for (int i=0; i<2; ++i) {
-                bool hover = CheckCollisionPointRec(mouse, prefBox[i]);
-                DrawRectangleRec(prefBox[i], hover ? Fade(YELLOW,0.12f) : BLACK);
-                DrawRectangleLinesEx(prefBox[i], 2, hover?GRAY:BLACK);
-                DrawTextSmall(i == 0 ? "Start perk A" : "Start perk B",prefBox[i].x + 10,prefBox[i].y + 6,26,GRAY);
-                int pref = player_preferred_start[i];
-                DrawTextSmall(preference_desc[pref], prefBox[i].x + 10, prefBox[i].y + 28, 26, GRAY);
-
-                float rot = 0;//GetTime() * 120.0f;
-                Rectangle src = {0, 0, (float)preference_icon[pref]->width, (float)preference_icon[pref]->height};
-                Rectangle dst = {prefBox[i].x + prefBox[i].width - 48,prefBox[i].y + 9, 42, 42};
-                Vector2 origin = { dst.width / 2.0f, dst.height / 2.0f };
-                dst.x += origin.x;
-                dst.y += origin.y;
-                DrawTexturePro(*preference_icon[pref], src, dst, origin, rot, WHITE);
-                if (hover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                    int p = player_preferred_start[i];
-                    do {
-                        p = (p + 1) % PREFERENCE_COUNT;
-                    } while (!(unlocked_preferences & (1ULL << p)) && p!=PREFERENCE_RAILGUN);
-                    player_preferred_start[i] = p;
-                }
-            }
 
         // rank
         {
@@ -1076,8 +1194,8 @@ int main() {
             float size = 64.f;
             float radius = size*0.55f;
             float end_angle = (float)(rank_progress * 360.0) - 90;
-            float cx = GetScreenWidth() * 0.5f - 400 + 32;
-            float cy = prefBox[0].y+28;
+            float cx = baseX - 400 + 32;
+            float cy = baseY + 660;
             DrawRing({cx, cy}, radius - 8, radius, -90, end_angle, 64, ranks[rank_index].color);
             DrawRing({cx, cy}, radius - 8, radius, end_angle, 360-90, 64, Fade(ranks[rank_index].color, 0.4f));
             DrawTexturePro(
@@ -1090,19 +1208,123 @@ int main() {
         }
 
         // quit button
-        bool hoverQuit = CheckCollisionPointRec(mouse, btnQuit);
+        bool hoverQuit = !main_menu_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
         DrawRectangleRec(btnQuit, hoverQuit ? Fade(RED, 0.85) : BLACK);
         DrawRectangleLinesEx(btnQuit, 2, DARKGRAY);
         DrawText("Quit", btnQuit.x + 30, btnQuit.y + 8, 58, hoverQuit ? WHITE : DARKGRAY);
         EndDrawing();
-        if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            showTechTree = false;
-            goto START_GAME;
-        }
+        if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            main_menu_transition_mode = 1;
         if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
-            CloseWindow();
-            return 0;
+            if(main_menu_transition_mode && main_menu_transition_mode!=2) {
+                main_menu_transition_mode = -1;
+                main_menu_progress = 1.f-main_menu_progress;
+            }
+            else main_menu_transition_mode = 2;
         }
+    }
+
+    NEW_GAME:
+    NOISE_SEED = GetRandomValue(1, 1'000'000);
+    GenerateGrass(terrainGrid);
+    GenerateHillsAndDesert(terrainGrid);
+    GenerateRivers(terrainGrid);
+
+    // minimap (used only for new game)
+    static const int MINIMAP_SCALE = 2;
+    static RenderTexture2D minimap = LoadRenderTexture(GRID_SIZE * MINIMAP_SCALE, GRID_SIZE * MINIMAP_SCALE);
+    BeginTextureMode(minimap);
+    ClearBackground(BLACK);
+    for (int y = 0; y < GRID_SIZE; y++)
+        for (int x = 0; x < GRID_SIZE; x++)
+            DrawRectangle(x * MINIMAP_SCALE, y * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE, ColorForTile(terrainGrid[y][x].texture));
+    EndTextureMode(); // minimap
+
+    while (true) {
+        if(new_game_transition_mode)
+            new_game_progress += GetFrameTime()*5.f;
+        if(new_game_progress>1.f) {
+            new_game_progress = 0.f;
+            if (new_game_transition_mode==-1) {
+                new_game_transition_mode=0;
+            }
+            else if (new_game_transition_mode==1) {
+                new_game_transition_mode = -1;
+                showTechTree = false;
+                goto START_GAME;
+            }
+            else if (new_game_transition_mode==2) {
+                new_game_transition_mode = -1;
+                goto MAIN_MENU;
+            }
+        }
+        float baseY = (float)GetScreenHeight()/2 - 600;
+        float baseX = (float)GetScreenWidth()/2;
+        if(new_game_transition_mode==-1) baseX += (1.0f-new_game_progress)*(1.0f-new_game_progress)*GetScreenWidth();
+        else if(new_game_transition_mode==2) baseX += new_game_progress*new_game_progress*GetScreenWidth();
+        else baseX -= new_game_progress*new_game_progress*GetScreenWidth();
+        const Rectangle btnStart = {baseX - 400, baseY+720,900, 80};
+        const Rectangle btnQuit = {baseX - 400, baseY+820,900, 80};
+        Rectangle prefBox[2] = {
+            { baseX+240-280, baseY + 720-70-10-70-30, 310, 70 },
+            { baseX+240-280, baseY + 720-70-30, 310, 70 }
+        };
+        BeginDrawing();
+        ClearBackground(BLACK);
+
+        DrawTexturePro(
+            tex::earth,
+            Rectangle{0,0,(float)tex::earth.width,(float)tex::earth.height},
+            Rectangle{baseX-256, baseY+100, 512, 256},
+            {0,0}, 0, Fade(WHITE, 0.85f));
+        DrawText("Terrain peek", baseX - 320, baseY+400, 128, WHITE);
+
+        DrawTexturePro(
+            minimap.texture,
+            Rectangle{0,0,(float)GRID_SIZE*MINIMAP_SCALE,-(float)GRID_SIZE*MINIMAP_SCALE},
+            Rectangle{baseX-230, baseY+545, 148, 148},
+            {0,0}, 0, WHITE);
+        Vector2 mouse = GetMousePosition();
+        // preferences
+        if(unlocked_preferences)
+            for (int i=0; i<2; ++i) {
+                bool hover = !new_game_transition_mode && CheckCollisionPointRec(mouse, prefBox[i]);
+                DrawRectangleRec(prefBox[i], hover ? Fade(ORANGE,0.34f) : BLACK);
+                DrawRectangleLinesEx(prefBox[i], 2, hover?GRAY:BLACK);
+                DrawTextSmall(i == 0 ? "Start perk A" : "Start perk B",prefBox[i].x + 10,prefBox[i].y + 6,30,hover?GRAY:DARKGRAY);
+                int pref = player_preferred_start[i];
+                DrawTextSmall(preference_desc[pref], prefBox[i].x + 10, prefBox[i].y + 32, 38, hover?WHITE:GRAY);
+
+                float rot = 0;//GetTime() * 120.0f;
+                Rectangle src = {0, 0, (float)preference_icon[pref]->width, (float)preference_icon[pref]->height};
+                Rectangle dst = {prefBox[i].x + prefBox[i].width - 70,prefBox[i].y + 5, 60, 60};
+                Vector2 origin = { dst.width / 2.0f, dst.height / 2.0f };
+                dst.x += origin.x;
+                dst.y += origin.y;
+                DrawTexturePro(*preference_icon[pref], src, dst, origin, rot, WHITE);
+                if (hover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    int p = player_preferred_start[i];
+                    do {
+                        p = (p + 1) % PREFERENCE_COUNT;
+                    } while (!(unlocked_preferences & (1ULL << p)) && p!=PREFERENCE_RAILGUN);
+                    player_preferred_start[i] = p;
+                }
+            }
+        // Start button
+        bool hoverStart = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnStart);
+        DrawRectangleRec(btnStart, hoverStart ? Fade(GREEN, 0.28) : BLACK);
+        DrawRectangleLinesEx(btnStart, 2, DARKGRAY);
+        DrawText("Ready", btnStart.x + 30, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
+        // quit button
+        bool hoverQuit = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
+        DrawRectangleRec(btnQuit, hoverQuit ? DARKGRAY : BLACK);
+        DrawRectangleLinesEx(btnQuit, 2, DARKGRAY);
+        DrawText("Back", btnQuit.x + 30, btnQuit.y + 8, 58, hoverQuit ? WHITE : DARKGRAY);
+        EndDrawing();
+        if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            new_game_transition_mode = 1;
+        if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE))
+            new_game_transition_mode = 2;
     }
 
     GAME_OVER:
@@ -1308,109 +1530,11 @@ int main() {
     // EndTextureMode(); // minimap
 
 
-    // create grid
-    for (int y = 0; y < GRID_SIZE; y++)
-        for (int x = 0; x < GRID_SIZE; x++)
-            if (GetRandomValue(1, 100) <= 90)
-                terrainGrid[y][x] = { &tex::grass, 1.0 };
-            else {
-                int alt = GetRandomValue(2, 4); // 2,3,4
-                switch (alt) {
-                    case 2: terrainGrid[y][x] = { &tex::grass2, 1.0 }; break;
-                    case 3: terrainGrid[y][x] = { &tex::grass3, 1.0 }; break;
-                    case 4: terrainGrid[y][x] = { &tex::grass4, 1.0 }; break;
-                }
-            }
-    GenerateHillsAndDesert(terrainGrid);
+    // create grid (we have already done this)
+    // GenerateGrass();
+    // GenerateHillsAndDesert(terrainGrid);
+    // GenerateRivers(terrainGrid);
 
-    // -------------------------------------------------------------
-    // ROAD GENERATION — old country roads, mostly straight,
-    // with rare curves and occasional crossroads
-    // -------------------------------------------------------------
-    int NUM_ROADS = 80 * GRID_SIZE * GRID_SIZE / 512 / 512;
-    int MAX_LEN   = 600;
-
-    int dirX[4] = { 1, -1, 0, 0 };
-    int dirY[4] = { 0, 0, 1, -1 };
-
-    for (int r = 0; r < NUM_ROADS; r++) {
-        int x = 0, y = 0, dir = 0;
-        switch (GetRandomValue(0,3)) {
-            case 0: x = GetRandomValue(0, GRID_SIZE-1); y = 3;             dir = 2; break;
-            case 1: x = GetRandomValue(0, GRID_SIZE-1); y = GRID_SIZE-4;   dir = 3; break;
-            case 2: y = GetRandomValue(0, GRID_SIZE-1); x = 3;             dir = 0; break;
-            case 3: y = GetRandomValue(0, GRID_SIZE-1); x = GRID_SIZE-4;   dir = 1; break;
-        }
-
-        for (int i = 0; i < MAX_LEN; i++) {
-            if (x <= 2 || y <= 2 || x >= GRID_SIZE-3 || y >= GRID_SIZE-3)
-                break;
-
-            // --- MAIN TILE ---
-            Terrain &T = terrainGrid[y][x];
-            if (!IsDesert(T.texture)) {
-                T.texture = &tex::water;
-                T.speed = 0.2f;
-                T.extra_sight = -0.7f;
-            }
-
-            // --- SECOND TILE (perpendicular, width = 2) ---
-            int px = 0, py = 0;
-            if (dirX[dir] != 0) py = 1;  // horizontal → widen vertically
-            else  px = 1;  // vertical → widen horizontally
-
-            int wx = x + px;
-            int wy = y + py;
-
-            if (wx > 2 && wy > 2 && wx < GRID_SIZE-3 && wy < GRID_SIZE-3) {
-                Terrain &W = terrainGrid[wy][wx];
-                if (!IsDesert(W.texture)) {
-                    W.texture = &tex::water;
-                    W.speed = 0.2f;
-                    W.extra_sight = -0.7f;
-                }
-            }
-
-            // --- RARE TURN ---
-            if (GetRandomValue(0,100) < 6) {
-                if (dir<2) dir = GetRandomValue(0,1)?2:3;
-                else dir = GetRandomValue(0,1)?0:1;
-            }
-
-            // --- RARE CROSSROAD (also 2 tiles wide) ---
-            if (GetRandomValue(0,100) < 2) {
-                int cd = GetRandomValue(0,3);
-                int cx = x + dirX[cd];
-                int cy = y + dirY[cd];
-
-                if (cx > 2 && cy > 2 && cx < GRID_SIZE-3 && cy < GRID_SIZE-3) {
-                    Terrain &C = terrainGrid[cy][cx];
-                    if (!IsDesert(C.texture)) {
-                        C.texture = &tex::water;
-                        C.speed = 0.3f;
-                        C.extra_sight = -0.7f;
-                    }
-                    int bpx = 0, bpy = 0;
-                    if(dirX[cd] != 0) bpy = 1;
-                    else bpx = 1;
-                    if (GetRandomValue(0,1)) { bpx = -bpx; bpy = -bpy; }
-                    int bx = cx + bpx;
-                    int by = cy + bpy;
-
-                    if (bx > 2 && by > 2 && bx < GRID_SIZE-3 && by < GRID_SIZE-3) {
-                        Terrain &B = terrainGrid[by][bx];
-                        if (!IsDesert(B.texture)) {
-                            B.texture = &tex::water;
-                            B.speed = 0.3f;
-                            B.extra_sight = -0.7f;
-                        }
-                    }
-                }
-            }
-            x += dirX[dir];
-            y += dirY[dir];
-        }
-    }
 
 
     int num_decorators = 0;   // track trees
@@ -2372,7 +2496,7 @@ int main() {
                 continue;
             }
             // TODO: heal only if not moving, but for now this is hard to properly check
-            if (u.health < u.max_health && (!is_mecha(u) || (u.faction && (u.faction->technology & TECHNOLOGY_AUTOREPAIRS)))) { // EVERYTHING OVER 18 MAX HEALTH (tWO-SHOTTED BY TANK) IS NOT LIVING
+            if (u.health < u.max_health && (!is_mecha(u) || (u.faction && (u.faction->technology & TECHNOLOGY_AUTOREPAIRS)))) {
                 if ((float)GetRandomValue(0, 1000000) / 1000000.0f < dt*0.5f && (is_mecha(u) || u.faction==nullptr || !(u.faction->technology & TECHNOLOGY_NUCLEAR))) {
                     u.health += 1.0f;
                     if (u.health > u.max_health)
@@ -4392,6 +4516,7 @@ int main() {
     UnloadTexture(tex::snow);
     UnloadTexture(tex::tree);
     UnloadTexture(tex::water);
+    UnloadTexture(tex::earth);
     CloseWindow();
     free(terrainBlock);
     free(terrainGrid);
