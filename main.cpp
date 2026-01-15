@@ -91,10 +91,10 @@ struct RankDef {
 };
 
 RankDef ranks[] = {
-    {"STRUGGLER",  1200, 1400, &tex::gear, BROWN},
-    {"SURVIVOR",   1400, 1600, &tex::gear, ORANGE},
-    {"LEADER",     1600, 1800, &tex::gear, YELLOW},
-    {"UTOPIC",     1800, 2200, &tex::utopia, WHITE}
+    {"STRUGGLER",  1200.0, 1400.0, &tex::gear, BROWN},
+    {"SURVIVOR",   1400.0, 1600.0, &tex::gear, ORANGE},
+    {"LEADER",     1600.0, 1800.0, &tex::gear, YELLOW},
+    {"UTOPIC",     1800.0, 2200.0, &tex::utopia, WHITE}
 };
 
 static void DrawTechProgressBar(
@@ -1041,7 +1041,7 @@ int main() {
             if(player_rating<1200) player_rating = 1200;
             if(player_rating>2200) player_rating = 2200;
             for (int i=0;i<4;i++)
-                if (rank_index>=ranks[i].min && player_rating<ranks[i].max) {
+                if (player_rating>=ranks[i].min && player_rating<ranks[i].max) {
                     rank_index = i;
                     break;
                 }
@@ -1119,7 +1119,7 @@ int main() {
             if(player_rating<1200) player_rating = 1200;
             if(player_rating>2200) player_rating = 2200;
             for (int i=0;i<4;i++)
-                if (rank_index>=ranks[i].min && player_rating<ranks[i].max) {
+                if (player_rating>=ranks[i].min && player_rating<ranks[i].max) {
                     rank_index = i;
                     break;
                 }
