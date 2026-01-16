@@ -303,8 +303,8 @@ int NOISE_SEED = 0;
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
             3.0,          /* attack_rate */ \
-            4.0,         /* range */ \
-            1.0,          /* damage */ \
+            2.0,         /* range */ \
+            3.0,          /* damage */ \
             0.0,          /* experience */ \
             (float)GetRandomValue(0,360),          /* angle */ \
             0.4,          /* size */ \
@@ -2468,12 +2468,12 @@ int main() {
                 continue;
             }
             if(u.texture==&tex::esper && (float)GetRandomValue(0, 1000000) / 1000000.0f<0.03*dt) { // once every 30 seconds the esper changes their mind
-                u.target_x += GetRandomValue(-5,5);
-                u.target_y += GetRandomValue(-5,5);
-                if(u.target_x<0) u.target_x = 0;
-                if(u.target_y<0) u.target_y = 0;
-                if(u.target_x>=GRID_SIZE-1) u.target_x = GRID_SIZE-1;
-                if(u.target_y>=GRID_SIZE-1) u.target_y = GRID_SIZE-1;
+                u.target_x = u.x+GetRandomValue(-40,40);
+                u.target_y = u.y+GetRandomValue(-40,40);
+                if(u.target_x<1) u.target_x = 1;
+                if(u.target_y<1) u.target_y = 1;
+                if(u.target_x>=GRID_SIZE-2) u.target_x = GRID_SIZE-2;
+                if(u.target_y>=GRID_SIZE-2) u.target_y = GRID_SIZE-2;
             }
 
             float u_speed = terrainGrid[(int)u.y][(int)u.x].speed;
@@ -3009,7 +3009,7 @@ int main() {
                 float y = GetRandomValue(10, GRID_SIZE - 10);
                 if (tooCloseToAnyCamp(x, y)) continue;
                 Terrain &T = terrainGrid[(int)y][(int)x];
-                if(GetRandomValue(0,100)<=1) {
+                if(GetRandomValue(0,1000)<10) {
                     CREATE_ESPER(ANIMAL_FACTION, x, y); // 2 every 250 seconds - they balance the late game by giving opportunities to players to come back
                     RevealUnitToAllFactions(num_units - 1);
                     last_message_counter = 0.f;
