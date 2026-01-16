@@ -41,6 +41,7 @@ namespace tex {
     static Texture2D road;
     static Texture2D road_transition;
     static Texture2D human;
+    static Texture2D esper;
     static Texture2D scout;
     static Texture2D tank;
     static Texture2D datacenter;
@@ -193,7 +194,8 @@ static Color ColorForTile(Texture* texture) {
 #define PREFERENCE_HUMAN       7
 #define PREFERENCE_ROOMBA      8
 #define PREFERENCE_ANIMAL      9
-#define PREFERENCE_COUNT       10
+#define PREFERENCE_ESPER      10
+#define PREFERENCE_COUNT      11
 
 
 const char* preference_desc[PREFERENCE_COUNT] = {
@@ -206,7 +208,8 @@ const char* preference_desc[PREFERENCE_COUNT] = {
     "+experience",
     "+5 humans",
     "near roombas",
-    "near animals"
+    "near animals",
+    "near esper"
 };
 
 Texture* preference_icon[PREFERENCE_COUNT] = {
@@ -220,6 +223,7 @@ Texture* preference_icon[PREFERENCE_COUNT] = {
     &tex::human,
     &tex::roomba,
     &tex::bison,
+    &tex::esper
 };
 
 typedef unsigned long long PrefMask;
@@ -283,11 +287,31 @@ int NOISE_SEED = 0;
             4.0,         /* range */ \
             1.0,          /* damage */ \
             0.0,          /* experience */ \
-            0.0,          /* angle */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
             0.3,          /* size */ \
             5.0,          /* health */ \
             5.0,          /* max_health */ \
             (faction)     /* faction */ \
+        };
+
+#define CREATE_ESPER(faction, x, y) \
+    if (num_units < MAX_UNITS) \
+        units[num_units++] = { \
+            &tex::esper,  /* texture */ \
+            "Esper",      /* name */ \
+            5.0,         /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            3.0,          /* attack_rate */ \
+            4.0,         /* range */ \
+            1.0,          /* damage */ \
+            0.0,          /* experience */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
+            0.4,          /* size */ \
+            20.0,          /* health */ \
+            20.0,          /* max_health */ \
+            (faction),     /* faction */ \
+            (faction),     /* capturable */ \
         };
 
 #define CREATE_TANK(faction, x, y) \
@@ -1025,6 +1049,7 @@ int main() {
     tex::water = LoadTexture("data/water.png");
     tex::desert_transition = LoadTexture("data/desert_transition.png");
     tex::human = LoadTexture("data/human.png");
+    tex::esper = LoadTexture("data/esper.png");
     tex::scout = LoadTexture("data/scout.png");
     tex::tank = LoadTexture("data/tank.png");
     tex::van = LoadTexture("data/van.png");
@@ -1698,6 +1723,10 @@ int main() {
                 if(GetRandomValue(0,99)<50) {CREATE_LAB(&factions[1], px, by);}
                 else CREATE_DATACENTER(&factions[1], px, by);
             }
+            else if(pref==PREFERENCE_ESPER) {
+                CREATE_ESPER(&factions[1], px, by);
+                RevealUnitToAllFactions(num_units - 1);
+            }
             else if(pref==PREFERENCE_ROOMBA) {
                 CREATE_ROOMBA(&factions[1], px, by-3);
                 CREATE_ROOMBA(&factions[1], px*0.5f+bx*0.5f, by);
@@ -1757,6 +1786,10 @@ int main() {
                 }
                 else if(pref==PREFERENCE_WAREHOUSE) {
                     CREATE_WAREHOUSE(&factions[1], px, by);
+                    RevealUnitToAllFactions(num_units - 1);
+                }
+                else if(pref==PREFERENCE_ESPER) {
+                    CREATE_ESPER(&factions[1], px, by);
                     RevealUnitToAllFactions(num_units - 1);
                 }
                 else if(pref==PREFERENCE_LAB) {
@@ -2310,6 +2343,8 @@ int main() {
             }
             if(u.texture==&tex::oil)
                 u.faction->victory_points += 3.f;
+            if(u.texture==&tex::esper)
+                u.faction->victory_points += 1.f;
             if(u.texture==&tex::warehouse)
                 u.faction->victory_points += 2.f;
             if(u.texture==&tex::radio && u.faction && (u.faction->technology & TECHNOLOGY_PROPAGANDA) )
@@ -2431,6 +2466,14 @@ int main() {
                 };
                 u.popup = "mobile fort";
                 continue;
+            }
+            if(u.texture==&tex::esper && (float)GetRandomValue(0, 1000000) / 1000000.0f<0.03*dt) { // once every 30 seconds the esper changes their mind
+                u.target_x += GetRandomValue(-5,5);
+                u.target_y += GetRandomValue(-5,5);
+                if(u.target_x<0) u.target_x = 0;
+                if(u.target_y<0) u.target_y = 0;
+                if(u.target_x>=GRID_SIZE-1) u.target_x = GRID_SIZE-1;
+                if(u.target_y>=GRID_SIZE-1) u.target_y = GRID_SIZE-1;
             }
 
             float u_speed = terrainGrid[(int)u.y][(int)u.x].speed;
@@ -2839,6 +2882,10 @@ int main() {
                                     last_message = "Important loss: Storage";
                                     last_message_counter = 0.f;
                                 }
+                                else if(o.texture==&tex::warehouse) {
+                                    last_message = "Important loss: Esper";
+                                    last_message_counter = 0.f;
+                                }
                             }
                             if(u.faction==factions) {
                                 if(o.texture==&tex::camp) {
@@ -2851,6 +2898,10 @@ int main() {
                                 }
                                 else if(o.texture==&tex::warehouse) {
                                     last_message = "Nice capture: Storage";
+                                    last_message_counter = 0.f;
+                                }
+                                else if(o.texture==&tex::esper) {
+                                    last_message = "Nice capture: Esper";
                                     last_message_counter = 0.f;
                                 }
                             }
@@ -2950,7 +3001,6 @@ int main() {
             u.attack_y += (dy / dist) * attackSpeed;
         }
 
-
         // spawn units
         const float ANIMAL_SPAWN_RATE = 0.1f; // expected spawns per second
         if (GetRandomValue(0, 1000000) < (int)(ANIMAL_SPAWN_RATE * dt * 1000000.0f)) {
@@ -2959,7 +3009,13 @@ int main() {
                 float y = GetRandomValue(10, GRID_SIZE - 10);
                 if (tooCloseToAnyCamp(x, y)) continue;
                 Terrain &T = terrainGrid[(int)y][(int)x];
-                if (T.texture == &tex::grass) {
+                if(GetRandomValue(0,100)<=1) {
+                    CREATE_ESPER(ANIMAL_FACTION, x, y); // 2 every 250 seconds - they balance the late game by giving opportunities to players to come back
+                    RevealUnitToAllFactions(num_units - 1);
+                    last_message_counter = 0.f;
+                    last_message = "A new esper broadcast their brainwaves!";
+                }
+                else if(T.texture == &tex::grass) {
                     if(GetRandomValue(0,100)<50) {
                         CREATE_BISON(ANIMAL_FACTION, x, y);
                     }
@@ -2967,14 +3023,14 @@ int main() {
                         CREATE_WOLF(ANIMAL_FACTION, x, y);
                     }
                 }
-                else if (T.texture == &tex::hill) {
+                else if(T.texture == &tex::hill) {
                     CREATE_RAT(ANIMAL_FACTION, x-0.2, y+0.2);
                     CREATE_RAT(ANIMAL_FACTION, x-0.2, y-0.2);
                     CREATE_RAT(ANIMAL_FACTION, x+0.2, y+0.2);
                     CREATE_RAT(ANIMAL_FACTION, x+0.2, y-0.2);
                     CREATE_RAT(ANIMAL_FACTION, x, y);
                 }
-                else if (T.texture == &tex::mountain) {
+                else if(T.texture == &tex::mountain) {
                     CREATE_SNOWMAN(ANIMAL_FACTION, x, y);
                 }
             }
@@ -3040,7 +3096,7 @@ int main() {
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
 
-                if (u.selected && u.speed) {
+                if (u.selected && u.speed && u.texture!=&tex::esper) {
                     if(currentMovementMode==MovementMode::Explore) {
                         u.target_x = tx + (float)GetRandomValue(-10,10);
                         u.target_y = ty + (float)GetRandomValue(-10,10);
@@ -3105,7 +3161,7 @@ int main() {
         // Example vision radius in tile-units
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];
-            if (u.faction != &factions[0] && u.texture!=&tex::warehouse) continue;  // only the player or warehouses give vision
+            if (u.faction != &factions[0] && u.texture!=&tex::warehouse && u.texture!=&tex::esper) continue;  // only the player, warehouses, or espers give vision
             int ux = (int)u.x;
             int uy = (int)u.y;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
@@ -3218,6 +3274,7 @@ int main() {
             Unit &u = units[i];
             if (u.health <= 0) continue;
             if (u.speed <= 0) continue;
+            if (u.texture==&tex::esper) continue;
             //if (u.target_x != 0 || u.target_y != 0) continue; // already moving → skip
             if (!u.faction) continue;
             if (u.faction==factions && (u.selected || !(u.faction->technology & TECHNOLOGY_SNIFFING))) continue; // disable player AI is sniffing is disabled
@@ -3267,7 +3324,6 @@ int main() {
                 continue;
             }
             if ((float)GetRandomValue(0, 1000000) / 1000000.0f > AI_ORDER_CHANCE * dt) continue;
-
             // ---------------------------------------------------------
             // Movement
             // ---------------------------------------------------------
@@ -3323,6 +3379,7 @@ int main() {
                 if (o.faction != u.faction) continue;
                 if (o.health <= 0) continue;
                 if (o.speed <= 0) continue;
+                if (o.texture==&tex::esper) continue;
                 float dx = o.x - u.x;
                 float dy = o.y - u.y;
                 if (dx*dx + dy*dy <= AI_ORDER_RADIUS * AI_ORDER_RADIUS && GetRandomValue(0, 100) < 10 && !o.selected) {
@@ -3693,7 +3750,7 @@ int main() {
         ClearBackground(Fade(BLACK, 0.5));
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];
-            if (u.faction != &factions[0] && u.texture!=&tex::warehouse) continue;
+            if (u.faction != &factions[0] && u.texture!=&tex::warehouse && u.texture!=&tex::esper) continue;
             Vector2 world = { u.x * TILE_SIZE, u.y * TILE_SIZE };
             Vector2 screen = GetWorldToScreen2D(world, camera);
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
@@ -4432,6 +4489,14 @@ int main() {
                     if(hovered->name==hero_name)
                         DrawText("Mighty", px + 80, textY+60, 28, WHITE);
                 }
+                else if(hovered->texture==&tex::esper) {
+                    DrawText("+1 utopia", px + 80, textY, 28, WHITE);
+                    DrawText("Autonomous", px + 80, textY+30, 28, WHITE);
+                    if(hovered->name==veteran_name)
+                        DrawText("Stronger", px + 80, textY+60, 28, WHITE);
+                    if(hovered->name==hero_name)
+                        DrawText("Mighty", px + 80, textY+60, 28, WHITE);
+                }
                 else if(is_mecha((*hovered)) && hovered->speed==0) DrawText("Mecha", px + 80, textY, 28, WHITE);
                 else if(is_mecha((*hovered))) {
                     DrawText("Mecha", px + 80, textY, 28, WHITE);
@@ -4535,6 +4600,7 @@ int main() {
     UnloadTexture(tex::mountain_transition);
     UnloadTexture(tex::mountain_transition2);
     UnloadTexture(tex::human);
+    UnloadTexture(tex::esper);
     UnloadTexture(tex::scout);
     UnloadTexture(tex::tank);
     UnloadTexture(tex::van);
