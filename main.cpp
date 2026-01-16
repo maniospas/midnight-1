@@ -1805,7 +1805,7 @@ int main() {
                     RevealUnitToAllFactions(num_units - 1);
                 }
                 else if(pref==PREFERENCE_ESPER) {
-                    CREATE_ESPER(ANIMAL_FACTION, px, by);
+                    //CREATE_ESPER(ANIMAL_FACTION, px, by);
                     RevealUnitToAllFactions(num_units - 1);
                 }
                 else if(pref==PREFERENCE_LAB) {
@@ -3044,8 +3044,8 @@ int main() {
                 float y = GetRandomValue(10, GRID_SIZE - 10);
                 if (tooCloseToAnyCamp(x, y)) continue;
                 Terrain &T = terrainGrid[(int)y][(int)x];
-                if(GetRandomValue(0,1000)<10) {
-                    CREATE_ESPER(ANIMAL_FACTION, x, y); // 2 every 250 seconds - they balance the late game by giving opportunities to players to come back
+                if(GetRandomValue(0,1000)<7) {
+                    CREATE_ESPER(ANIMAL_FACTION, x, y); // 1.5 every 250 seconds - they balance the late game by giving opportunities to players to come back
                     RevealUnitToAllFactions(num_units - 1);
                     last_message_counter = 0.f;
                     last_message = "A new esper broadcast their brainwaves!";
