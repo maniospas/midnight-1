@@ -12,7 +12,7 @@ static const int MAX_DECORATORS = 1000000;
 static const int TILE_SIZE = 128;
 static const float CAMERA_ZOOM = 0.8f;
 static const float movement_speed_multiplier = 0.5f;
-static const float CAPTURE_RATE = 0.5001f;
+static const float CAPTURE_RATE = 0.5f;
 
 
 Font uiFont;
