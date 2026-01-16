@@ -302,14 +302,14 @@ int NOISE_SEED = 0;
             5.0,         /* speed */ \
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
-            3.0,          /* attack_rate */ \
-            2.0,         /* range */ \
+            2.0,          /* attack_rate */ \
+            4.0,         /* range */ \
             3.0,          /* damage */ \
             0.0,          /* experience */ \
             (float)GetRandomValue(0,360),          /* angle */ \
             0.4,          /* size */ \
-            20.0,          /* health */ \
-            20.0,          /* max_health */ \
+            7.0,          /* health */ \
+            7.0,          /* max_health */ \
             (faction),     /* faction */ \
             (faction),     /* capturable */ \
         };
@@ -1105,17 +1105,30 @@ int main() {
     // prepare buttons
     MovementMode currentMovementMode = MovementMode::Tight;
     Rectangle clusteringBtn = {
-        GetScreenWidth() - 300.0f,
-        GetScreenHeight() - 110.0f,
-        280.0f,
-        100.0f
+        GetScreenWidth() - 260.0f,
+        GetScreenHeight() - 95.0f,
+        240.0f,
+        90.0f
     };
     bool showTechTree = false;
+    bool showHelp = false;
     Rectangle techBtn = {
-        GetScreenWidth() - 300.0f,
-        GetScreenHeight() - 220.0f,
-        280.0f,
-        100.0f
+        GetScreenWidth() - 260.0f,
+        GetScreenHeight() - 190.0f,
+        240.0f,
+        90.0f
+    };
+    Rectangle helpBtn = {
+        GetScreenWidth() - 260.0f,
+        GetScreenHeight() - 190.0f-65.f,
+        240.0f,
+        60.0f
+    };
+    Rectangle optionsButton = {
+        GetScreenWidth() - 260.0f,
+        10.f,
+        240.0f,
+        60.0f
     };
 
     // preallocate stuff
@@ -1136,7 +1149,6 @@ int main() {
         { ORANGE,    "AI", 0 },
         { PINK,      "AI", 0 },
         { BEIGE,     "AI", 0 },
-        { BROWN,     "AI", 0 }
     };
     Faction* ANIMAL_FACTION = &factions[2];
     int player_preferred_start[2] = {
@@ -1171,6 +1183,7 @@ int main() {
                 new_game_transition_mode = -1;
                 main_menu_transition_mode = -1;
                 showTechTree = false;
+                showHelp = false;
                 goto NEW_GAME;
             }
             else if (main_menu_transition_mode==2) {
@@ -1286,6 +1299,7 @@ int main() {
             else if (new_game_transition_mode==1) {
                 new_game_transition_mode = -1;
                 showTechTree = false;
+                showHelp = false;
                 goto START_GAME;
             }
             else if (new_game_transition_mode==2) {
@@ -1421,6 +1435,8 @@ int main() {
                 game_over_progress = 0.f;
                 game_over_transition_mode = 0;
                 if(unlocking_perk) {
+                    reward_transition_mode = -1;
+                    reward_progress = 0;
                     goto CLAIM_REWARDS;
                 }
                 main_menu_transition_mode = -2;
@@ -1570,12 +1586,12 @@ int main() {
             }
             // --- OK button ---
             Vector2 mouse = GetMousePosition();
-            bool hoverOk = CheckCollisionPointRec(mouse, btnOk);
+            bool hoverOk = !reward_transition_mode && CheckCollisionPointRec(mouse, btnOk);
             DrawRectangleRec(btnOk, hoverOk ? DARKGRAY : BLACK);
             DrawRectangleLinesEx(btnOk, 2, GRAY);
             DrawText("OK", btnOk.x + btnOk.width/2 - MeasureText("OK", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
             EndDrawing();
-            if ((!reward_transition_mode && hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE))
+            if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE))
                 reward_transition_mode = 1;
         }
     }
@@ -1724,7 +1740,7 @@ int main() {
                 else CREATE_DATACENTER(&factions[1], px, by);
             }
             else if(pref==PREFERENCE_ESPER) {
-                CREATE_ESPER(&factions[1], px, by);
+                CREATE_ESPER(ANIMAL_FACTION, px, by);
                 RevealUnitToAllFactions(num_units - 1);
             }
             else if(pref==PREFERENCE_ROOMBA) {
@@ -1789,7 +1805,7 @@ int main() {
                     RevealUnitToAllFactions(num_units - 1);
                 }
                 else if(pref==PREFERENCE_ESPER) {
-                    CREATE_ESPER(&factions[1], px, by);
+                    CREATE_ESPER(ANIMAL_FACTION, px, by);
                     RevealUnitToAllFactions(num_units - 1);
                 }
                 else if(pref==PREFERENCE_LAB) {
@@ -2046,12 +2062,31 @@ int main() {
                 }
             }
         }
-        if (IsKeyPressed(KEY_ESCAPE)) showTechTree = !showTechTree;
+        static float showHelpTimer = 0.f;
+        showHelpTimer -= dt*2;
+        if(showHelpTimer<0) {
+            showHelpTimer = 0;
+            showHelp = false;
+        }
+        if (IsKeyPressed(KEY_ESCAPE))
+            showTechTree = !showTechTree;
+        if(IsKeyDown(KEY_TAB)) {
+            showHelp = true;
+            showHelpTimer = 1.f;
+        }
         if (CheckCollisionPointRec(GetMousePosition(), techBtn)) {
             mouseCapturedByUI = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                 showTechTree = !showTechTree;
         }
+        if (!showTechTree && CheckCollisionPointRec(GetMousePosition(), helpBtn)) {
+            mouseCapturedByUI = true;
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                showHelp = true;
+                showHelpTimer = 1.f;
+            }
+        }
+        if (showTechTree) showHelp = false;
 
 
         // camera
@@ -2344,7 +2379,7 @@ int main() {
             if(u.texture==&tex::oil)
                 u.faction->victory_points += 3.f;
             if(u.texture==&tex::esper)
-                u.faction->victory_points += 1.f;
+                u.faction->victory_points += 2.f;
             if(u.texture==&tex::warehouse)
                 u.faction->victory_points += 2.f;
             if(u.texture==&tex::radio && u.faction && (u.faction->technology & TECHNOLOGY_PROPAGANDA) )
@@ -4232,6 +4267,25 @@ int main() {
         }
 
 
+        if (showHelp) {
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.85f));
+            float px = GetScreenWidth()*0.5f-600;
+            float py = GetScreenHeight()*0.5f-400;
+            DrawText("Use your units to capture stuff.",px,py,32,WHITE);
+            py += 40;
+            DrawText("Gather the most utopia before pollution fills.",px,py,32,WHITE);
+            py += 40;
+            DrawText("Spawning stops if you exceed available industry.",px,py,32,WHITE);
+            py += 40;
+            py += 100;
+            DrawText("Mouse over units to see a description.",px,py,32,WHITE);
+            py += 40;
+            DrawText("WASD/right drag to move camera & QE/scroll to zoom",px,py,32,WHITE);
+            py += 40;
+            DrawText("Left drag for selection rectangle/shift to select all visible & right click to move",px,py,32,WHITE);
+        }
+
+
         // --------------------------------------------------
         // RESEARCH BUTTON
         // --------------------------------------------------
@@ -4239,13 +4293,13 @@ int main() {
         bool techHover = CheckCollisionPointRec(GetMousePosition(), techBtn);
         DrawRectangleRounded(techBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
         static float prev_prog = 0.f;
-        const char* title = (prog >= 1.0f) ? "New tech (esc)" : (showTechTree?"Back (esc)":"Research (esc)");
+        const char* title = (prog >= 1.0f) ? "New tech" : (showTechTree?"Back":"Research");
         if(prev_prog<1.f && prog >= 1.0f) {
             last_message_counter = 0.f;
             last_message = "New tech can be selected.";
         }
         prev_prog = prog;
-        DrawText(title,techBtn.x + 20,techBtn.y + 16,32,WHITE);
+        DrawText(title,techBtn.x + 20,techBtn.y + 14,32,WHITE);
         float padding = 20.0f;
         float barW = techBtn.width - padding * 2;
         float barH = 20.0f;
@@ -4253,22 +4307,37 @@ int main() {
         float by = techBtn.y + techBtn.height - barH - 18.0f;
         DrawTechProgressBar(bx, by, barW, barH, prog);
 
+        DrawRectangleRounded({techBtn.x+techBtn.width-70, techBtn.y+15, 50, 25},0.2f, 8, WHITE);
+        DrawTextSmall("esc",techBtn.x+techBtn.width-65+5,techBtn.y+15,20,BLACK);
+
 
         // --------------------------------------------------
-        // EXIT APP BUTTON (reuses clusteringBtn)
+        // EXIT APP BUTTON
         // --------------------------------------------------
         if (showTechTree) {
             Vector2 mouse = GetMousePosition();
-            bool hover = CheckCollisionPointRec(mouse, clusteringBtn);
-            DrawRectangleRounded(clusteringBtn, 0.2f, 8, hover ? Fade(RED, 0.65f) : Fade(BLACK, 0.6f));
+            bool hover = CheckCollisionPointRec(mouse, optionsButton);
+            DrawRectangleRounded(optionsButton, 0.2f, 8, hover ? Fade(RED, 0.65f) : Fade(BLACK, 0.6f));
             DrawText("Concede",
-                     clusteringBtn.x + (clusteringBtn.width - MeasureText("Concede", 36)) * 0.5f,
-                     clusteringBtn.y + (clusteringBtn.height - 36) * 0.5f,
-                     36,WHITE);
+                     optionsButton.x + 20,
+                     optionsButton.y + 15,
+                     32,WHITE);
             if (hover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 factions[0].victory_points = -factions[0].victory_points;
                 goto GAME_OVER;
             }
+        }
+        else {
+            Vector2 mouse = GetMousePosition();
+            bool hover = CheckCollisionPointRec(mouse, helpBtn);
+            DrawRectangleRounded(helpBtn, 0.2f, 8, hover ? Fade(DARKGRAY, 0.5f) : Fade(BLACK, 0.5f));
+            DrawText("Info",
+                     helpBtn.x + 20,
+                     helpBtn.y + 15,
+                     32,WHITE);
+
+            DrawRectangleRounded({helpBtn.x+helpBtn.width-70, helpBtn.y+15, 50, 25},0.2f, 8, WHITE);
+            DrawTextSmall("tab",helpBtn.x+helpBtn.width-65+5,helpBtn.y+15,20,BLACK);
         }
 
         if (last_message) {
@@ -4490,7 +4559,7 @@ int main() {
                         DrawText("Mighty", px + 80, textY+60, 28, WHITE);
                 }
                 else if(hovered->texture==&tex::esper) {
-                    DrawText("+1 utopia", px + 80, textY, 28, WHITE);
+                    DrawText("+2 utopia", px + 80, textY, 28, WHITE);
                     DrawText("Autonomous", px + 80, textY+30, 28, WHITE);
                     if(hovered->name==veteran_name)
                         DrawText("Stronger", px + 80, textY+60, 28, WHITE);
@@ -4563,12 +4632,17 @@ int main() {
             // label
             DrawText(
                 //currentMovementMode==MovementMode::Explore?"Explore":currentMovementMode==MovementMode::Tight?"Tight move":"Scattered",
-                "Formation (space)",
+                "Formation",
                 clusteringBtn.x + 20,
                 clusteringBtn.y + 10,
                 32,
                 WHITE
             );
+
+
+
+            DrawRectangleRounded({clusteringBtn.x+clusteringBtn.width-70, clusteringBtn.y+15, 50, 25},0.2f, 8, WHITE);
+            DrawTextSmall("spc",clusteringBtn.x+clusteringBtn.width-65+5,clusteringBtn.y+15,20,BLACK);
 
         }
         EndDrawing();
