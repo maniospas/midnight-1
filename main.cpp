@@ -1872,9 +1872,10 @@ int main() {
     // 3. MAP SCATTER — neutral structures + tanks
     // ====================================================================
     int NUM_NEUTRAL_STRUCTURES = GRID_SIZE*GRID_SIZE/512;
-    int NUM_NEUTRAL_TANKS = GRID_SIZE*GRID_SIZE/512*2;
-    if(GetRandomValue(0,99)<20) NUM_NEUTRAL_TANKS *= 2;
-    if(GetRandomValue(0,99)<20) NUM_NEUTRAL_TANKS *= 2;
+    int NUM_NEUTRAL_TANKS = GRID_SIZE*GRID_SIZE/512/2;
+    if(GetRandomValue(0,99)<50) NUM_NEUTRAL_TANKS *= 2;
+    if(GetRandomValue(0,99)<50) NUM_NEUTRAL_TANKS *= 2;
+    if(GetRandomValue(0,99)<50) NUM_NEUTRAL_TANKS *= 2;
     int NUM_WILD_ANIMALS= GRID_SIZE*GRID_SIZE/512/8;
     float AVOID_BASE_RADIUS = 7.0f;
 
@@ -1960,8 +1961,8 @@ int main() {
             }
             continue; // more tanks in the desert - roombas elsewhere
         }
-        if (GetRandomValue(0, 99) < 70) continue; // too many mechas saturate the early game, so make them rarer without droping firepire by clustering
-        if (GetRandomValue(0, 99) < 85) continue;
+        if (GetRandomValue(0, 99) < 70) continue; // too many mechas saturate the early game, so make them rarer without droping firepowser by clustering
+        //if (GetRandomValue(0, 99) < 85) continue;
         //cluster some tanks - the player should feel lucky to find something like this
         CREATE_TANK(&factions[1], x-0.3f, y-0.3f);
         CREATE_TANK(&factions[1], x+0.3f, y-0.3f);
@@ -3360,7 +3361,7 @@ int main() {
                     if (o.faction==ANIMAL_FACTION) continue;
                     if (o.capturing) continue;
                     if (o.health <= 0) continue;
-                    if (time_norm>0.9f && o.texture!=&tex::oil && o.texture!=&tex::warehouse) continue; // at the last stretch attack the victory locations with all means
+                    if (time_norm>0.7f && o.texture!=&tex::oil && o.texture!=&tex::warehouse && o.texture!=&tex::esper) continue; // at the last stretch attack the victory locations with all means
                     float dx = o.x - u.x;
                     float dy = o.y - u.y;
                     float d2 = dx*dx + dy*dy;
