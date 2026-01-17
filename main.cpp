@@ -1873,6 +1873,8 @@ int main() {
     // ====================================================================
     int NUM_NEUTRAL_STRUCTURES = GRID_SIZE*GRID_SIZE/512;
     int NUM_NEUTRAL_TANKS = GRID_SIZE*GRID_SIZE/512*2;
+    if(GetRandomValue(0,99)<20) NUM_NEUTRAL_TANKS *= 2;
+    if(GetRandomValue(0,99)<20) NUM_NEUTRAL_TANKS *= 2;
     int NUM_WILD_ANIMALS= GRID_SIZE*GRID_SIZE/512/8;
     float AVOID_BASE_RADIUS = 7.0f;
 
@@ -3073,11 +3075,11 @@ int main() {
                 float y = GetRandomValue(10, GRID_SIZE - 10);
                 if (tooCloseToAnyCamp(x, y)) continue;
                 Terrain &T = terrainGrid[(int)y][(int)x];
-                if(GetRandomValue(0,1000)<7) {
-                    CREATE_ESPER(ANIMAL_FACTION, x, y); // 1.5 every 250 seconds - they balance the late game by giving opportunities to players to come back
+                if(GetRandomValue(0,1000)<10 && time_norm>0.3) {
+                    CREATE_ESPER(ANIMAL_FACTION, x, y); // 2 every 250 seconds, but only after 33% of progress - they balance the late game by giving opportunities to players to come back
                     RevealUnitToAllFactions(num_units - 1);
                     last_message_counter = 0.f;
-                    last_message = "A new esper broadcast their brainwaves!";
+                    last_message = "An esper broadcasts their brainwaves!";
                 }
                 else if(T.texture == &tex::grass) {
                     if(GetRandomValue(0,100)<50) {
@@ -4501,9 +4503,9 @@ int main() {
                 DrawRectangleRec(bar_bg, bg);
                 DrawRectangleRec(bar_fg, fg);
 
-                if(polution_speedup<-0.2f)
+                if(polution_speedup<-0.1f)
                     DrawText("Pollution slowed down", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
-                else if(polution_speedup>0.2f)
+                else if(polution_speedup>0.1f)
                     DrawText("Pollution sped up from industry", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
                 else
                     DrawText("Pollution progress", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
