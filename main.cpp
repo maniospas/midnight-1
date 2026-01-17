@@ -1315,8 +1315,8 @@ int main() {
         const Rectangle btnStart = {baseX - 400, baseY+720,900, 80};
         const Rectangle btnQuit = {baseX - 400, baseY+820,900, 80};
         Rectangle prefBox[2] = {
-            { baseX+240-280, baseY + 720-70-10-70-30, 310, 70 },
-            { baseX+240-280, baseY + 720-70-30, 310, 70 }
+            { baseX+240-260, baseY + 720-70-10-70-30, 310, 70 },
+            { baseX+240-260, baseY + 720-70-30, 310, 70 }
         };
         BeginDrawing();
         ClearBackground(BLACK);
@@ -1337,7 +1337,7 @@ int main() {
         // preferences
         if(unlocked_preferences)
             for (int i=0; i<2; ++i) {
-                bool hover = !new_game_transition_mode && CheckCollisionPointRec(mouse, prefBox[i]);
+                bool hover = false;//!new_game_transition_mode && CheckCollisionPointRec(mouse, prefBox[i]);
                 DrawRectangleRec(prefBox[i], hover ? Fade(ORANGE,0.34f) : BLACK);
                 DrawRectangleLinesEx(prefBox[i], 2, hover?GRAY:BLACK);
                 DrawTextSmall(i == 0 ? "Start perk A" : "Start perk B",prefBox[i].x + 10,prefBox[i].y + 6,30,hover?GRAY:DARKGRAY);
@@ -1358,6 +1358,35 @@ int main() {
                     } while (!(unlocked_preferences & (1ULL << p)) && p!=PREFERENCE_RAILGUN);
                     player_preferred_start[i] = p;
                 }
+
+                Rectangle leftArrow  = { prefBox[i].x - 28-7, prefBox[i].y + 15, 24, 40 };
+                Rectangle rightArrow = { prefBox[i].x + prefBox[i].width + 4, prefBox[i].y + 15, 24, 40 };
+
+                bool hoverL = !new_game_transition_mode && CheckCollisionPointRec(mouse, leftArrow);
+                bool hoverR = !new_game_transition_mode && CheckCollisionPointRec(mouse, rightArrow);
+                DrawTriangle(
+                    (Vector2){ leftArrow.x + leftArrow.width, leftArrow.y },
+                             (Vector2){ leftArrow.x, leftArrow.y + leftArrow.height/2 },
+                             (Vector2){ leftArrow.x + leftArrow.width, leftArrow.y + leftArrow.height },
+                             hoverL ? ORANGE : DARKGRAY);
+                DrawTriangle(
+                    (Vector2){ rightArrow.x, rightArrow.y },
+                             (Vector2){ rightArrow.x, rightArrow.y + rightArrow.height },
+                             (Vector2){ rightArrow.x + rightArrow.width, rightArrow.y + rightArrow.height/2 },
+                             hoverR ? ORANGE : DARKGRAY);
+
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    int p = player_preferred_start[i];
+                    if (hoverR) {
+                        do {p = (p + 1) % PREFERENCE_COUNT;} while (!(unlocked_preferences & (1ULL << p)) && p != PREFERENCE_RAILGUN);
+                        player_preferred_start[i] = p;
+                    }
+                    if (hoverL) {
+                        do {p = (p - 1 + PREFERENCE_COUNT) % PREFERENCE_COUNT;} while (!(unlocked_preferences & (1ULL << p)) && p != PREFERENCE_RAILGUN);
+                        player_preferred_start[i] = p;
+                    }
+                }
+
             }
         // Start button
         bool hoverStart = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnStart);
@@ -3168,7 +3197,9 @@ int main() {
                 if(u.faction!=factions) {u.selected=false; continue;} //only first faction can be selected
                 float px = u.x * TILE_SIZE;
                 float py = u.y * TILE_SIZE;
-                u.selected = (px >= minX && px <= maxX && py >= minY && py <= maxY);
+                float extra = u.size+u.extra_scale+0.01f;
+                extra *= TILE_SIZE/2;
+                u.selected = (px >= minX-extra&& px <= maxX+extra && py >= minY-extra && py <= maxY+extra);
             }
         }
 
@@ -4308,7 +4339,7 @@ int main() {
         DrawTechProgressBar(bx, by, barW, barH, prog);
 
         DrawRectangleRounded({techBtn.x+techBtn.width-70, techBtn.y+15, 50, 25},0.2f, 8, WHITE);
-        DrawTextSmall("esc",techBtn.x+techBtn.width-65+5,techBtn.y+15,20,BLACK);
+        DrawTextSmall("esc",techBtn.x+techBtn.width-65+5,techBtn.y+15,24,BLACK);
 
 
         // --------------------------------------------------
@@ -4337,7 +4368,7 @@ int main() {
                      32,WHITE);
 
             DrawRectangleRounded({helpBtn.x+helpBtn.width-70, helpBtn.y+15, 50, 25},0.2f, 8, WHITE);
-            DrawTextSmall("tab",helpBtn.x+helpBtn.width-65+5,helpBtn.y+15,20,BLACK);
+            DrawTextSmall("tab",helpBtn.x+helpBtn.width-65+5,helpBtn.y+15,24,BLACK);
         }
 
         if (last_message) {
@@ -4519,8 +4550,11 @@ int main() {
                     Vector2 origin = { size * 0.5f, size * 0.5f };
                     DrawTexturePro(*t, src, dst, origin, rot, WHITE);
                 }
-                textY += 135;
-                if(hovered->texture==&tex::camp) DrawText("Spawns humans", px + 80, textY, 28, WHITE);
+                textY += 140;
+                if(hovered->texture==&tex::camp) {
+                    DrawText("Spawns humans if", px + 80, textY, 28, WHITE);
+                    DrawText("below industry cap", px + 80, textY+30, 28, WHITE);
+                }
                 else if(hovered->texture==&tex::lab) DrawText("+10% research", px + 80, textY, 28, WHITE);
                 else if(hovered->texture==&tex::field) {
                     DrawText("+4 industry (bloom)", px + 80, textY, 28, WHITE);
@@ -4569,7 +4603,7 @@ int main() {
                 else if(is_mecha((*hovered)) && hovered->speed==0) DrawText("Mecha", px + 80, textY, 28, WHITE);
                 else if(is_mecha((*hovered))) {
                     DrawText("Mecha", px + 80, textY, 28, WHITE);
-                    DrawText("Needs industry", px + 80, textY+30, 28, WHITE);
+                    DrawText("Takes up industry", px + 80, textY+30, 28, WHITE);
                     if(hovered->name==veteran_name)
                         DrawText("Stronger", px + 80, textY+60, 28, WHITE);
                     if(hovered->name==hero_name)
@@ -4585,7 +4619,7 @@ int main() {
                     }
                     else {
                         DrawText("Combatant", px + 80, textY, 28, WHITE);
-                        DrawText("Needs industry", px + 80, textY+30, 28, WHITE);
+                        DrawText("Takes up industry", px + 80, textY+30, 28, WHITE);
                     }
                     if(hovered->name==veteran_name)
                         DrawText("Stronger", px + 80, textY+60, 28, WHITE);
@@ -4642,7 +4676,7 @@ int main() {
 
 
             DrawRectangleRounded({clusteringBtn.x+clusteringBtn.width-70, clusteringBtn.y+15, 50, 25},0.2f, 8, WHITE);
-            DrawTextSmall("spc",clusteringBtn.x+clusteringBtn.width-65+5,clusteringBtn.y+15,20,BLACK);
+            DrawTextSmall("spc",clusteringBtn.x+clusteringBtn.width-65+5,clusteringBtn.y+15,24,BLACK);
 
         }
         EndDrawing();
