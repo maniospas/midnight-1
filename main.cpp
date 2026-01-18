@@ -58,6 +58,7 @@ namespace tex {
     static Texture2D lab;
     static Texture2D warehouse;
     static Texture2D overlay;
+    static Texture2D banner;
     static Texture2D blood;
     static Texture2D ghost;
     static Texture2D crater;
@@ -308,8 +309,8 @@ int NOISE_SEED = 0;
             0.0,          /* experience */ \
             (float)GetRandomValue(0,360),          /* angle */ \
             0.4,          /* size */ \
-            7.0,          /* health */ \
-            7.0,          /* max_health */ \
+            15.0,          /* health */ \
+            15.0,          /* max_health */ \
             (faction),     /* faction */ \
             (faction),     /* capturable */ \
         };
@@ -1085,6 +1086,8 @@ int main() {
     tex::datacenter = LoadTexture("data/datacenter.png");
     tex::info = LoadTexture("data/info.png");
     tex::overlay = LoadTexture("data/overlay.png");
+    tex::banner = LoadTexture("data/banner.png");
+    tex::banner = LoadTexture("data/banner.png");
     SetTargetFPS(60);
 
 
@@ -1484,7 +1487,7 @@ int main() {
                     Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
                     Rectangle{baseX-256, baseY+100, 512, 256},
                     {0,0}, 0, WHITE);
-                DrawText("BEST UTOPIA", GetScreenWidth()/2 - MeasureText("BEST UTOPIA", 96)/2+70, baseY+420, 96, GREEN);
+                DrawText("BEST UTOPIA", baseX - MeasureText("BEST UTOPIA", 96)/2+70, baseY+420, 96, GREEN);
             }
             else if (game_time >= GAME_DURATION) {
                 DrawTexturePro(
@@ -1530,7 +1533,7 @@ int main() {
 
             // --- Ethical tech disclosure ---
             if (badTechCount) {
-                DrawTextSmall("Was it really worth it?",baseX - MeasureText("Was it really worth it?", 28)/2,baseY+610,28,ORANGE);
+                DrawTextSmall("Was it really worth it?", baseX - MeasureText("Was it really worth it?", 28)/2,baseY+610,28,ORANGE);
                 for (int i = 0; i < badTechCount; i++)
                     DrawTextSmall(TextFormat("- %s", badTechNames[i]), baseX - 260,baseY+650 + i * 28,24, DARKGRAY);
             }
@@ -2213,12 +2216,13 @@ int main() {
                     bool applied = false;
                     for (int j = 0; j < num_units; j++)
                         if (units[j].faction==u.faction && units[j].texture==&tex::human && units[j].health<units[j].max_health) {
-                            units[j].health = units[j].max_health;
+                            units[j].health += 2;
+                            units[j].max_health += 2;
                             units[j].popup = "healthcare";
                             applied = true;
                         }
                     if(u.faction==factions && applied) {
-                        last_message = "Databank: found healthcare products and healed your humans.";
+                        last_message = "Databank: found healthcare products and increased HP of your humans.";
                         last_message_counter = 0.f;
                     }
                 }
@@ -2277,14 +2281,6 @@ int main() {
         if(factions[0].count_members==0) {
             goto GAME_OVER;
         }
-        for(int i=0;i<max_factions;i++) {
-            if(factions[i].technology & TECHNOLOGY_TECHNOCRACY) {
-                factions[i].victory_points += factions[i].industry*0.01f;
-                //factions[i].industry *= 0.5f;
-            }
-            game_time += dt*0.08f*factions[i].industry/200.f;
-            polution_speedup += 0.08f*factions[i].industry/200.f;
-        }
 
         // process units
         const float TURN_RATE = 36.0f;
@@ -2332,7 +2328,10 @@ int main() {
             }
             if(!u.faction)
                 continue;
-            if (u.capturing && (float)GetRandomValue(0, 1000000) / 1000000.0f < dt*((u.faction->technology&TECHNOLOGY_OWNERSHIP)?1.0f:0.5f)) {
+            if (u.capturing && u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f < dt
+                    *((u.faction->technology&TECHNOLOGY_OWNERSHIP)?1.0f:0.5f)
+                    *(u.faction->count_members<=u.faction->industry?1.0f:0.3f)
+                ) {
                 u.health += CAPTURE_RATE;
                 if (u.health > u.max_health)
                     u.health = u.max_health;
@@ -2710,6 +2709,18 @@ int main() {
             if(u.faction && (u.faction->technology & TECHNOLOGY_HYPERMAGNET)) step *= 2;
             u.x += (dx / dist) * step;
             u.y += (dy / dist) * step;
+        }
+
+        //
+        for(int i=0;i<max_factions;i++) {
+            if(factions[i].technology & TECHNOLOGY_TECHNOCRACY) {
+                factions[i].victory_points += factions[i].industry*0.01f;
+                //factions[i].industry *= 0.5f;
+            }
+            game_time += dt*0.08f*factions[i].industry/300.f;
+            polution_speedup += 0.08f*factions[i].industry/300.f;
+            game_time += dt*0.08f*factions[i].count_members/300.f;
+            polution_speedup += 0.08f*factions[i].count_members/300.f;
         }
 
         // repulse units
@@ -3361,7 +3372,7 @@ int main() {
                     if (o.faction==ANIMAL_FACTION) continue;
                     if (o.capturing) continue;
                     if (o.health <= 0) continue;
-                    if (time_norm>0.7f && o.texture!=&tex::oil && o.texture!=&tex::warehouse && o.texture!=&tex::esper) continue; // at the last stretch attack the victory locations with all means
+                    if (time_norm>0.8f && o.texture!=&tex::oil && o.texture!=&tex::warehouse && o.texture!=&tex::esper) continue; // at the last stretch attack the victory locations with all means
                     float dx = o.x - u.x;
                     float dy = o.y - u.y;
                     float d2 = dx*dx + dy*dy;
@@ -3451,7 +3462,8 @@ int main() {
                 if (o.texture==&tex::esper) continue;
                 float dx = o.x - u.x;
                 float dy = o.y - u.y;
-                if (dx*dx + dy*dy <= AI_ORDER_RADIUS * AI_ORDER_RADIUS && GetRandomValue(0, 100) < 10 && !o.selected) {
+                // grab everything if the game has progressed enough
+                if (dx*dx + dy*dy <= AI_ORDER_RADIUS * AI_ORDER_RADIUS && (GetRandomValue(0, 100) < 10 || time_norm>0.5f) && !o.selected) {
                     // only order units not already moving
                     o.target_x = tx;
                     o.target_y = ty;
@@ -4463,23 +4475,11 @@ int main() {
             DrawText(msg, 124, 102+offset, 42, WHITE);
             snprintf(msg, sizeof(msg), "%d top AI", best_other_points);
             DrawText(msg, 330, 102+offset, 42, WHITE);
-            snprintf(msg, sizeof(msg), "%d/%d industry", (int)factions[0].count_members, factions[0].industry);
-            DrawText(msg, 100, 180+offset, 24, BLACK);
             DrawTexturePro(
                 tex::utopia,
                 Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height},
-                Rectangle{20, offset+85, 90, 90},
-                {0,0}, 0, WHITE);
-            DrawTexturePro(
-                tex::gear,
-                Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height},
-                Rectangle{50, 180+offset+14, 32, 32},
-                {16,16}, game_time*6.f*factions[0].industry, WHITE);
-            DrawTexturePro(
-                tex::gear,
-                Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height},
-                           Rectangle{50+24, 180+offset+14, 32, 32},
-                           {16,16}, -game_time*6.f*factions[0].industry-30, WHITE);
+                           Rectangle{20, offset+85, 90, 90},
+                           {0,0}, 0, WHITE);
 
 
             // ======================================================
@@ -4504,13 +4504,38 @@ int main() {
                 DrawRectangleRec(bar_bg, bg);
                 DrawRectangleRec(bar_fg, fg);
 
-                if(polution_speedup<-0.1f)
+                if(polution_speedup<-0.2f)
                     DrawText("Pollution slowed down", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
-                else if(polution_speedup>0.1f)
+                else if(polution_speedup>0.2f)
                     DrawText("Pollution sped up from industry", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
                 else
                     DrawText("Pollution progress", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
                 DrawRectangleLinesEx(bar_bg, 8.0f, BLACK);
+            }
+
+            offset += 30;
+            {
+                int fi = 0;
+                DrawTexturePro(tex::banner,Rectangle{0,0,(float)tex::banner.width,(float)tex::banner.height}, Rectangle{-20, 170+offset, 470, 48}, {0,0},0, factions[fi].color);
+                if((int)factions[fi].count_members<factions[fi].industry)
+                    snprintf(msg, sizeof(msg), "%d/%d industry", (int)factions[fi].count_members, factions[fi].industry);
+                else if((int)factions[fi].count_members==factions[fi].industry)
+                    snprintf(msg, sizeof(msg), "%d/%d industry (cap)", (int)factions[fi].count_members, factions[fi].industry);
+                else
+                    snprintf(msg, sizeof(msg), "%d/%d industry (over cap)", (int)factions[fi].count_members, factions[fi].industry);
+                DrawText(msg, 80, 182+offset, 24, WHITE);
+                DrawTexturePro(tex::gear, Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height}, Rectangle{30, 180+offset+14, 32, 32}, {16,16}, game_time*6.f*factions[fi].industry, WHITE);
+                DrawTexturePro(tex::gear, Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height}, Rectangle{30+24, 180+offset+14, 32, 32}, {16,16}, -game_time*6.f*factions[fi].industry-30, WHITE);
+            }
+
+            for (int fi = 3; fi < max_factions; fi++) {
+                if((int)factions[fi].count_members<=factions[fi].industry) continue;
+                offset += 52;
+                DrawTexturePro(tex::banner,Rectangle{0,0,(float)tex::banner.width,(float)tex::banner.height}, Rectangle{-20, 170+offset, 470, 48}, {0,0},0, factions[fi].color);
+                snprintf(msg, sizeof(msg), "%d/%d AI industry (over cap)", (int)factions[fi].count_members, factions[fi].industry);
+                DrawText(msg, 80, 182+offset, 24, WHITE);
+                DrawTexturePro(tex::gear, Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height}, Rectangle{30, 180+offset+14, 32, 32}, {16,16}, game_time*6.f*factions[fi].industry, WHITE);
+                DrawTexturePro(tex::gear, Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height}, Rectangle{30+24, 180+offset+14, 32, 32}, {16,16}, -game_time*6.f*factions[fi].industry-30, WHITE);
             }
 
         }
