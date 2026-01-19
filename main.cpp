@@ -12,7 +12,12 @@ static const int MAX_DECORATORS = 1000000;
 static const int TILE_SIZE = 128;
 static const float CAMERA_ZOOM = 0.8f;
 static const float movement_speed_multiplier = 0.5f;
-static const float CAPTURE_RATE = 0.5f;
+
+// difficulty controls
+static const float CAMP_SPAWN_RATE = 2.f; //
+static const float ANIMAL_SPAWN_RATE = 0.1f; // expected spawns per second
+static const float CAPTURE_RATE = 0.5f; // also heals espers and partial captures
+static const float OVER_CAP_REGEN_RATE = 0.3f; // 1.f is normal restoration from units being captured, this is lower if we have over-saturated industry
 
 
 Font uiFont;
@@ -408,7 +413,7 @@ int NOISE_SEED = 0;
             5.0,          /* speed */ \
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
-            1.0,          /* attack_rate */ \
+            2.0,          /* attack_rate */ \
             1.0,          /* range */ \
             3.0,          /* damage */ \
             0.0,          /* experience */ \
@@ -475,7 +480,7 @@ int NOISE_SEED = 0;
             (float)(y),   /* y */ \
             5.0,          /* attack_rate */ \
             6.0,         /* range */ \
-            2.0,          /* damage */ \
+            1.5,          /* damage */ \
             0.0,          /* experience */ \
             (float)GetRandomValue(0,360),          /* angle */ \
             0.7,          /* size */ \
@@ -1318,8 +1323,8 @@ int main() {
         const Rectangle btnStart = {baseX - 400, baseY+720,900, 80};
         const Rectangle btnQuit = {baseX - 400, baseY+820,900, 80};
         Rectangle prefBox[2] = {
-            { baseX+240-260, baseY + 720-70-10-70-30, 310, 70 },
-            { baseX+240-260, baseY + 720-70-30, 310, 70 }
+            { baseX+220-260, baseY + 720-70-10-70-30, 310, 70 },
+            { baseX+220-260, baseY + 720-70-30, 310, 70 }
         };
         BeginDrawing();
         ClearBackground(BLACK);
@@ -1334,7 +1339,7 @@ int main() {
         DrawTexturePro(
             minimap.texture,
             Rectangle{0,0,(float)GRID_SIZE*MINIMAP_SCALE,-(float)GRID_SIZE*MINIMAP_SCALE},
-            Rectangle{baseX-230, baseY+545, 148, 148},
+            Rectangle{baseX-270, baseY+545, 148, 148},
             {0,0}, 0, WHITE);
         Vector2 mouse = GetMousePosition();
         // preferences
@@ -2330,7 +2335,7 @@ int main() {
                 continue;
             if (u.capturing && u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f < dt
                     *((u.faction->technology&TECHNOLOGY_OWNERSHIP)?1.0f:0.5f)
-                    *(u.faction->count_members<=u.faction->industry?1.0f:0.3f)
+                    *(u.faction->count_members<=u.faction->industry?1.0f:OVER_CAP_REGEN_RATE)
                 ) {
                 u.health += CAPTURE_RATE;
                 if (u.health > u.max_health)
@@ -2474,7 +2479,7 @@ int main() {
                 }
             }
             if (u.texture == &tex::camp) {
-                if((float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<dt*u.attack_rate && u.faction!=factions+1) {
+                if(u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<CAMP_SPAWN_RATE*dt*u.attack_rate*(1.1f-u.faction->count_members/(float)(1+u.faction->industry)) && u.faction!=factions+1) {
                     int canMake = (int)u.faction->industry-(int)u.faction->count_members;
                     if (canMake > 0) {
                         if (canMake > 2) canMake = 2;
@@ -2550,6 +2555,7 @@ int main() {
             u_speed *= u.speed;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
+            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.5f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range = 25.f;
             if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
@@ -2635,11 +2641,11 @@ int main() {
                     if(u.faction && (u.faction->technology&TECHNOLOGY_SPEEDY)) rot *= 3.f; // even faster turning for speedy
                     if (diff > 0) {
                         u.angle += rot;
-                        if(u.angle>targetAngle) u.angle = targetAngle;
+                        if(diff-rot<0) u.angle = targetAngle;
                     }
                     else {
                         u.angle -= rot;
-                        if(u.angle<targetAngle) u.angle = targetAngle;
+                        if(diff+rot>0) u.angle = targetAngle;
                     }
                     continue;
                 }
@@ -2652,7 +2658,7 @@ int main() {
                 u.stunned += 0.1/u.attack_rate;
                 continue;
             }
-            // TODO: heal only if not moving, but for now this is hard to properly check
+            // TODO: perhaps heal only if not moving, but for now this is hard to properly check
             if (u.health < u.max_health && (!is_mecha(u) || (u.faction && (u.faction->technology & TECHNOLOGY_AUTOREPAIRS)))) {
                 if ((float)GetRandomValue(0, 1000000) / 1000000.0f < dt*0.5f && (is_mecha(u) || u.faction==nullptr || !(u.faction->technology & TECHNOLOGY_NUCLEAR))) {
                     u.health += 1.0f;
@@ -2660,9 +2666,9 @@ int main() {
                         u.health = u.max_health;
                 }
             }
-            if(u.target_x==0 && u.target_y==0) {
+
+            if(u.target_x==0 && u.target_y==0)
                 continue;
-            }
             // --- ROTATE TOWARD MOVEMENT DIRECTION BEFORE MOVING ---
             float dx = u.target_x - u.x;
             float dy = u.target_y - u.y;
@@ -2689,13 +2695,13 @@ int main() {
                 if(u.texture==&tex::human) rot *= 3.f; // humans turn very fast
                 if(is_mecha(u) && (u.faction->technology&TECHNOLOGY_DRIVER)) rot *= 2.f;
                 if(u.faction && (u.faction->technology&TECHNOLOGY_SPEEDY)) rot *= 3.f; // even faster turning for speedy
-                if (diff > 0) {
+                if (diff>0) {
                     u.angle += rot;
-                    if(u.angle>desiredAngle) u.angle = desiredAngle;
+                    if(diff-rot<0) u.angle = desiredAngle;
                 }
                 else {
                     u.angle -= rot;
-                    if(u.angle<desiredAngle) u.angle = desiredAngle;
+                    if(diff+rot>0) u.angle = desiredAngle;
                 }
                 continue;
             }
@@ -3080,7 +3086,6 @@ int main() {
         }
 
         // spawn units
-        const float ANIMAL_SPAWN_RATE = 0.1f; // expected spawns per second
         if (GetRandomValue(0, 1000000) < (int)(ANIMAL_SPAWN_RATE * dt * 1000000.0f)) {
             for (int k = 0; k < 4; k++) { // small burst
                 float x = GetRandomValue(10, GRID_SIZE - 10);
@@ -3246,7 +3251,7 @@ int main() {
             int uy = (int)u.y;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
-            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.35f;
+            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.5f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
             if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
@@ -3836,6 +3841,7 @@ int main() {
             Vector2 screen = GetWorldToScreen2D(world, camera);
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
+            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.5f;
             float u_range = u.range*(1+extra_sight);
             // important that here we extend the sight range only for stuff controlled by the player
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
@@ -4518,7 +4524,7 @@ int main() {
                 int fi = 0;
                 DrawTexturePro(tex::banner,Rectangle{0,0,(float)tex::banner.width,(float)tex::banner.height}, Rectangle{-20, 170+offset, 470, 48}, {0,0},0, factions[fi].color);
                 if((int)factions[fi].count_members<factions[fi].industry)
-                    snprintf(msg, sizeof(msg), "%d/%d industry", (int)factions[fi].count_members, factions[fi].industry);
+                    snprintf(msg, sizeof(msg), "%d/%d industry (spawning)", (int)factions[fi].count_members, factions[fi].industry);
                 else if((int)factions[fi].count_members==factions[fi].industry)
                     snprintf(msg, sizeof(msg), "%d/%d industry (cap)", (int)factions[fi].count_members, factions[fi].industry);
                 else
