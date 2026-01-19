@@ -131,6 +131,7 @@ namespace sound {
     static SoundPool noise;
     static SoundPool notify;
     static Sound select;
+    static Sound select2;
 
     static Music bg;
 }
@@ -1116,6 +1117,7 @@ void unload() {
     sound::noise.Unload();
     sound::notify.Unload();
     UnloadSound(sound::select);
+    UnloadSound(sound::select2);
     CloseAudioDevice();
     CloseWindow();
 }
@@ -1218,6 +1220,7 @@ int main() {
     sound::noise.Load("data/noise.wav", 5);
     sound::notify.Load("data/notify.wav", 5);
     sound::select = LoadSound("data/select.wav");
+    sound::select2 = LoadSound("data/select2.wav");
     sound::bg = LoadMusicStream("data/track.ogg");
     sound::bg.looping = true;
     PlayMusicStream(sound::bg);
@@ -2214,6 +2217,7 @@ int main() {
 
         bool mouseCapturedByUI = false;
         if (IsKeyPressed(KEY_SPACE)) {
+            PlaySound(sound::select2);
             if(currentMovementMode==MovementMode::Scattered) {
                 currentMovementMode = MovementMode::Explore;
                 last_message = "Explore formation";
@@ -2233,6 +2237,7 @@ int main() {
         else if (CheckCollisionPointRec(GetMousePosition(), clusteringBtn)) {
             mouseCapturedByUI = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                PlaySound(sound::select2);
                 if(currentMovementMode==MovementMode::Scattered) {
                     currentMovementMode = MovementMode::Explore;
                     last_message = "Explore formation";
@@ -2250,28 +2255,26 @@ int main() {
                 }
             }
         }
-        static float showHelpTimer = 0.f;
-        showHelpTimer -= dt*2;
-        if(showHelpTimer<0) {
-            showHelpTimer = 0;
-            showHelp = false;
-        }
-        if (IsKeyPressed(KEY_ESCAPE))
+        if (IsKeyPressed(KEY_ESCAPE)) {
             showTechTree = !showTechTree;
-        if(IsKeyDown(KEY_TAB)) {
-            showHelp = true;
-            showHelpTimer = 1.f;
+            PlaySound(sound::select2);
+        }
+        if(IsKeyPressed(KEY_TAB)) {
+            showHelp = !showHelp;
+            PlaySound(sound::select2);
         }
         if (CheckCollisionPointRec(GetMousePosition(), techBtn)) {
             mouseCapturedByUI = true;
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 showTechTree = !showTechTree;
+                PlaySound(sound::select2);
+            }
         }
         if (!showTechTree && CheckCollisionPointRec(GetMousePosition(), helpBtn)) {
             mouseCapturedByUI = true;
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                showHelp = true;
-                showHelpTimer = 1.f;
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                showHelp = !showHelp;
+                PlaySound(sound::select2);
             }
         }
         if (showTechTree) showHelp = false;
@@ -4482,6 +4485,7 @@ int main() {
             if(tech!=F.technology && F.technology_progress>=1.f) {
                 F.technology_progress -= 1.f;
                 F.technology = tech;
+                PlaySound(sound::select);
             }
         }
 
