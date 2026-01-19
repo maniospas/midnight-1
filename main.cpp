@@ -91,6 +91,50 @@ namespace tex {
     static Texture2D roomba;
 }
 
+struct SoundPool {
+    Sound* voices;
+    int next = 0;
+    int voiceCount = 0;
+    void Load(const char* path, int _voiceCount) {
+        voiceCount = _voiceCount;
+        voices = (Sound*)malloc(voiceCount*sizeof(Sound));
+        for(int i=0; i<voiceCount; i++) voices[i] = LoadSound(path);
+        next = 0;
+    }
+    void Unload() {
+        for(int i=0; i<voiceCount; i++) UnloadSound(voices[i]);
+        delete voices;
+        voiceCount = 0;
+    }
+    void Play(float volume) {
+        if(!voiceCount) return;
+        int idx = -1;
+        for(int i = 0;i < voiceCount;i++)
+            if (!IsSoundPlaying(voices[i])) {
+                idx = i;
+                break;
+            }
+        if(idx < 0) idx = next;
+        float pitch = GetRandomValue(95, 105) / 100.0f; // 0.95 -> 1.05
+        SetSoundPitch(voices[idx], pitch);
+        SetSoundVolume(voices[idx], volume);
+        PlaySound(voices[idx]);
+        next = (next+1)%voiceCount;
+    }
+};
+
+namespace sound {
+    static SoundPool boom;
+    static SoundPool gun;
+    static SoundPool damage;
+    static SoundPool moo;
+    static SoundPool noise;
+    static SoundPool notify;
+    static Sound select;
+
+    static Music bg;
+}
+
 
 struct RankDef {
     const char* name;
@@ -1006,6 +1050,77 @@ const int GAME_W = 2560;
 const int GAME_H = 1600;
 
 
+void unload() {
+    UnloadTexture(tex::gear);
+    UnloadTexture(tex::sun);
+    UnloadTexture(tex::reward);
+    UnloadTexture(tex::research);
+    UnloadTexture(tex::utopia);
+    UnloadTexture(tex::track);
+    UnloadTexture(tex::grass);
+    UnloadTexture(tex::grass2);
+    UnloadTexture(tex::grass3);
+    UnloadTexture(tex::grass4);
+    UnloadTexture(tex::grass_transition);
+    UnloadTexture(tex::grass_transition2);
+    UnloadTexture(tex::hill);
+    UnloadTexture(tex::hill2);
+    UnloadTexture(tex::hill3);
+    UnloadTexture(tex::hill4);
+    UnloadTexture(tex::hill_transition);
+    UnloadTexture(tex::hill_transition2);
+    UnloadTexture(tex::hill_outline);
+    UnloadTexture(tex::hill_wedge);
+    UnloadTexture(tex::desert);
+    UnloadTexture(tex::desert_transition);
+    UnloadTexture(tex::mountain);
+    UnloadTexture(tex::mountain_transition);
+    UnloadTexture(tex::mountain_transition2);
+    UnloadTexture(tex::human);
+    UnloadTexture(tex::esper);
+    UnloadTexture(tex::scout);
+    UnloadTexture(tex::tank);
+    UnloadTexture(tex::van);
+    UnloadTexture(tex::snowman);
+    UnloadTexture(tex::field);
+    UnloadTexture(tex::field_little);
+    UnloadTexture(tex::field_empty);
+    UnloadTexture(tex::heal);
+    UnloadTexture(tex::camp);
+    UnloadTexture(tex::lab);
+    UnloadTexture(tex::blood);
+    UnloadTexture(tex::bison);
+    UnloadTexture(tex::rat);
+    UnloadTexture(tex::roomba);
+    UnloadTexture(tex::wolf);
+    UnloadTexture(tex::warehouse);
+    UnloadTexture(tex::ghost);
+    UnloadTexture(tex::crater);
+    UnloadTexture(tex::radio);
+    UnloadTexture(tex::oil);
+    UnloadTexture(tex::datacenter);
+    UnloadTexture(tex::info);
+    UnloadTexture(tex::overlay);
+    UnloadTexture(tex::railgun);
+    UnloadTexture(tex::road);
+    UnloadTexture(tex::road_transition);
+    UnloadTexture(tex::mine);
+    UnloadTexture(tex::snow);
+    UnloadTexture(tex::tree);
+    UnloadTexture(tex::water);
+    UnloadTexture(tex::earth);
+    sound::boom.Unload();
+    sound::gun.Unload();
+    sound::damage.Unload();
+    sound::moo.Unload();
+    sound::noise.Unload();
+    sound::notify.Unload();
+    UnloadSound(sound::select);
+    CloseAudioDevice();
+    CloseWindow();
+}
+
+
 int main() {
     PrefMask unlocked_preferences = 0;
     const double AI_ELO = 1500;
@@ -1024,6 +1139,7 @@ int main() {
     SetTraceLogLevel(LOG_NONE); // disable raylib logs
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), "MIDNIGHT - next morn");
+    InitAudioDevice();
     SetRandomSeed((unsigned)time(NULL));
     MaximizeWindow();
     SetTextureFilter(uiFont.texture, TEXTURE_FILTER_BILINEAR);
@@ -1093,8 +1209,20 @@ int main() {
     tex::overlay = LoadTexture("data/overlay.png");
     tex::banner = LoadTexture("data/banner.png");
     tex::banner = LoadTexture("data/banner.png");
-    SetTargetFPS(60);
 
+
+    sound::gun.Load("data/gun.ogg", 24);
+    sound::boom.Load("data/boom.ogg", 5);
+    sound::damage.Load("data/damage.wav", 10);
+    sound::moo.Load("data/moo.wav", 10);
+    sound::noise.Load("data/noise.wav", 5);
+    sound::notify.Load("data/notify.wav", 5);
+    sound::select = LoadSound("data/select.wav");
+    sound::bg = LoadMusicStream("data/track.ogg");
+    sound::bg.looping = true;
+    PlayMusicStream(sound::bg);
+
+    SetTargetFPS(60);
 
     int num_units = 0;
     int max_factions = 7; // can never be less than 3 if we include the player, unclaimed, and wild - can also not include the last Wild faction
@@ -1181,6 +1309,7 @@ int main() {
 
     MAIN_MENU:
     while (true) {
+        UpdateMusicStream(sound::bg);
         if(main_menu_transition_mode)
             main_menu_progress += GetFrameTime()*5.f;
         if(main_menu_progress>1.f) {
@@ -1196,7 +1325,9 @@ int main() {
             }
             else if (main_menu_transition_mode==2) {
                 main_menu_transition_mode = -1;
-                CloseWindow();
+                free(terrainBlock);
+                free(terrainGrid);
+                unload();
                 return 0;
             }
         }
@@ -1269,14 +1400,17 @@ int main() {
         DrawRectangleLinesEx(btnQuit, 2, DARKGRAY);
         DrawText("Quit", btnQuit.x + 30, btnQuit.y + 8, 58, hoverQuit ? WHITE : DARKGRAY);
         EndDrawing();
-        if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             main_menu_transition_mode = 1;
+            PlaySound(sound::select);
+        }
         if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
             if(main_menu_transition_mode && main_menu_transition_mode!=2) {
                 main_menu_transition_mode = -1;
                 main_menu_progress = 1.f-main_menu_progress;
             }
             else main_menu_transition_mode = 2;
+            PlaySound(sound::select);
         }
     }
 
@@ -1297,6 +1431,7 @@ int main() {
     EndTextureMode(); // minimap
 
     while (true) {
+        UpdateMusicStream(sound::bg);
         if(new_game_transition_mode)
             new_game_progress += GetFrameTime()*5.f;
         if(new_game_progress>1.f) {
@@ -1360,6 +1495,7 @@ int main() {
                 dst.y += origin.y;
                 DrawTexturePro(*preference_icon[pref], src, dst, origin, rot, WHITE);
                 if (hover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    PlaySound(sound::select);
                     int p = player_preferred_start[i];
                     do {
                         p = (p + 1) % PREFERENCE_COUNT;
@@ -1384,6 +1520,7 @@ int main() {
                              hoverR ? ORANGE : DARKGRAY);
 
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    PlaySound(sound::select);
                     int p = player_preferred_start[i];
                     if (hoverR) {
                         do {p = (p + 1) % PREFERENCE_COUNT;} while (!(unlocked_preferences & (1ULL << p)) && p != PREFERENCE_RAILGUN);
@@ -1407,10 +1544,14 @@ int main() {
         DrawRectangleLinesEx(btnQuit, 2, DARKGRAY);
         DrawText("Back", btnQuit.x + 30, btnQuit.y + 8, 58, hoverQuit ? WHITE : DARKGRAY);
         EndDrawing();
-        if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            PlaySound(sound::select);
             new_game_transition_mode = 1;
-        if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE))
+        }
+        if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
             new_game_transition_mode = 2;
+            PlaySound(sound::select);
+        }
     }
 
     GAME_OVER:
@@ -1466,6 +1607,7 @@ int main() {
             }
         }
         while (true) {
+            UpdateMusicStream(sound::bg);
             if(game_over_transition_mode)
                 game_over_progress += GetFrameTime()*5.f;
             if(game_over_progress>1.f) {
@@ -1550,12 +1692,15 @@ int main() {
             DrawRectangleLinesEx(btnOk, 2, GRAY);
             DrawText("OK", btnOk.x + btnOk.width/2 - MeasureText("OK", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
             EndDrawing();
-            if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE))
+            if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
+                PlaySound(sound::select);
                 game_over_transition_mode = 1;
+            }
         }
 
         CLAIM_REWARDS:
         while (true) {
+            UpdateMusicStream(sound::bg);
             if(reward_transition_mode)
                 reward_progress += GetFrameTime()*5.f;
             if(reward_progress>1.f) {
@@ -1628,8 +1773,10 @@ int main() {
             DrawRectangleLinesEx(btnOk, 2, GRAY);
             DrawText("OK", btnOk.x + btnOk.width/2 - MeasureText("OK", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
             EndDrawing();
-            if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE))
+            if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
                 reward_transition_mode = 1;
+                PlaySound(sound::select);
+            }
         }
     }
 
@@ -2045,6 +2192,7 @@ int main() {
     float prev_game_time = 0.f;
 
     while (true) {
+        UpdateMusicStream(sound::bg);
         //factions[0].technology |= TECHNOLOGY_EXPLORE; // for debug
         float dt = GetFrameTime();
         float polution_speedup = 0.f;// just track this for this frame
@@ -2161,6 +2309,20 @@ int main() {
                 camera.target.y += mouseWorldBefore.y - mouseWorldAfter.y;
             }
         }
+
+
+        Vector2 screenMin = GetScreenToWorld2D({0,0}, camera);
+        Vector2 screenMax = GetScreenToWorld2D({(float)GetScreenWidth(), (float)GetScreenHeight()}, camera);
+
+        int xMin = (int)(screenMin.x / TILE_SIZE) - 2;
+        int yMin = (int)(screenMin.y / TILE_SIZE) - 2;
+        int xMax = (int)(screenMax.x / TILE_SIZE) + 2;
+        int yMax = (int)(screenMax.y / TILE_SIZE) + 2;
+
+        if (xMin <= 0) xMin = 1;
+        if (yMin <= 0) yMin = 1;
+        if (xMax >= GRID_SIZE) xMax = GRID_SIZE-1;
+        if (yMax >= GRID_SIZE) yMax = GRID_SIZE-1;
 
         for(int i=0;i<max_factions;i++) {
             factions[i].industry = (factions[i].technology&TECHNOLOGY_REACTOR)?60:20;
@@ -2393,7 +2555,14 @@ int main() {
                     num_units--;
                     u = units[num_units];
                 }
-                else
+                else{
+                    if(visible[(int)u.y][(int)u.x]) {
+                        int ux = (int)u.x;
+                        int uy = (int)u.y;
+                        int range = (int)u.size + 1;
+                        if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range)
+                            sound::damage.Play(camera.zoom*0.2f);
+                    }
                     u = { \
                         &tex::blood,  /* texture */
                         "Blood",      /* name */
@@ -2410,6 +2579,7 @@ int main() {
                         0.0,          /* max_health */
                         nullptr       /* faction */
                     };
+                }
                 continue;
             }
             if(u.texture==&tex::oil)
@@ -2656,6 +2826,16 @@ int main() {
                 u.attack_x = u.x + cosf(ang) * (rad / TILE_SIZE);
                 u.attack_y = u.y + sinf(ang) * (rad / TILE_SIZE);
                 u.stunned += 0.1/u.attack_rate;
+                if(visible[(int)u.y][(int)u.x]) {
+                    int ux = (int)u.x;
+                    int uy = (int)u.y;
+                    int range = (int)u.size + 1;
+                    if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range) {
+                        if(u.texture==&tex::bison) sound::moo.Play(camera.zoom*0.5f);
+                        else if(u.texture==&tex::tank) sound::boom.Play(camera.zoom*0.9f);
+                        else sound::gun.Play(camera.zoom*0.2f);
+                    }
+                }
                 continue;
             }
             // TODO: perhaps heal only if not moving, but for now this is hard to properly check
@@ -3483,19 +3663,6 @@ int main() {
         ClearBackground(BLACK);
 
         BeginMode2D(camera);
-        Vector2 screenMin = GetScreenToWorld2D({0,0}, camera);
-        Vector2 screenMax = GetScreenToWorld2D({(float)GetScreenWidth(), (float)GetScreenHeight()}, camera);
-
-        int xMin = (int)(screenMin.x / TILE_SIZE) - 2;
-        int yMin = (int)(screenMin.y / TILE_SIZE) - 2;
-        int xMax = (int)(screenMax.x / TILE_SIZE) + 2;
-        int yMax = (int)(screenMax.y / TILE_SIZE) + 2;
-
-        if (xMin <= 0) xMin = 1;
-        if (yMin <= 0) yMin = 1;
-        if (xMax >= GRID_SIZE) xMax = GRID_SIZE-1;
-        if (yMax >= GRID_SIZE) yMax = GRID_SIZE-1;
-
         for (int y = yMin; y < yMax; y++)
             for (int x = xMin; x < xMax; x++) {
                 int px = x * TILE_SIZE - TILE_SIZE/2;
@@ -4716,66 +4883,8 @@ int main() {
         EndDrawing();
     }
 
-    UnloadTexture(tex::gear);
-    UnloadTexture(tex::sun);
-    UnloadTexture(tex::reward);
-    UnloadTexture(tex::research);
-    UnloadTexture(tex::utopia);
-    UnloadTexture(tex::track);
-    UnloadTexture(tex::grass);
-    UnloadTexture(tex::grass2);
-    UnloadTexture(tex::grass3);
-    UnloadTexture(tex::grass4);
-    UnloadTexture(tex::grass_transition);
-    UnloadTexture(tex::grass_transition2);
-    UnloadTexture(tex::hill);
-    UnloadTexture(tex::hill2);
-    UnloadTexture(tex::hill3);
-    UnloadTexture(tex::hill4);
-    UnloadTexture(tex::hill_transition);
-    UnloadTexture(tex::hill_transition2);
-    UnloadTexture(tex::hill_outline);
-    UnloadTexture(tex::hill_wedge);
-    UnloadTexture(tex::desert);
-    UnloadTexture(tex::desert_transition);
-    UnloadTexture(tex::mountain);
-    UnloadTexture(tex::mountain_transition);
-    UnloadTexture(tex::mountain_transition2);
-    UnloadTexture(tex::human);
-    UnloadTexture(tex::esper);
-    UnloadTexture(tex::scout);
-    UnloadTexture(tex::tank);
-    UnloadTexture(tex::van);
-    UnloadTexture(tex::snowman);
-    UnloadTexture(tex::field);
-    UnloadTexture(tex::field_little);
-    UnloadTexture(tex::field_empty);
-    UnloadTexture(tex::heal);
-    UnloadTexture(tex::camp);
-    UnloadTexture(tex::lab);
-    UnloadTexture(tex::blood);
-    UnloadTexture(tex::bison);
-    UnloadTexture(tex::rat);
-    UnloadTexture(tex::roomba);
-    UnloadTexture(tex::wolf);
-    UnloadTexture(tex::warehouse);
-    UnloadTexture(tex::ghost);
-    UnloadTexture(tex::crater);
-    UnloadTexture(tex::radio);
-    UnloadTexture(tex::oil);
-    UnloadTexture(tex::datacenter);
-    UnloadTexture(tex::info);
-    UnloadTexture(tex::overlay);
-    UnloadTexture(tex::railgun);
-    UnloadTexture(tex::road);
-    UnloadTexture(tex::road_transition);
-    UnloadTexture(tex::mine);
-    UnloadTexture(tex::snow);
-    UnloadTexture(tex::tree);
-    UnloadTexture(tex::water);
-    UnloadTexture(tex::earth);
-    CloseWindow();
     free(terrainBlock);
     free(terrainGrid);
+    unload();
     return 0;
 }
