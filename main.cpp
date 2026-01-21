@@ -125,6 +125,7 @@ struct SoundPool {
 
 namespace sound {
     static SoundPool boom;
+    static SoundPool explosion;
     static SoundPool gun;
     static SoundPool damage;
     static SoundPool dead;
@@ -1113,6 +1114,7 @@ void unload() {
     UnloadTexture(tex::water);
     UnloadTexture(tex::earth);
     sound::boom.Unload();
+    sound::explosion.Unload();
     sound::gun.Unload();
     sound::damage.Unload();
     sound::dead.Unload();
@@ -1219,12 +1221,13 @@ int main() {
 
     sound::gun.Load("data/gun.ogg", 24);
     sound::boom.Load("data/boom.ogg", 5);
+    sound::explosion.Load("data/explosion.ogg", 10);
     sound::damage.Load("data/damage.wav", 10);
     sound::dead.Load("data/dead.ogg", 10);
     sound::ohm.Load("data/ohm.ogg", 5);
     sound::moo.Load("data/moo.wav", 10);
     sound::noise.Load("data/noise.wav", 5);
-    sound::notify.Load("data/notify.wav", 5);
+    sound::notify.Load("data/notify.ogg", 5);
     sound::select = LoadSound("data/select.wav");
     sound::select2 = LoadSound("data/select2.wav");
     sound::bg = LoadMusicStream("data/track.ogg");
@@ -2542,7 +2545,16 @@ int main() {
                     };
                 }
                 else if(is_mecha(u)) {
+                    if(visible[(int)u.y][(int)u.x]) {
+                        int ux = (int)u.x;
+                        int uy = (int)u.y;
+                        int range = (int)u.size + 1;
+                        if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range)
+                            sound::explosion.Play(camera.zoom*0.2f);
+                    }
                     terrainGrid[(int)u.y][(int)u.x].speed /= 2; // terrain becomes uneven
+                    if(terrainGrid[(int)u.y][(int)u.x].sight>0.5f)
+                        terrainGrid[(int)u.y][(int)u.x].sight = 0.5f; // extra dodge
                     u = { \
                         &tex::crater,  /* texture */
                         "Crater",      /* name */
@@ -2564,13 +2576,12 @@ int main() {
                     num_units--;
                     u = units[num_units];
                 }
-                else{
+                else {
                     if(visible[(int)u.y][(int)u.x]) {
                         int ux = (int)u.x;
                         int uy = (int)u.y;
                         int range = (int)u.size + 1;
                         if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range) {
-
                             if(u.texture==&tex::human) sound::dead.Play(camera.zoom*0.8f);
                             else sound::damage.Play(camera.zoom*0.2f);
                         }
@@ -2844,7 +2855,7 @@ int main() {
                     int range = (int)u.size + 1;
                     if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range) {
                         if(u.texture==&tex::bison) sound::moo.Play(camera.zoom*0.5f);
-                        else if(u.texture==&tex::wolf) sound::damage.Play(camera.zoom*0.5f);
+                        else if(u.texture==&tex::wolf || u.texture==&tex::snowman) sound::damage.Play(camera.zoom*0.4f);
                         else if(u.texture==&tex::tank) sound::boom.Play(camera.zoom*0.9f);
                         else if(u.texture==&tex::esper) sound::ohm.Play(camera.zoom*0.9f);
                         else sound::gun.Play(camera.zoom*0.2f);
@@ -3186,6 +3197,13 @@ int main() {
                                 }
                             }
                             o.popup = "captured";
+                            // if(visible[(int)o.y][(int)o.x]) {
+                            //     int ux = (int)o.x;
+                            //     int uy = (int)o.y;
+                            //     int range = (int)o.size + 1;
+                            //     if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range)
+                            //         sound::notify.Play(camera.zoom*0.2f);
+                            // }
                             if(u.faction && (u.faction->technology & TECHNOLOGY_CONQUER)) {
                                 u.experience += 15.f;
                                 u.animation = 0.f;
@@ -4844,7 +4862,9 @@ int main() {
                     if(hovered->name==hero_name)
                         DrawText("Mighty", px + 80, textY+60, 28, WHITE);
                 }
-                else DrawText("Grants sight", px + 80, textY, 28, WHITE);
+                else {
+                    DrawText("Grants sight", px + 80, textY, 28, WHITE);
+                }
             }
             else {
                 DrawText("No info", px + 80, textY + 80, 42, WHITE);
