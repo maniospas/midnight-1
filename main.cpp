@@ -127,6 +127,8 @@ namespace sound {
     static SoundPool boom;
     static SoundPool gun;
     static SoundPool damage;
+    static SoundPool dead;
+    static SoundPool ohm;
     static SoundPool moo;
     static SoundPool noise;
     static SoundPool notify;
@@ -1113,6 +1115,8 @@ void unload() {
     sound::boom.Unload();
     sound::gun.Unload();
     sound::damage.Unload();
+    sound::dead.Unload();
+    sound::ohm.Unload();
     sound::moo.Unload();
     sound::noise.Unload();
     sound::notify.Unload();
@@ -1216,6 +1220,8 @@ int main() {
     sound::gun.Load("data/gun.ogg", 24);
     sound::boom.Load("data/boom.ogg", 5);
     sound::damage.Load("data/damage.wav", 10);
+    sound::dead.Load("data/dead.ogg", 10);
+    sound::ohm.Load("data/ohm.ogg", 5);
     sound::moo.Load("data/moo.wav", 10);
     sound::noise.Load("data/noise.wav", 5);
     sound::notify.Load("data/notify.wav", 5);
@@ -2563,8 +2569,11 @@ int main() {
                         int ux = (int)u.x;
                         int uy = (int)u.y;
                         int range = (int)u.size + 1;
-                        if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range)
-                            sound::damage.Play(camera.zoom*0.2f);
+                        if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range) {
+
+                            if(u.texture==&tex::human) sound::dead.Play(camera.zoom*0.8f);
+                            else sound::damage.Play(camera.zoom*0.2f);
+                        }
                     }
                     u = { \
                         &tex::blood,  /* texture */
@@ -2740,6 +2749,8 @@ int main() {
                 float u_attack_rate = u.attack_rate;
                 if(u.faction && (u.faction->technology&TECHNOLOGY_HELLBRINGER) && (u.name==veteran_name || u.name==hero_name)) u_attack_rate *= 3.f;
                 if (r < dt * mul * u_attack_rate) {
+                    u.attack_x = 0;
+                    u.attack_y = 0;
                     float bestDist = 999999.0f;
                     float bestCaptureDist = bestDist;
                     Unit* best = nullptr;
@@ -2790,8 +2801,6 @@ int main() {
                     if(best) {
                         u.attack_target_x = best->x;
                         u.attack_target_y = best->y;
-                        u.attack_x = 0;
-                        u.attack_y = 0;
                     }
                 }
             }
@@ -2835,7 +2844,9 @@ int main() {
                     int range = (int)u.size + 1;
                     if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range) {
                         if(u.texture==&tex::bison) sound::moo.Play(camera.zoom*0.5f);
+                        else if(u.texture==&tex::wolf) sound::damage.Play(camera.zoom*0.5f);
                         else if(u.texture==&tex::tank) sound::boom.Play(camera.zoom*0.9f);
+                        else if(u.texture==&tex::esper) sound::ohm.Play(camera.zoom*0.9f);
                         else sound::gun.Play(camera.zoom*0.2f);
                     }
                 }
@@ -2849,6 +2860,8 @@ int main() {
                         u.health = u.max_health;
                 }
             }
+            if((u.attack_x || u.attack_y) && (u.x-u.target_x)*(u.x-u.target_x)+(u.y-u.target_y)*(u.y-u.target_y) < u_range*u_range/3)
+                continue;
 
             if(u.target_x==0 && u.target_y==0)
                 continue;
