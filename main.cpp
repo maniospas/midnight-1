@@ -2553,8 +2553,8 @@ int main() {
                             sound::explosion.Play(camera.zoom*0.2f);
                     }
                     terrainGrid[(int)u.y][(int)u.x].speed /= 2; // terrain becomes uneven
-                    if(terrainGrid[(int)u.y][(int)u.x].sight>0.5f)
-                        terrainGrid[(int)u.y][(int)u.x].sight = 0.5f; // extra dodge
+                    if(terrainGrid[(int)u.y][(int)u.x].extra_sight>0.5f)
+                        terrainGrid[(int)u.y][(int)u.x].extra_sight = 0.5f; // extra dodge
                     u = { \
                         &tex::crater,  /* texture */
                         "Crater",      /* name */
@@ -3465,7 +3465,7 @@ int main() {
             int uy = (int)u.y;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
-            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
+            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.5f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
             if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
