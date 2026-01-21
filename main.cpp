@@ -16,7 +16,7 @@ static const float movement_speed_multiplier = 0.5f;
 // difficulty controls
 static const float CAMP_SPAWN_RATE = 2.f; //
 static const float ANIMAL_SPAWN_RATE = 0.1f; // expected spawns per second
-static const float CAPTURE_RATE = 0.5f; // also heals espers and partial captures
+static const float CAPTURE_RATE = 1.0f; // also heals espers and partial captures
 static const float OVER_CAP_REGEN_RATE = 0.3f; // 1.f is normal restoration from units being captured, this is lower if we have over-saturated industry
 
 
@@ -555,8 +555,8 @@ int NOISE_SEED = 0;
             0.0,          /* experience */ \
             0.0,          /* angle */ \
             0.8,          /* size */ \
-            20.0,         /* health */ \
-            20.0,         /* max_health */ \
+            50.0,         /* health */ \
+            50.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction)     /* can only be captured */ \
         }; \
@@ -581,8 +581,8 @@ int NOISE_SEED = 0;
                 0.0,          /* experience */ \
                 0.0,          /* angle */ \
                 1.3,          /* size */ \
-                15.0,         /* health */ \
-                15.0,         /* max_health */ \
+                50.0,         /* health */ \
+                50.0,         /* max_health */ \
                 (faction),    /* faction */ \
                 (faction),    /* can only be captured */ \
                 -0.1f \
@@ -605,8 +605,8 @@ int NOISE_SEED = 0;
             0.0,          /* experience */ \
             0.0,          /* angle */ \
             1.3,          /* size */ \
-            15.0,         /* health */ \
-            15.0,         /* max_health */ \
+            50.0,         /* health */ \
+            50.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),    /* can only be captured */ \
             -0.1f \
@@ -627,8 +627,8 @@ int NOISE_SEED = 0;
             0.0,          /* experience */ \
             0.0,          /* angle */ \
             1.0,          /* size */ \
-            15.0,        /* health */ \
-            15.0,        /* max_health */ \
+            50.0,        /* health */ \
+            50.0,        /* max_health */ \
             (faction),    /* faction */ \
             (faction)     /* can only be captured */ \
         };
@@ -647,8 +647,8 @@ int NOISE_SEED = 0;
             0.0,          /* experience */ \
             0.0,          /* angle */ \
             1.2,          /* size */ \
-            15.0,         /* health */ \
-            15.0,         /* max_health */ \
+            50.0,         /* health */ \
+            50.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction)     /* can only be captured */ \
         };
@@ -668,8 +668,8 @@ int NOISE_SEED = 0;
             0.0,          /* experience */ \
             0.0,          /* angle */ \
             1.5,          /* size */ \
-            20.0,         /* health */ \
-            20.0,         /* max_health */ \
+            50.0,         /* health */ \
+            50.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction)     /* can only be captured */ \
         };
@@ -688,8 +688,8 @@ int NOISE_SEED = 0;
             0.0,          /* experience */ \
             0.0,          /* angle */ \
             1.2,          /* size */ \
-            40.0,         /* health */ \
-            40.0,         /* max_health */ \
+            25.0,         /* health */ \
+            25.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction)     /* can only be captured */ \
         };
@@ -708,8 +708,8 @@ int NOISE_SEED = 0;
             0.0,          /* experience */ \
             0.0,          /* angle */ \
             1.5,          /* size */ \
-            40.0,         /* health */ \
-            40.0,         /* max_health */ \
+            50.0,         /* health */ \
+            50.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction)     /* can only be captured */ \
         };
@@ -2842,7 +2842,7 @@ int main() {
                     }
                     continue;
                 }
-                float rad = (u.size+u.extra_scale) * TILE_SIZE;   // same radius as your drawn circle
+                float rad = u.size*TILE_SIZE;//(u.size+u.extra_scale) * TILE_SIZE;   // same radius as the drawn circle, NOT the image that may be larger
 
                 float ang = u.angle * DEG2RAD;
 
@@ -3927,7 +3927,7 @@ int main() {
                 int hp = (int)(u.health+0.01);
                 float startBase = 0;//u.angle-45.f+180.f;
                 float segmentAngle = 360.0f / maxHealth;  // 18°
-                float gap = 5.f;
+                float gap = 50.f/maxHealth;
                 Color hc = u.capturing?u.faction->color:RED;
                 //Color hc = u.capturing?YELLOW:RED;
                 float outer = radius * 0.99f;
@@ -4342,11 +4342,11 @@ int main() {
             DrawTechNode(hunting.x, hunting.y, "HUNTING", "+4 camp & hide industry", tech, TECHNOLOGY_HUNTING);
             DrawTextureEx(tex::gear, {hunting.x + ICON_DX, hunting.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
 
-            DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "More research, -1 spawn HP", tech, TECHNOLOGY_NERDS);
+            DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "+30\% research, -1 spawn HP", tech, TECHNOLOGY_NERDS);
             DrawTextureEx(tex::research, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
 
 
-            DrawTechNode(taming.x, taming.y, "TAMER", "Bad research, tame animals", tech, TECHNOLOGY_TAMING);
+            DrawTechNode(taming.x, taming.y, "TAMER", "-50\% research, 50\% taming", tech, TECHNOLOGY_TAMING);
             DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
 
 
@@ -4380,7 +4380,7 @@ int main() {
                 DrawTextureEx(tex::blood, {fight.x + ICON_DX, fight.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_RESEARCH)) {
-                DrawTechNode(research.x, research.y, "RESEARCH", "More research", tech, TECHNOLOGY_RESEARCH);
+                DrawTechNode(research.x, research.y, "RESEARCH", "+30\% research", tech, TECHNOLOGY_RESEARCH);
                 DrawTextureEx(tex::research, {research.x + ICON_DX, research.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_HOMUNCULI)) {
@@ -4388,11 +4388,11 @@ int main() {
                 DrawTextureEx(tex::ghost, {homunculi.x + ICON_DX, homunculi.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_MECHA)) {
-                DrawTechNode(mecha.x, mecha.y, "MECHA", "Mecha dodge often", tech, TECHNOLOGY_MECHA);
+                DrawTechNode(mecha.x, mecha.y, "MECHA", "+50\% mecha doge", tech, TECHNOLOGY_MECHA);
                 DrawTextureEx(tex::tank, {mecha.x + ICON_DX, mecha.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_MECHA | TECHNOLOGY_AUTOREPAIRS)) {
-                DrawTechNode(autorepair.x, autorepair.y, "AUTOREPAIR", "Mecha health regen", tech, TECHNOLOGY_AUTOREPAIRS);
+                DrawTechNode(autorepair.x, autorepair.y, "AUTOREPAIR", "Mecha regen HP", tech, TECHNOLOGY_AUTOREPAIRS);
                 DrawTextureEx(tex::tank, {autorepair.x + ICON_DX, autorepair.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TAMING | TECHNOLOGY_HEROICS)) {
@@ -4400,11 +4400,11 @@ int main() {
                 DrawTextureEx(tex::blood, {heroics.x + ICON_DX, heroics.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_GRIT)) {
-                DrawTechNode(grit.x, grit.y, "GRIT", "Often dodge vs lethal", tech, TECHNOLOGY_GRIT);
+                DrawTechNode(grit.x, grit.y, "GRIT", "+50\% dodge vs lethal", tech, TECHNOLOGY_GRIT);
                 DrawTextureEx(tex::blood, {grit.x + ICON_DX, grit.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TOUGH)) {
-                DrawTechNode(tough.x, tough.y, "TOUGH", "+1 human health", tech, TECHNOLOGY_TOUGH);
+                DrawTechNode(tough.x, tough.y, "TOUGH", "+1 human HP", tech, TECHNOLOGY_TOUGH);
                 DrawTextureEx(tex::blood, {tough.x + ICON_DX, tough.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HEROICS | TECHNOLOGY_HELLBRINGER)) {
@@ -4420,7 +4420,7 @@ int main() {
                 DrawTextureEx(tex::track, {seafaring.x + ICON_DX, seafaring.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_FARMING | TECHNOLOGY_RESEARCH | TECHNOLOGY_INFRASTRUCTURE)) {
-                DrawTechNode(infrastructure.x, infrastructure.y, "MEDIA", "Wide radio sight", tech, TECHNOLOGY_INFRASTRUCTURE);
+                DrawTechNode(infrastructure.x, infrastructure.y, "MEDIA", "+50\% radio sight", tech, TECHNOLOGY_INFRASTRUCTURE);
                 DrawTextureEx(tex::track, {infrastructure.x + ICON_DX, infrastructure.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_SEAFARERING | TECHNOLOGY_INFRASTRUCTURE | TECHNOLOGY_OWNERSHIP)) {
@@ -4448,7 +4448,7 @@ int main() {
                 DrawTextureEx(tex::ghost, {bioweapon.x + ICON_DX, bioweapon.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_TRACK | TECHNOLOGY_SNIPING)) {
-                DrawTechNode(sniping.x, sniping.y, "SNIPING", "Double accuracy vs dodge", tech, TECHNOLOGY_SNIPING);
+                DrawTechNode(sniping.x, sniping.y, "SNIPING", "x2 accuracy vs dodge", tech, TECHNOLOGY_SNIPING);
                 DrawTextureEx(tex::blood, {sniping.x + ICON_DX, sniping.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_TRACK | TECHNOLOGY_SNIFFING)) {
@@ -4460,7 +4460,7 @@ int main() {
                 DrawTextureEx(tex::track, {conquer.x + ICON_DX, conquer.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_RESEARCH | TECHNOLOGY_NUCLEAR)) {
-                DrawTechNode(nuclear.x, nuclear.y, "NUCLEAR", "Double damage for no regen", tech, TECHNOLOGY_NUCLEAR);
+                DrawTechNode(nuclear.x, nuclear.y, "NUCLEAR", "x2 damage for no regen", tech, TECHNOLOGY_NUCLEAR);
                 DrawTextureEx(tex::blood, {nuclear.x + ICON_DX, nuclear.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_MOBILE_FORTRESS)) {
@@ -4468,7 +4468,7 @@ int main() {
                 DrawTextureEx(tex::tank, {mobile.x + ICON_DX, mobile.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_WONDER | TECHNOLOGY_LUXURY)) {
-                DrawTechNode(luxury.x, luxury.y, "PRISTINE", "Often dodge animal & bloo", tech, TECHNOLOGY_LUXURY);
+                DrawTechNode(luxury.x, luxury.y, "PRISTINE", "+50\% dodge vs animal & bloo", tech, TECHNOLOGY_LUXURY);
                 DrawTextureEx(tex::research, {luxury.x + ICON_DX, luxury.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_GIGAJOULE | TECHNOLOGY_TERRAFORIMING)) {
@@ -4767,7 +4767,7 @@ int main() {
             Rectangle src = { 0, 0, (float)tex::info.width, (float)tex::info.height };
             Rectangle dst = { px, py, panelSize, panelSize };
             Vector2 origin = { 0, 0 };
-            DrawTexturePro(tex::info, src, dst, origin, 0.0f, WHITE);
+            DrawTexturePro(tex::info, src, dst, origin, 0.0f, hovered->faction?hovered->faction->color:BLACK);
             float textY = py - 26;
             px -= 55;
             if (hovered && hovered->health) {
@@ -4790,80 +4790,256 @@ int main() {
                 if(hovered->texture==&tex::camp) {
                     DrawText("Spawns humans if", px + 80, textY, 28, WHITE);
                     DrawText("below industry cap", px + 80, textY+30, 28, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else if(hovered->faction==factions)
+                        DrawTextSmall("yours", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("AI", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                 }
-                else if(hovered->texture==&tex::lab) DrawText("+10% research", px + 80, textY, 28, WHITE);
+                else if(hovered->texture==&tex::lab) {
+                    DrawText("+10% research", px + 80, textY, 28, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else if(hovered->faction==factions)
+                        DrawTextSmall("yours", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("enemy", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                }
                 else if(hovered->texture==&tex::field) {
                     DrawText("+4 industry (bloom)", px + 80, textY, 28, WHITE);
                     DrawText("Irrational crop cycle", px + 80, textY+30, 28, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else if(hovered->faction==factions)
+                        DrawTextSmall("yours", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("enemy", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                 }
                 else if(hovered->texture==&tex::field_little) {
                     DrawText("+2 industry (grows)", px + 80, textY, 28, WHITE);
                     DrawText("Irrational crop cycle", px + 80, textY+30, 28, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else if(hovered->faction==factions)
+                        DrawTextSmall("yours", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("enemy", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                 }
                 else if(hovered->texture==&tex::field_empty) {
                     DrawText("+0 industry (barren)", px + 80, textY, 28, WHITE);
                     DrawText("Irrational crop cycle", px + 80, textY+30, 28, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else if(hovered->faction==factions)
+                        DrawTextSmall("yours", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("enemy", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                 }
                 else if(hovered->texture==&tex::hide) {
                     DrawText("+4 industry", px + 80, textY, 28, WHITE);
                     DrawText("May become rats", px + 80, textY+30, 28, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else if(hovered->faction==factions)
+                        DrawTextSmall("yours", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("enemy", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                 }
-                else if(hovered->texture==&tex::mine) DrawText("+12 industry", px + 80, textY, 28, WHITE);
-                else if(hovered->texture==&tex::oil) DrawText("+3 utopia", px + 80, textY, 28, WHITE);
-                else if(hovered->texture==&tex::datacenter) DrawText("Random benefits", px + 80, textY, 28, WHITE);
-                else if(hovered->texture==&tex::warehouse) DrawText("+2 utopia", px + 80, textY, 28, WHITE);
+                else if(hovered->texture==&tex::mine) {
+                    DrawText("+12 industry", px + 80, textY, 28, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else if(hovered->faction==factions)
+                        DrawTextSmall("yours", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("enemy", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                }
+                else if(hovered->texture==&tex::oil) {
+                    DrawText("+3 utopia", px + 80, textY, 28, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else if(hovered->faction==factions)
+                        DrawTextSmall("yours", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("enemy", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                }
+                else if(hovered->texture==&tex::datacenter) {
+                    DrawText("Random benefits", px + 80, textY, 28, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else if(hovered->faction==factions)
+                        DrawTextSmall("yours", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("enemy", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                }
+                else if(hovered->texture==&tex::warehouse) {
+                    DrawText("+2 utopia", px + 80, textY, 28, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else if(hovered->faction==factions)
+                        DrawTextSmall("yours", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("enemy", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                }
                 else if(hovered->texture==&tex::railgun) {
-                    DrawText("Mecha stationary", px + 80, textY, 28, WHITE);
+                    DrawText("Mecha, stationary", px + 80, textY, 28, WHITE);
                     DrawText("No sight penalty", px + 80, textY+30, 28, WHITE);
-                    if(hovered->name==veteran_name)
-                        DrawText("Stronger", px + 80, textY+60, 28, WHITE);
-                    if(hovered->name==hero_name)
-                        DrawText("Mighty", px + 80, textY+60, 28, WHITE);
+                    DrawTextSmall("combat", px + 80, textY+62, 20, WHITE);
+                    for(float f=0;f<hovered->damage*hovered->attack_rate;f+=0.5f)
+                        DrawRectangleRounded({px+150.f+14.f*f, textY+67.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    DrawTextSmall("sight", px + 80, textY+78, 20, WHITE);
+                    for(float f=0;f<hovered->range/2;f+=0.5f)
+                        DrawRectangleRounded({px+150.f+14.f*f, textY+83.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("health", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                 }
                 else if(hovered->texture==&tex::roomba) {
-                    DrawText("Mecha that attacks", px + 80, textY, 28, WHITE);
-                    DrawText("only animals & bloo", px + 80, textY+30, 28, WHITE);
-                    if(hovered->name==veteran_name)
-                        DrawText("Stronger", px + 80, textY+60, 28, WHITE);
-                    if(hovered->name==hero_name)
-                        DrawText("Mighty", px + 80, textY+60, 28, WHITE);
+                    DrawText("Mecha vs animals & bloo", px + 80, textY, 28, WHITE);
+                    DrawTextSmall("speed", px + 80, textY+62-16, 20, WHITE);
+                    for(float f=0;f<hovered->speed;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+67.f-16, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    DrawTextSmall("combat", px + 80, textY+62, 20, WHITE);
+                    for(float f=0;f<hovered->damage*hovered->attack_rate;f+=0.5f)
+                        DrawRectangleRounded({px+150.f+14.f*f, textY+67.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    DrawTextSmall("sight", px + 80, textY+78, 20, WHITE);
+                    for(float f=0;f<hovered->range/2;f+=0.5f)
+                        DrawRectangleRounded({px+150.f+14.f*f, textY+83.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("health", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                 }
                 else if(hovered->texture==&tex::esper) {
                     DrawText("+2 utopia", px + 80, textY, 28, WHITE);
                     DrawText("Autonomous", px + 80, textY+30, 28, WHITE);
-                    if(hovered->name==veteran_name)
-                        DrawText("Stronger", px + 80, textY+60, 28, WHITE);
-                    if(hovered->name==hero_name)
-                        DrawText("Mighty", px + 80, textY+60, 28, WHITE);
+                    DrawTextSmall("speed", px + 80, textY+62-16, 20, WHITE);
+                    for(float f=0;f<hovered->speed;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+67.f-16, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    DrawTextSmall("combat", px + 80, textY+62, 20, WHITE);
+                    for(float f=0;f<hovered->damage*hovered->attack_rate;f+=0.5f)
+                        DrawRectangleRounded({px+150.f+14.f*f, textY+67.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    DrawTextSmall("sight", px + 80, textY+78, 20, WHITE);
+                    for(float f=0;f<hovered->range/2;f+=0.5f)
+                        DrawRectangleRounded({px+150.f+14.f*f, textY+83.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("health", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                 }
-                else if(is_mecha((*hovered)) && hovered->speed==0) DrawText("Mecha", px + 80, textY, 28, WHITE);
-                else if(is_mecha((*hovered))) {
+                else if(is_mecha((*hovered)) && hovered->speed==0) {
                     DrawText("Mecha", px + 80, textY, 28, WHITE);
-                    DrawText("Takes up industry", px + 80, textY+30, 28, WHITE);
-                    if(hovered->name==veteran_name)
-                        DrawText("Stronger", px + 80, textY+60, 28, WHITE);
-                    if(hovered->name==hero_name)
-                        DrawText("Mighty", px + 80, textY+60, 28, WHITE);
+                    DrawTextSmall("speed", px + 80, textY+62-16, 20, WHITE);
+                    for(float f=0;f<hovered->speed;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+67.f-16, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    DrawTextSmall("combat", px + 80, textY+62, 20, WHITE);
+                    for(float f=0;f<hovered->damage*hovered->attack_rate;f+=0.5f)
+                        DrawRectangleRounded({px+150.f+14.f*f, textY+67.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    DrawTextSmall("sight", px + 80, textY+78, 20, WHITE);
+                    for(float f=0;f<hovered->range/2;f+=0.5f)
+                        DrawRectangleRounded({px+150.f+14.f*f, textY+83.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("health", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                }
+                else if(is_mecha((*hovered))) {
+                    DrawText("Mecha, fills industry", px + 80, textY, 28, WHITE);
+                    DrawTextSmall("speed", px + 80, textY+62-16, 20, WHITE);
+                    for(float f=0;f<hovered->speed;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+67.f-16, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    DrawTextSmall("combat", px + 80, textY+62, 20, WHITE);
+                    for(float f=0;f<hovered->damage*hovered->attack_rate;f+=0.5f)
+                        DrawRectangleRounded({px+150.f+14.f*f, textY+67.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    DrawTextSmall("sight", px + 80, textY+78, 20, WHITE);
+                    for(float f=0;f<hovered->range/2;f+=0.5f)
+                        DrawRectangleRounded({px+150.f+14.f*f, textY+83.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("health", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                 }
                 else if(hovered->damage) {
                     if(hovered->range<3.f) {
-                        DrawText("Animal", px + 80, textY, 28, WHITE);
-                        if(hovered->texture==&tex::snowman) DrawText("Fast on high altitudes", px + 80, textY+30, 28, WHITE);
-                        else if(hovered->texture==&tex::rat) DrawText("Proliferates", px + 80, textY+30, 28, WHITE);
-                        else if(hovered->texture==&tex::wolf) DrawText("50\% taming chance", px + 80, textY+30, 28, WHITE);
-                        else DrawText("Drops hide", px + 80, textY+30, 28, WHITE);
+                        if(hovered->texture==&tex::snowman) DrawText("Animal, fast on hills", px + 80, textY, 28, WHITE);
+                        else if(hovered->texture==&tex::rat) DrawText("Animal, proliferates", px + 80, textY, 28, WHITE);
+                        else if(hovered->texture==&tex::wolf) DrawText("Animal, 50\% taming", px + 80, textY, 28, WHITE);
+                        else DrawText("Animal, drops hide", px + 80, textY, 28, WHITE);
+                        DrawTextSmall("speed", px + 80, textY+62-16, 20, WHITE);
+                        for(float f=0;f<hovered->speed;f+=1.0f)
+                            DrawRectangleRounded({px+150.f+7.f*f, textY+67.f-16, 5.f, 10.f}, 0.2f, 8, WHITE);
+                        DrawTextSmall("combat", px + 80, textY+62, 20, WHITE);
+                        for(float f=0;f<hovered->damage*hovered->attack_rate;f+=0.5f)
+                            DrawRectangleRounded({px+150.f+14.f*f, textY+67.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                        DrawTextSmall("sight", px + 80, textY+78, 20, WHITE);
+                        for(float f=0;f<hovered->range/2;f+=0.5f)
+                            DrawRectangleRounded({px+150.f+14.f*f, textY+83.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                        DrawTextSmall("health", px + 80, textY+94, 20, WHITE);
+                        for(float f=0;f<hovered->health/2;f+=1.0f)
+                            DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                     }
                     else {
-                        DrawText("Combatant", px + 80, textY, 28, WHITE);
-                        DrawText("Takes up industry", px + 80, textY+30, 28, WHITE);
+                        DrawText("Fills industry", px + 80, textY, 28, WHITE);
+                        DrawTextSmall("speed", px + 80, textY+62-16, 20, WHITE);
+                        for(float f=0;f<hovered->speed;f+=1.0f)
+                            DrawRectangleRounded({px+150.f+7.f*f, textY+67.f-16, 5.f, 10.f}, 0.2f, 8, WHITE);
+                        DrawTextSmall("combat", px + 80, textY+62, 20, WHITE);
+                        for(float f=0;f<hovered->damage*hovered->attack_rate;f+=0.5f)
+                            DrawRectangleRounded({px+150.f+14.f*f, textY+67.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                        DrawTextSmall("sight", px + 80, textY+78, 20, WHITE);
+                        for(float f=0;f<hovered->range/2;f+=0.5f)
+                            DrawRectangleRounded({px+150.f+14.f*f, textY+83.f, 5.f, 10.f}, 0.2f, 8, WHITE);
+                        DrawTextSmall("health", px + 80, textY+94, 20, WHITE);
+                        for(float f=0;f<hovered->health/2;f+=1.0f)
+                            DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                     }
-                    if(hovered->name==veteran_name)
-                        DrawText("Stronger", px + 80, textY+60, 28, WHITE);
-                    if(hovered->name==hero_name)
-                        DrawText("Mighty", px + 80, textY+60, 28, WHITE);
+                    // if(hovered->name==veteran_name)
+                    //     DrawText("Stronger", px + 80, textY+60, 28, WHITE);
+                    // if(hovered->name==hero_name)
+                    //     DrawText("Mighty", px + 80, textY+60, 28, WHITE);
                 }
                 else {
                     DrawText("Grants sight", px + 80, textY, 28, WHITE);
+                    if(hovered->faction==factions+1)
+                        DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
+                    else if(hovered->faction==factions)
+                        DrawTextSmall("yours", px + 80, textY+94, 20, WHITE);
+                    else
+                        DrawTextSmall("enemy", px + 80, textY+94, 20, WHITE);
+                    for(float f=0;f<hovered->health/2;f+=1.0f)
+                        DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                 }
             }
             else {
