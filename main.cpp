@@ -2748,7 +2748,7 @@ int main() {
             u_speed *= u.speed;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
-            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.5f;
+            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range = 25.f;
             if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
@@ -3465,7 +3465,7 @@ int main() {
             int uy = (int)u.y;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
-            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.5f;
+            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
             if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
@@ -4042,7 +4042,7 @@ int main() {
             Vector2 screen = GetWorldToScreen2D(world, camera);
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
-            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.5f;
+            if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
             float u_range = u.range*(1+extra_sight);
             // important that here we extend the sight range only for stuff controlled by the player
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
