@@ -218,7 +218,7 @@ static Color ColorForTile(Texture* texture) {
 #define TECHNOLOGY_MECHA      16777216ULL // 50% chance of mecha dodge
 #define TECHNOLOGY_DRIVER     33554432ULL // mecha speed cannot be reduced
 #define TECHNOLOGY_FARMING    67108864ULL // +3 industry from farms
-#define TECHNOLOGY_CONQUER   134217728ULL // research progress whenever you capture something
+#define TECHNOLOGY_HARDCORE  134217728ULL // -6 industry per camp, x2 spawn
 #define TECHNOLOGY_AUTOREPAIRS 268435456ULL // mecha regeneration
 #define TECHNOLOGY_BIOWEAPON   536870912ULL // kills become bloos
 #define TECHNOLOGY_INDUSTRY   1073741824ULL // mechas can gain XP
@@ -580,7 +580,7 @@ int NOISE_SEED = 0;
                 0.0,          /* damage */ \
                 0.0,          /* experience */ \
                 0.0,          /* angle */ \
-                1.3,          /* size */ \
+                1.4,          /* size */ \
                 50.0,         /* health */ \
                 50.0,         /* max_health */ \
                 (faction),    /* faction */ \
@@ -592,7 +592,7 @@ int NOISE_SEED = 0;
                     if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(bby+0.5f)+ppy][(int)(bbx+0.5f)+ppx] = { &tex::grass, 1.0 }; \
         }
 #define CREATE_DATACENTER(faction, x, y) \
-    if (num_units < MAX_UNITS) \
+    if (num_units < MAX_UNITS) {\
         units[num_units++] = { \
             &tex::datacenter,   /* texture */ \
             "Databank",       /* name */ \
@@ -604,17 +604,21 @@ int NOISE_SEED = 0;
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            1.3,          /* size */ \
+            2.0,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),    /* can only be captured */ \
-            -0.1f \
-        };
+            -0.2f \
+        }; \
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
+    }
 
 
 #define CREATE_MINE(faction, x, y) \
-    if (num_units < MAX_UNITS) \
+    if (num_units < MAX_UNITS) { \
         units[num_units++] = { \
             &tex::mine,   /* texture */ \
             "Mine",       /* name */ \
@@ -622,19 +626,24 @@ int NOISE_SEED = 0;
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
             12.0,         /* attack_rate (6 industry)*/ \
-            4.0,         /* range */ \
+            4.5,         /* range */ \
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            1.0,          /* size */ \
+            2.0,          /* size */ \
             50.0,        /* health */ \
             50.0,        /* max_health */ \
             (faction),    /* faction */ \
-            (faction)     /* can only be captured */ \
-        };
+            (faction),     /* can only be captured */ \
+            0.5           /* extra scale*/\
+        };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
+    }
 
 #define CREATE_RADIO(faction, x, y) \
-    if (num_units < MAX_UNITS) \
+    if (num_units < MAX_UNITS) {\
         units[num_units++] = { \
             &tex::radio,   /* texture */ \
             "Radio",       /* name */ \
@@ -646,16 +655,21 @@ int NOISE_SEED = 0;
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            1.2,          /* size */ \
+            2.0,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
             (faction),    /* faction */ \
-            (faction)     /* can only be captured */ \
-        };
+            (faction),    /* can only be captured */ \
+            0.5           /* extra scale*/\
+        };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
+    }
 
 
 #define CREATE_LAB(faction, x, y) \
-    if (num_units < MAX_UNITS) \
+    if (num_units < MAX_UNITS) { \
         units[num_units++] = { \
             &tex::lab,   /* texture */ \
             "Lab",       /* name */ \
@@ -663,19 +677,24 @@ int NOISE_SEED = 0;
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
             0.0,          /* attack_rate */ \
-            2.0,          /* range */ \
+            4.5,          /* range */ \
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            1.5,          /* size */ \
+            1.8,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
             (faction),    /* faction */ \
-            (faction)     /* can only be captured */ \
-        };
+            (faction),    /* can only be captured */ \
+            0.2           /* extra scale*/\
+        };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
+    }
 
 #define CREATE_OIL(faction, x, y) \
-    if (num_units < MAX_UNITS) \
+    if (num_units < MAX_UNITS) { \
         units[num_units++] = { \
             &tex::oil,   /* texture */ \
             "Oil",       /* name */ \
@@ -692,10 +711,14 @@ int NOISE_SEED = 0;
             25.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction)     /* can only be captured */ \
-        };
+        };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
+    }
 
 #define CREATE_WAREHOUSE(faction, x, y) \
-    if (num_units < MAX_UNITS) \
+    if (num_units < MAX_UNITS) {\
         units[num_units++] = { \
             &tex::warehouse,   /* texture */ \
             "Storage",  /* name */ \
@@ -703,16 +726,20 @@ int NOISE_SEED = 0;
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
             0.0,          /* attack_rate */ \
-            3.0,          /* range */ \
+            4.5,          /* range */ \
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            1.5,          /* size */ \
+            2.0,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction)     /* can only be captured */ \
-        };
+        };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
+    }
 
 inline bool IsGrass(Texture2D* t) {
     return t==&tex::grass || t==&tex::grass2 || t==&tex::grass3 || t==&tex::grass4;
@@ -1867,7 +1894,7 @@ int main() {
             if(!u.speed) continue;
             float dx = u.x - x;
             float dy = u.y - y;
-            if (dx*dx + dy*dy < minDist * minDist)
+            if (dx*dx + dy*dy < (minDist+u.size) * (minDist+u.size))
                 return true;
         }
         return false;
@@ -1928,10 +1955,12 @@ int main() {
                 else {CREATE_VAN(&factions[1], px, by);}
             }
             else if(pref==PREFERENCE_WAREHOUSE) {
+                px = p==0?(bx-5):(bx+5);
                 CREATE_WAREHOUSE(&factions[1], px, by);
                 RevealUnitToAllFactions(num_units - 1);
             }
             else if(pref==PREFERENCE_LAB) {
+                px = p==0?(bx-5):(bx+5);
                 if(GetRandomValue(0,99)<50) {CREATE_LAB(&factions[1], px, by);}
                 else CREATE_DATACENTER(&factions[1], px, by);
             }
@@ -1997,6 +2026,7 @@ int main() {
                     else {CREATE_VAN(&factions[1], px, by);}
                 }
                 else if(pref==PREFERENCE_WAREHOUSE) {
+                    px = p==0?(bx-5):(bx+5);
                     CREATE_WAREHOUSE(&factions[1], px, by);
                     RevealUnitToAllFactions(num_units - 1);
                 }
@@ -2005,6 +2035,7 @@ int main() {
                     RevealUnitToAllFactions(num_units - 1);
                 }
                 else if(pref==PREFERENCE_LAB) {
+                    px = p==0?(bx-5):(bx+5);
                     if(GetRandomValue(0,99)<50) {CREATE_LAB(&factions[1], px, by);}
                     else CREATE_DATACENTER(&factions[1], px, by);
                 }
@@ -2430,7 +2461,8 @@ int main() {
                     }
                 }
             }
-            if(u.texture==&tex::camp && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 4.f;
+            if(u.texture==&tex::camp && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 3.f;
+            if(u.texture==&tex::camp && u.faction && (u.faction->technology & TECHNOLOGY_HARDCORE)) u.faction->industry -= 7.f;
             if(u.texture==&tex::camp || u.speed) u.faction->count_members += 0.00001f;
             if(u.texture==&tex::oil && u.faction && (u.faction->technology & TECHNOLOGY_REFINERY)) u.faction->industry += 25.f;
             if(u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty || u.texture==&tex::mine || u.texture==&tex::hide) {
@@ -2442,7 +2474,7 @@ int main() {
                 if(u.texture==&tex::field_little) u.faction->industry += 2.f;
                 if(u.texture==&tex::hide) u.faction->industry += 4.f;
                 if(u.texture==&tex::mine) u.faction->industry += 12.f;
-                if(u.texture==&tex::hide && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 4.f;
+                if(u.texture==&tex::hide && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 3.f;
                 continue;
             }
             if(is_mecha(u) && u.faction) {
@@ -2459,6 +2491,9 @@ int main() {
         }
         if(factions[0].count_members==0) {
             goto GAME_OVER;
+        }
+        for(int i=0;i<max_factions;i++) {
+            if(factions[i].industry<0) factions[i].industry = 0;
         }
 
         // process units
@@ -2582,7 +2617,7 @@ int main() {
                         int uy = (int)u.y;
                         int range = (int)u.size + 1;
                         if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range) {
-                            if(u.texture==&tex::human) sound::dead.Play(camera.zoom*0.8f);
+                            if(u.texture==&tex::human) sound::dead.Play(camera.zoom*1.0f);
                             else sound::damage.Play(camera.zoom*0.2f);
                         }
                     }
@@ -2675,7 +2710,8 @@ int main() {
                 if(u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<CAMP_SPAWN_RATE*dt*u.attack_rate*(1.1f-u.faction->count_members/(float)(1+u.faction->industry)) && u.faction!=factions+1) {
                     int canMake = (int)u.faction->industry-(int)u.faction->count_members;
                     if (canMake > 0) {
-                        if (canMake > 2) canMake = 2;
+                        const int can_make_limit = (u.faction->technology & TECHNOLOGY_HARDCORE)?4:2;
+                        if (canMake > can_make_limit) canMake = can_make_limit;
                         for (int k = 0; k < canMake; k++) {
                             if (num_units >= MAX_UNITS) break;
                             float sx = u.x + (GetRandomValue(-5000, 5000) * 0.0002f);
@@ -2747,7 +2783,7 @@ int main() {
             if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_SEAFARERING) && terrainGrid[(int)u.y][(int)u.x].texture==&tex::water) u_speed = 1.5f;
             u_speed *= u.speed;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
-            if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
+            if((u.texture==&tex::railgun || u.texture==&tex::radio) && extra_sight<0.f) extra_sight = 0.f;
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range = 25.f;
@@ -3197,53 +3233,6 @@ int main() {
                                 }
                             }
                             o.popup = "captured";
-                            // if(visible[(int)o.y][(int)o.x]) {
-                            //     int ux = (int)o.x;
-                            //     int uy = (int)o.y;
-                            //     int range = (int)o.size + 1;
-                            //     if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range)
-                            //         sound::notify.Play(camera.zoom*0.2f);
-                            // }
-                            if(u.faction && (u.faction->technology & TECHNOLOGY_CONQUER)) {
-                                u.experience += 15.f;
-                                u.animation = 0.f;
-                                if(u.experience>=10 && (!is_mecha(u) || (u.faction && (u.faction->technology & TECHNOLOGY_INDUSTRY)))
-                                    && u.name!=veteran_name && u.name!=hero_name) {
-                                    u.size *= 1.2;
-                                    u.name = veteran_name;
-                                    u.damage *= 1.5;
-                                    u.max_health += 5;
-                                    u.popup = "new veteran";
-                                }
-                                if(u.experience>=20 && u.name==veteran_name) {
-                                    u.size *= 1.2;
-                                    u.name = hero_name;
-                                    u.damage *= 1.5;
-                                    u.max_health += 5;
-                                    u.popup = "new hero";
-                                }
-                                if(u.experience>50 && u.name==hero_name) {
-                                    u.experience -= 20;
-                                    int r = GetRandomValue(0, 100);
-                                    if(r<25) {
-                                        u.attack_rate *= 1.5f;
-                                        u.popup = "hero: aggression";
-                                    }
-                                    else if(r<50) {
-                                        u.speed *= 1.2f;
-                                        u.popup = "hero: faster";
-                                    }
-                                    else if(r<75){
-                                        u.max_health += 2.f;
-                                        u.health += 2.f;
-                                        u.popup = "hero: healthier";
-                                    }
-                                    else {
-                                        u.range *= 1.2f;
-                                        u.popup = "hero: farsight";
-                                    }
-                                }
-                            }
                             o.capturing = u.faction;
                             if(o.capturing==ANIMAL_FACTION) {
                                 o.capturing = factions+1; // animals cannot capture
@@ -3273,8 +3262,8 @@ int main() {
                                     0.0,          /* experience */ \
                                     0.0,          /* angle */ \
                                     1.3,          /* size */ \
-                                    15.0,         /* health */ \
-                                    15.0,         /* max_health */ \
+                                    50.0,         /* health */ \
+                                    50.0,         /* max_health */ \
                                     (u.faction),    /* faction */ \
                                     (u.faction),    /* can only be captured */ \
                                     -0.1f \
@@ -3464,7 +3453,7 @@ int main() {
             int ux = (int)u.x;
             int uy = (int)u.y;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
-            if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
+            if((u.texture==&tex::railgun || u.texture==&tex::radio) && extra_sight<0.f) extra_sight = 0.f;
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.5f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
@@ -3503,6 +3492,7 @@ int main() {
             else if (candidate == TECHNOLOGY_HUNTING) chosen = candidate;
             else if (candidate == TECHNOLOGY_NERDS) chosen = candidate;
             else if (candidate == TECHNOLOGY_TAMING) chosen = candidate;
+            else if (candidate == TECHNOLOGY_HARDCORE) chosen = candidate;
 
             else if (candidate == TECHNOLOGY_TRACK && (prev & TECHNOLOGY_EXPLORE)) chosen = candidate;
             else if (candidate == TECHNOLOGY_AGILE && (prev & TECHNOLOGY_EXPLORE)) chosen = candidate;
@@ -3510,7 +3500,7 @@ int main() {
 
             else if (candidate == TECHNOLOGY_WONDER && (prev & (TECHNOLOGY_AGILE | TECHNOLOGY_TAMING))) chosen = candidate;
 
-            else if (candidate == TECHNOLOGY_FIGHT && (prev & TECHNOLOGY_HUNTING)) chosen = candidate;
+            else if (candidate == TECHNOLOGY_FIGHT && (prev & TECHNOLOGY_HARDCORE)) chosen = candidate;
             else if (candidate == TECHNOLOGY_FARMING && (prev & TECHNOLOGY_HUNTING)) chosen = candidate;
 
             else if (candidate == TECHNOLOGY_RESEARCH && (prev & TECHNOLOGY_NERDS)) chosen = candidate;
@@ -3532,7 +3522,6 @@ int main() {
 
             else if (candidate == TECHNOLOGY_SNIPING && (prev & TECHNOLOGY_TRACK)) chosen = candidate;
             else if (candidate == TECHNOLOGY_SNIFFING && (prev & TECHNOLOGY_TRACK)) chosen = candidate;
-            else if (candidate == TECHNOLOGY_CONQUER && (prev & TECHNOLOGY_SNIFFING)) chosen = candidate;
 
             else if (candidate == TECHNOLOGY_INFRASTRUCTURE && (prev & (TECHNOLOGY_FARMING | TECHNOLOGY_RESEARCH))) chosen = candidate;
             else if (candidate == TECHNOLOGY_OWNERSHIP && (prev & (TECHNOLOGY_SEAFARERING | TECHNOLOGY_INFRASTRUCTURE))) chosen = candidate;
@@ -3927,7 +3916,7 @@ int main() {
                 int hp = (int)(u.health+0.01);
                 float startBase = 0;//u.angle-45.f+180.f;
                 float segmentAngle = 360.0f / maxHealth;  // 18°
-                float gap = 50.f/maxHealth;
+                float gap = 75.f/maxHealth;
                 Color hc = u.capturing?u.faction->color:RED;
                 //Color hc = u.capturing?YELLOW:RED;
                 float outer = radius * 0.99f;
@@ -4041,7 +4030,7 @@ int main() {
             Vector2 world = { u.x * TILE_SIZE, u.y * TILE_SIZE };
             Vector2 screen = GetWorldToScreen2D(world, camera);
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
-            if(u.texture==&tex::railgun && extra_sight<0.f) extra_sight = 0.f;
+            if((u.texture==&tex::railgun || u.texture==&tex::radio) && extra_sight<0.f) extra_sight = 0.f;
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
             float u_range = u.range*(1+extra_sight);
             // important that here we extend the sight range only for stuff controlled by the player
@@ -4058,7 +4047,7 @@ int main() {
             Vector2 origin = { radiusPixels, radiusPixels };
             DrawTexturePro(fog_hole, src, dst, origin, 0.f, WHITE);
         }
-        float fogTileRadius = TILE_SIZE * camera.zoom * 1.3f;
+        float fogTileRadius = TILE_SIZE * camera.zoom * 1.5f;
         for (int y = yMin; y < yMax; y++) {
             for (int x = xMin; x < xMax; x++) {
                 if (explored[y][x]) continue;
@@ -4070,8 +4059,8 @@ int main() {
                     }
                 }
                 if (!hasExploredNeighbor) continue;
-                float wx = x * TILE_SIZE + TILE_SIZE * 0.5f;
-                float wy = y * TILE_SIZE + TILE_SIZE * 0.5f;
+                float wx = x * TILE_SIZE + TILE_SIZE * 0.5f-fogTileRadius/2;
+                float wy = y * TILE_SIZE + TILE_SIZE * 0.5f-fogTileRadius/2;
                 Vector2 screen = GetWorldToScreen2D({wx, wy}, camera);
                 DrawCircle(screen.x, screen.y, fogTileRadius, BLACK);
             }
@@ -4239,7 +4228,7 @@ int main() {
 
             Vector2 sniping    = { track.x+DX,      track.y };
             Vector2 sniffing   = { track.x+DX,      track.y-DY };
-            Vector2 conquer    = { sniffing.x+DX,   sniffing.y };
+            Vector2 hardcore   = { hunting.x,       hunting.y-DY };
             Vector2 ownership  = { seafaring.x + DX, seafaring.y };
 
             Vector2 luxury     = { ownership.x+DX,   ownership.y+DY };
@@ -4269,7 +4258,6 @@ int main() {
             DrawConnector(agile.x+actual_cell_width, agile.y+actual_cell_height, wonder.x, wonder.y+actual_cell_height, tech & TECHNOLOGY_AGILE);
 
             // HUNTING
-            DrawConnector(hunting.x+actual_cell_width, hunting.y+actual_cell_height, fight.x, fight.y+actual_cell_height, tech & TECHNOLOGY_HUNTING);
             DrawConnector(hunting.x+actual_cell_width, hunting.y+actual_cell_height, farming.x, farming.y+actual_cell_height, tech & TECHNOLOGY_HUNTING);
             DrawConnector(taming.x+actual_cell_width, taming.y+actual_cell_height, heroics.x, heroics.y+actual_cell_height, tech & TECHNOLOGY_TAMING);
 
@@ -4277,6 +4265,9 @@ int main() {
             DrawConnector(nerds.x+actual_cell_width, nerds.y+actual_cell_height, research.x, research.y+actual_cell_height, tech & TECHNOLOGY_NERDS);
             DrawConnector(nerds.x+actual_cell_width, nerds.y+actual_cell_height, homunculi.x, homunculi.y+actual_cell_height, tech & TECHNOLOGY_NERDS);
             DrawConnector(nerds.x+actual_cell_width, nerds.y+actual_cell_height, mecha.x, mecha.y+actual_cell_height, tech & TECHNOLOGY_NERDS);
+
+            // HARDCORE
+            DrawConnector(hardcore.x+actual_cell_width, hardcore.y+actual_cell_height, fight.x, fight.y+actual_cell_height, tech & TECHNOLOGY_HARDCORE);
 
             // FIGHT
             DrawConnector(fight.x+actual_cell_width, fight.y+actual_cell_height, heroics.x, heroics.y+actual_cell_height, tech & TECHNOLOGY_FIGHT);
@@ -4298,7 +4289,6 @@ int main() {
             DrawConnector(aifarm.x+actual_cell_width, aifarm.y+actual_cell_height, technocracy.x, technocracy.y+actual_cell_height, tech & TECHNOLOGY_AIFARM);
             DrawConnector(mechanised.x+actual_cell_width, mechanised.y+actual_cell_height, technocracy.x, technocracy.y+actual_cell_height, tech & TECHNOLOGY_MECHANISED);
             DrawConnector(research.x+actual_cell_width, research.y+actual_cell_height, infrastructure.x, infrastructure.y+actual_cell_height, tech & TECHNOLOGY_RESEARCH);
-            //DrawConnector(conquer.x+actual_cell_width, conquer.y+actual_cell_height, ownership.x, ownership.y+actual_cell_height, tech & TECHNOLOGY_CONQUER);
             DrawConnector(infrastructure.x+actual_cell_width, infrastructure.y+actual_cell_height, ownership.x, ownership.y+actual_cell_height, tech & TECHNOLOGY_INFRASTRUCTURE);
             DrawConnector(ownership.x+actual_cell_width, ownership.y+actual_cell_height, propaganda.x, propaganda.y+actual_cell_height, tech & TECHNOLOGY_OWNERSHIP);
             DrawConnector(ownership.x+actual_cell_width, ownership.y+actual_cell_height, luxury.x, luxury.y+actual_cell_height, tech & TECHNOLOGY_OWNERSHIP);
@@ -4332,14 +4322,13 @@ int main() {
             // TRACK
             DrawConnector(track.x+actual_cell_width, track.y+actual_cell_height, sniping.x, sniping.y+actual_cell_height, tech & TECHNOLOGY_TRACK);
             DrawConnector(track.x+actual_cell_width, track.y+actual_cell_height, sniffing.x, sniffing.y+actual_cell_height, tech & TECHNOLOGY_TRACK);
-            DrawConnector(sniffing.x+actual_cell_width, sniffing.y+actual_cell_height, conquer.x, conquer.y+actual_cell_height, tech & TECHNOLOGY_SNIFFING);
 
 
             DrawTechNode(explore.x, explore.y, "CHARTED", "Wide camp & storage sight", tech, TECHNOLOGY_EXPLORE);
             DrawTextureEx(tex::track, {explore.x + ICON_DX, explore.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
 
 
-            DrawTechNode(hunting.x, hunting.y, "HUNTING", "+4 camp & hide industry", tech, TECHNOLOGY_HUNTING);
+            DrawTechNode(hunting.x, hunting.y, "CIVILIZED", "+3 camp & hide industry", tech, TECHNOLOGY_HUNTING);
             DrawTextureEx(tex::gear, {hunting.x + ICON_DX, hunting.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
 
             DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "+30\% research, -1 spawn HP", tech, TECHNOLOGY_NERDS);
@@ -4350,13 +4339,16 @@ int main() {
             DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
 
 
+            DrawTechNode(hardcore.x, hardcore.y, "HARDCORE", "-7 camp industry, 2x spawn", tech, TECHNOLOGY_HARDCORE);
+            DrawTextureEx(tex::blood, {hardcore.x + ICON_DX, hardcore.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
+
             // account for datacenters autonomously adding techs without predecesoors
             if(prev_tech & (TECHNOLOGY_BIOWEAPON | TECHNOLOGY_GRIT | TECHNOLOGY_EVOLUTION)) {
                 DrawTechNode(evolution.x, evolution.y, "EVOLUTION", "Some spawn are snowmen", tech, TECHNOLOGY_EVOLUTION);
                 DrawTextureEx(tex::snowman, {evolution.x + ICON_DX, evolution.y + ICON_DY}, 0, ICON_SIZE / tex::snowman.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_TRACK)) {
-                DrawTechNode(track.x, track.y, "TRACKER", "Wider unit sight", tech, TECHNOLOGY_TRACK);
+                DrawTechNode(track.x, track.y, "TRACKER", "+50\% unit sight", tech, TECHNOLOGY_TRACK);
                 DrawTextureEx(tex::track, {track.x + ICON_DX, track.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_TAMING | TECHNOLOGY_WONDER)) {
@@ -4375,7 +4367,7 @@ int main() {
                 DrawTechNode(driver.x, driver.y, "DRIVER", "Mechas are often faster", tech, TECHNOLOGY_DRIVER);
                 DrawTextureEx(tex::tank, {driver.x + ICON_DX, driver.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
-            if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_FIGHT)) {
+            if(prev_tech & (TECHNOLOGY_HARDCORE | TECHNOLOGY_FIGHT)) {
                 DrawTechNode(fight.x, fight.y, "FIGHT", "Double unit experience", tech, TECHNOLOGY_FIGHT);
                 DrawTextureEx(tex::blood, {fight.x + ICON_DX, fight.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
@@ -4396,7 +4388,7 @@ int main() {
                 DrawTextureEx(tex::tank, {autorepair.x + ICON_DX, autorepair.y + ICON_DY}, 0, ICON_SIZE / tex::tank.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TAMING | TECHNOLOGY_HEROICS)) {
-                DrawTechNode(heroics.x, heroics.y, "HEROICS", "Vets & heroes may dodge", tech, TECHNOLOGY_HEROICS);
+                DrawTechNode(heroics.x, heroics.y, "HEROICS", "+30\% vet & heroes dodge", tech, TECHNOLOGY_HEROICS);
                 DrawTextureEx(tex::blood, {heroics.x + ICON_DX, heroics.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_GRIT)) {
@@ -4454,10 +4446,6 @@ int main() {
             if(prev_tech & (TECHNOLOGY_TRACK | TECHNOLOGY_SNIFFING)) {
                 DrawTechNode(sniffing.x, sniffing.y, "BOTNET", "Autonomous units", tech, TECHNOLOGY_SNIFFING);
                 DrawTextureEx(tex::track, {sniffing.x + ICON_DX, sniffing.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
-            }
-            if(prev_tech & (TECHNOLOGY_SNIFFING | TECHNOLOGY_CONQUER)) {
-                DrawTechNode(conquer.x, conquer.y, "CONQUER", "Captures yield experience", tech, TECHNOLOGY_CONQUER);
-                DrawTextureEx(tex::track, {conquer.x + ICON_DX, conquer.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_RESEARCH | TECHNOLOGY_NUCLEAR)) {
                 DrawTechNode(nuclear.x, nuclear.y, "NUCLEAR", "x2 damage for no regen", tech, TECHNOLOGY_NUCLEAR);
@@ -5032,6 +5020,7 @@ int main() {
                 }
                 else {
                     DrawText("Grants sight", px + 80, textY, 28, WHITE);
+                    DrawText("No sight penalty", px + 80, textY+30, 28, WHITE);
                     if(hovered->faction==factions+1)
                         DrawTextSmall("wild", px + 80, textY+94, 20, WHITE);
                     else if(hovered->faction==factions)
