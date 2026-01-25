@@ -1158,7 +1158,7 @@ void unload() {
 
 int main() {
     PrefMask unlocked_preferences = 0;
-    const double AI_ELO = 1500;
+    const double AI_ELO = 1800;
     double player_rating = 1200;
     {
         FILE* f = fopen("midnight-save.dat", "rb");
@@ -1774,11 +1774,11 @@ int main() {
                     Rectangle{baseX-256, baseY+100, 512, 256},
                     {0,0}, 0, WHITE);
             }
-            float size = 128.f;
-            float radius = size*0.55f;
-            float end_angle = (float)(rank_progress * 360.0) - 90;
-            float cx = baseX - MeasureText(ranks[rank_index].name, 96)/2+100-70;
-            float cy = baseY+420+45;
+            // float size = 128.f;
+            // float radius = size*0.55f;
+            // float end_angle = (float)(rank_progress * 360.0) - 90;
+            // float cx = baseX - MeasureText(ranks[rank_index].name, 96)/2+100-70;
+            // float cy = baseY+420+45;
             // DrawRing({cx, cy}, radius - 14, radius, -90, end_angle, 64, ranks[rank_index].color);
             // DrawRing({cx, cy}, radius - 14, radius, end_angle, 360-90, 64, Fade(ranks[rank_index].color, 0.4f));
             // DrawTexturePro(
