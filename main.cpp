@@ -4512,19 +4512,36 @@ int main() {
         if (showHelp) {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.85f));
             float px = GetScreenWidth()*0.5f-600;
-            float py = GetScreenHeight()*0.5f-400;
-            DrawText("Use your units to capture stuff.",px,py,32,WHITE);
+            float py = GetScreenHeight()*0.5f-340;
+            DrawRectangleRounded(Rectangle{px-5, py-3, 260, 60}, 0.2f, 8, Fade(WHITE, 0.5f));
+            DrawText("What to do",px,py,52,BLACK);
+            py += 80;
+            DrawText("Your units capture stuff - explore to find more",px,py,32,WHITE);
             py += 40;
-            DrawText("Gather the most utopia before pollution fills.",px,py,32,WHITE);
+            DrawText("Gather the most utopia points before pollution fills",px,py,32,WHITE);
             py += 40;
-            DrawText("Spawning stops if you exceed available industry.",px,py,32,WHITE);
+            DrawText("Spawning stops if you exceed available industry",px,py,32,WHITE);
             py += 40;
-            py += 100;
-            DrawText("Mouse over units to see a description.",px,py,32,WHITE);
+            DrawText("Select techs once research fills",px,py,32,WHITE);
             py += 40;
-            DrawText("WASD/right drag to move camera & QE/scroll to zoom",px,py,32,WHITE);
+            py += 250;
+            DrawRectangleRounded(Rectangle{px-5, py-3, 260, 60}, 0.2f, 8, Fade(WHITE, 0.5f));
+            DrawText("Controls",px,py,52,BLACK);
+            py += 80;
+            DrawText("Zoom",px,py,32,WHITE);
+            DrawText("QE/scroll",px+200,py,32,WHITE);
             py += 40;
-            DrawText("Left drag for selection rectangle/shift to select all visible & right click to move",px,py,32,WHITE);
+            DrawText("Camera",px,py,32,WHITE);
+            DrawText("WASD/right drag",px+200,py,32,WHITE);
+            py += 40;
+            DrawText("Description",px,py,32,WHITE);
+            DrawText("Mouse over units",px+200,py,32,WHITE);
+            py += 40;
+            DrawText("Select",px,py,32,WHITE);
+            DrawText("Left drag for selection rectangle/shift selects all visible",px+200,py,32,WHITE);
+            py += 40;
+            DrawText("Move",px,py,32,WHITE);
+            DrawText("Right click to move (units auto-attack and may stop when near target)",px+200,py,32,WHITE);
         }
 
 
@@ -4573,7 +4590,7 @@ int main() {
             Vector2 mouse = GetMousePosition();
             bool hover = CheckCollisionPointRec(mouse, helpBtn);
             DrawRectangleRounded(helpBtn, 0.2f, 8, hover ? Fade(DARKGRAY, 0.5f) : Fade(BLACK, 0.5f));
-            DrawText("Info",
+            DrawText(showHelp?"Close":"Info",
                      helpBtn.x + 20,
                      helpBtn.y + 15,
                      32,WHITE);
@@ -4925,8 +4942,7 @@ int main() {
                         DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                 }
                 else if(hovered->texture==&tex::esper) {
-                    DrawText("+2 utopia", px + 80, textY, 28, WHITE);
-                    DrawText("Autonomous", px + 80, textY+30, 28, WHITE);
+                    DrawText("+2 utopia, autonomous", px + 80, textY, 28, WHITE);
                     DrawTextSmall("speed", px + 80, textY+62-16, 20, WHITE);
                     for(float f=0;f<hovered->speed;f+=1.0f)
                         DrawRectangleRounded({px+150.f+7.f*f, textY+67.f-16, 5.f, 10.f}, 0.2f, 8, WHITE);
