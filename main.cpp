@@ -245,11 +245,12 @@ static Color ColorForTile(Texture* texture) {
 #define PREFERENCE_WAREHOUSE   4
 #define PREFERENCE_SPACING     5
 #define PREFERENCE_EXPERIENCE  6
-#define PREFERENCE_HUMAN       7
-#define PREFERENCE_ROOMBA      8
-#define PREFERENCE_ANIMAL      9
-#define PREFERENCE_ESPER      10
-#define PREFERENCE_COUNT      11
+#define PREFERENCE_SPEED       7
+#define PREFERENCE_HUMAN       8
+#define PREFERENCE_ROOMBA      9
+#define PREFERENCE_ANIMAL     10
+#define PREFERENCE_ESPER      11
+#define PREFERENCE_COUNT      12
 
 
 const char* preference_desc[PREFERENCE_COUNT] = {
@@ -259,7 +260,8 @@ const char* preference_desc[PREFERENCE_COUNT] = {
     "near old tech",
     "near storage",
     "+camp spacing",
-    "+experience",
+    "+starting vets",
+    "+starting speed",
     "+5 humans",
     "near roombas",
     "near animals",
@@ -274,6 +276,7 @@ Texture* preference_icon[PREFERENCE_COUNT] = {
     &tex::warehouse,
     &tex::camp,
     &tex::track,
+    &tex::human,
     &tex::human,
     &tex::roomba,
     &tex::bison,
@@ -1265,7 +1268,7 @@ int main() {
 
     int num_units = 0;
     int max_factions = 7; // can never be less than 3 if we include the player, unclaimed, and wild - can also not include the last Wild faction
-    static const float GAME_DURATION = 15.0f * 60.0f; // 15 minutes
+    static const float GAME_DURATION = 17.0f * 60.0f; // 17 minutes
     float game_time = 0.f;
 
     // load shaders
@@ -1982,6 +1985,8 @@ int main() {
             CREATE_HUMAN(&factions[0], sx, sy);
             if(player_preferred_start[0]==PREFERENCE_EXPERIENCE) units[num_units-1].experience += 8.f;
             if(player_preferred_start[1]==PREFERENCE_EXPERIENCE) units[num_units-1].experience += 8.f;
+            if(player_preferred_start[0]==PREFERENCE_SPEED) units[num_units-1].speed *= 1.2f;
+            if(player_preferred_start[1]==PREFERENCE_SPEED) units[num_units-1].speed *= 1.2f;
         }
 
         camera.target = {
@@ -2966,10 +2971,10 @@ int main() {
                 factions[i].victory_points += factions[i].industry*0.01f;
                 //factions[i].industry *= 0.5f;
             }
-            game_time += dt*0.08f*factions[i].industry/300.f;
-            polution_speedup += 0.08f*factions[i].industry/300.f;
-            game_time += dt*0.08f*factions[i].count_members/300.f;
-            polution_speedup += 0.08f*factions[i].count_members/300.f;
+            game_time += dt*0.08f*factions[i].industry/200.f;
+            polution_speedup += 0.08f*factions[i].industry/200.f;
+            game_time += dt*0.08f*factions[i].count_members/200.f;
+            polution_speedup += 0.08f*factions[i].count_members/200.f;
         }
 
         // repulse units
@@ -4942,7 +4947,7 @@ int main() {
                         DrawRectangleRounded({px+150.f+7.f*f, textY+99.f, 5.f, 10.f}, 0.2f, 8, WHITE);
                 }
                 else if(hovered->texture==&tex::esper) {
-                    DrawText("+2 utopia, autonomous", px + 80, textY, 28, WHITE);
+                    DrawText("+2 utopia, unruly", px + 80, textY, 28, WHITE);
                     DrawTextSmall("speed", px + 80, textY+62-16, 20, WHITE);
                     for(float f=0;f<hovered->speed;f+=1.0f)
                         DrawRectangleRounded({px+150.f+7.f*f, textY+67.f-16, 5.f, 10.f}, 0.2f, 8, WHITE);
