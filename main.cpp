@@ -12,6 +12,7 @@ static const int MAX_DECORATORS = 1000000;
 static const int TILE_SIZE = 128;
 static const float CAMERA_ZOOM = 0.8f;
 static const float movement_speed_multiplier = 0.5f;
+static const int SHOW_MINIMAP = 1;
 
 // difficulty controls
 static const float CAMP_SPAWN_RATE = 2.f; //
@@ -1835,14 +1836,16 @@ int main() {
     }
 
     // minimap
-    // const int MINIMAP_SCALE = 2;
     // RenderTexture2D minimap = LoadRenderTexture(GRID_SIZE * MINIMAP_SCALE, GRID_SIZE * MINIMAP_SCALE);
-    // BeginTextureMode(minimap);
-    // ClearBackground(BLACK);
-    // for (int y = 0; y < GRID_SIZE; y++)
-    //     for (int x = 0; x < GRID_SIZE; x++)
-    //         DrawRectangle(x * MINIMAP_SCALE, y * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE, Color{ 20,20,20,255 });
-    // EndTextureMode(); // minimap
+    if(SHOW_MINIMAP) {
+        const int MINIMAP_SCALE = 2;
+        BeginTextureMode(minimap);
+        ClearBackground(BLACK);
+        for (int y = 0; y < GRID_SIZE; y++)
+            for (int x = 0; x < GRID_SIZE; x++)
+                DrawRectangle(x * MINIMAP_SCALE, y * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE, Color{ 20,20,20,255 });
+        EndTextureMode(); // minimap
+    }
 
 
     // create grid (we have already done this)
@@ -2792,7 +2795,7 @@ int main() {
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range = 25.f;
-            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
+            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 2.0f;
             // attack (interrupt movement to attack)
             if (u.attack_target_x == 0 && u.attack_target_y == 0 && u.capturing!=factions+1) {
                 float r = (float)GetRandomValue(0, 1000000) / 1000000.0f;
@@ -3462,7 +3465,7 @@ int main() {
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.5f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
-            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
+            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 2.0f;
             int VISION_RADIUS = (int)u_range+2;
             for (int dy = -VISION_RADIUS; dy <= VISION_RADIUS; dy++) {
                 for (int dx = -VISION_RADIUS; dx <= VISION_RADIUS; dx++) {
@@ -3470,12 +3473,12 @@ int main() {
                     int vy = uy + dy;
                     if (vx < 0 || vy < 0 || vx >= GRID_SIZE || vy >= GRID_SIZE) continue;
                     if (dx*dx + dy*dy <= VISION_RADIUS * VISION_RADIUS) {
-                        // if(!explored[vy][vx]) {
-                        //     BeginTextureMode(minimap);
-                        //     Color c = ColorForTile(terrainGrid[vy][vx].texture);
-                        //     DrawRectangle(vx * MINIMAP_SCALE, vy * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE, c);
-                        //     EndTextureMode();
-                        // }
+                        if(SHOW_MINIMAP && !explored[vy][vx]) {
+                            BeginTextureMode(minimap);
+                            Color c = ColorForTile(terrainGrid[vy][vx].texture);
+                            DrawRectangle(vx * MINIMAP_SCALE, vy * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE, c);
+                            EndTextureMode();
+                        }
                         visible[vy][vx] = true;
                         explored[vy][vx] = true;
                     }
@@ -4040,7 +4043,7 @@ int main() {
             float u_range = u.range*(1+extra_sight);
             // important that here we extend the sight range only for stuff controlled by the player
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
-            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 1.5f;
+            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 2.0f;
             float radiusPixels = (u_range * TILE_SIZE) * camera.zoom;
             Rectangle src = { 0, 0, (float)fog_hole.width, (float)fog_hole.height };
             Rectangle dst = {
@@ -4137,50 +4140,62 @@ int main() {
         // ---------------------
         // MINIMAP DRAWING
         // ---------------------
-        // if(!showTechTree)
-        // {
-        //     float miniSize = 330.0f;   // onscreen size
-        //     float padding = 20.0f;
-        //     Rectangle src = {0,0,(float)minimap.texture.width,-(float)minimap.texture.height};
-        //     Rectangle dst = {32,(float)GetScreenHeight() - miniSize - 350,miniSize,miniSize};
-        //     DrawTexturePro(
-        //         minimap.texture,
-        //         src,
-        //         dst,
-        //         {0,0},
-        //         0.0f,
-        //         WHITE
-        //     );
-        //     DrawRectangleLines(dst.x, dst.y, dst.width, dst.height, WHITE);
-        //     // ------------------------------------------------------------
-        //     // DRAW CAMERA VIEWPORT OVER MINIMAP
-        //     // ------------------------------------------------------------
-        //     {
-        //         // 1. Determine world coords visible on screen
-        //         Vector2 worldTL = GetScreenToWorld2D({0,0}, camera);
-        //         Vector2 worldBR = GetScreenToWorld2D(
-        //             {(float)GetScreenWidth(), (float)GetScreenHeight()},
-        //             camera
-        //         );
-        //
-        //         // Convert world coords → tile coords
-        //         float tileTLx = worldTL.x / TILE_SIZE;
-        //         float tileTLy = worldTL.y / TILE_SIZE;
-        //         float tileBRx = worldBR.x / TILE_SIZE;
-        //         float tileBRy = worldBR.y / TILE_SIZE;
-        //
-        //         // 2. Scale into minimap-space
-        //         float scaleX = dst.width  / (float)GRID_SIZE;
-        //         float scaleY = dst.height / (float)GRID_SIZE;
-        //
-        //         float boxX = dst.x + tileTLx * scaleX;
-        //         float boxY = dst.y + tileTLy * scaleY;
-        //         float boxW = (tileBRx - tileTLx) * scaleX;
-        //         float boxH = (tileBRy - tileTLy) * scaleY;
-        //
-        //         DrawRectangleLines(boxX, boxY, boxW, boxH, BLUE);
-        //     }
-        // }
+        if(!showTechTree && SHOW_MINIMAP)
+        {
+            float miniSize = 330.0f;   // onscreen size
+            float padding = 20.0f;
+            Rectangle src = {0,0,(float)minimap.texture.width,-(float)minimap.texture.height};
+            Rectangle dst = {32,(float)GetScreenHeight() - miniSize - padding,miniSize,miniSize};
+            DrawTexturePro(
+                minimap.texture,
+                src,
+                dst,
+                {0,0},
+                0.0f,
+                WHITE
+            );
+            DrawRectangleLines(dst.x, dst.y, dst.width, dst.height, WHITE);
+            // ------------------------------------------------------------
+            // DRAW CAMERA VIEWPORT OVER MINIMAP
+            // ------------------------------------------------------------
+            if(GRID_SIZE && TILE_SIZE){
+                // 1. Determine world coords visible on screen
+                Vector2 worldTL = GetScreenToWorld2D({0,0}, camera);
+                Vector2 worldBR = GetScreenToWorld2D(
+                    {(float)GetScreenWidth(), (float)GetScreenHeight()},
+                    camera
+                );
+
+                // Convert world coords → tile coords
+                float tileTLx = worldTL.x / TILE_SIZE;
+                float tileTLy = worldTL.y / TILE_SIZE;
+                float tileBRx = worldBR.x / TILE_SIZE;
+                float tileBRy = worldBR.y / TILE_SIZE;
+
+                // 2. Scale into minimap-space
+                float scaleX = dst.width  / (float)GRID_SIZE;
+                float scaleY = dst.height / (float)GRID_SIZE;
+
+                float boxX = dst.x + tileTLx * scaleX;
+                float boxY = dst.y + tileTLy * scaleY;
+                float boxW = (tileBRx - tileTLx) * scaleX;
+                float boxH = (tileBRy - tileTLy) * scaleY;
+
+                if(boxX<dst.x) {
+                    boxW -= (dst.x-boxX);
+                    boxX = dst.x;
+                }
+                if(boxY<dst.y) {
+                    boxH -= (dst.y-boxY);
+                    boxY = dst.y;
+                }
+                if(boxX+boxW>dst.x+dst.width)
+                    boxW = dst.x+dst.width-boxX;
+                if(boxY+boxH>dst.y+dst.height)
+                    boxH = dst.y+dst.height-boxY;
+                DrawRectangleLines(boxX, boxY, boxW, boxH, BLUE);
+            }
+        }
 
         if (showTechTree) {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.85f));
@@ -4417,7 +4432,7 @@ int main() {
                 DrawTextureEx(tex::track, {seafaring.x + ICON_DX, seafaring.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_FARMING | TECHNOLOGY_RESEARCH | TECHNOLOGY_INFRASTRUCTURE)) {
-                DrawTechNode(infrastructure.x, infrastructure.y, "MEDIA", "+50\% radio sight", tech, TECHNOLOGY_INFRASTRUCTURE);
+                DrawTechNode(infrastructure.x, infrastructure.y, "MEDIA", "x2 radio sight", tech, TECHNOLOGY_INFRASTRUCTURE);
                 DrawTextureEx(tex::track, {infrastructure.x + ICON_DX, infrastructure.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_SEAFARERING | TECHNOLOGY_INFRASTRUCTURE | TECHNOLOGY_OWNERSHIP)) {
