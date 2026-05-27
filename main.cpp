@@ -49,6 +49,7 @@ namespace tex {
     static Texture2D human;
     static Texture2D esper;
     static Texture2D scout;
+    static Texture2D hero;
     static Texture2D tank;
     static Texture2D datacenter;
     static Texture2D railgun;
@@ -263,7 +264,7 @@ const char* preference_desc[PREFERENCE_COUNT] = {
     "+camp spacing",
     "+starting vets",
     "+starting speed",
-    "+5 humans",
+    "+8 humans",
     "near roombas",
     "near animals",
     "near esper"
@@ -1114,6 +1115,7 @@ void unload() {
     UnloadTexture(tex::human);
     UnloadTexture(tex::esper);
     UnloadTexture(tex::scout);
+    UnloadTexture(tex::hero);
     UnloadTexture(tex::tank);
     UnloadTexture(tex::van);
     UnloadTexture(tex::snowman);
@@ -1212,6 +1214,7 @@ int main() {
     tex::human = LoadTexture("data/human.png");
     tex::esper = LoadTexture("data/esper.png");
     tex::scout = LoadTexture("data/scout.png");
+    tex::hero = LoadTexture("data/hero.png");
     tex::tank = LoadTexture("data/tank.png");
     tex::van = LoadTexture("data/van.png");
     tex::gear = LoadTexture("data/gear.png");
@@ -1982,7 +1985,7 @@ int main() {
         }
 
         // Spawn starting humans
-        for (int i=0; i<8+(player_preferred_start[0]==PREFERENCE_HUMAN?5:0)+(player_preferred_start[1]==PREFERENCE_HUMAN?5:0); i++) {
+        for (int i=0; i<8+(player_preferred_start[0]==PREFERENCE_HUMAN?8:0)+(player_preferred_start[1]==PREFERENCE_HUMAN?8:0); i++) {
             float sx = bx + (GetRandomValue(-5000, 5000) * 0.0002f);
             float sy = by + (GetRandomValue(-5000, 5000) * 0.0002f);
             CREATE_HUMAN(&factions[0], sx, sy);
@@ -3102,6 +3105,7 @@ int main() {
                                 && u.name!=veteran_name && u.name!=hero_name) {
                                 u.size *= 1.2;
                                 u.name = veteran_name;
+                                if(u.texture==&tex::human) u.texture = &tex::scout;
                                 u.damage *= 1.5;
                                 u.max_health += 5;
                                 u.health += 5;
@@ -3110,6 +3114,7 @@ int main() {
                             if(u.experience>=20 && u.name==veteran_name) {
                                 u.size *= 1.2;
                                 u.name = hero_name;
+                                if(u.texture==&tex::scout) u.texture = &tex::hero;
                                 u.damage *= 1.5;
                                 u.max_health += 5;
                                 u.health += 5;
@@ -3158,7 +3163,7 @@ int main() {
                             o.health = o.max_health;
                             o.popup = "tamed";
                         }
-                        else if(o.health<=0 && o.faction && (o.faction->technology & TECHNOLOGY_UNSTABLE) && o.texture==&tex::human) {
+                        else if(o.health<=0 && o.faction && (o.faction->technology & TECHNOLOGY_UNSTABLE) && (o.texture==&tex::human || o.texture==&tex::scout || o.texture==&tex::hero)) {
                             units[j] = { \
                                 &tex::ghost,  /* texture */
                                 "Bloo",       /* name */
@@ -3178,7 +3183,7 @@ int main() {
                             };
                             units[j].popup = "unstable";
                         }
-                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_BIOWEAPON) && o.texture==&tex::human) {
+                        else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_BIOWEAPON) && (o.texture==&tex::human || o.texture==&tex::scout || o.texture==&tex::hero)) {
                             units[j] = { \
                                 &tex::ghost,  /* texture */
                                 "Bloo",       /* name */
