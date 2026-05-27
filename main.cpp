@@ -3563,7 +3563,7 @@ int main() {
         // ============================================================================
         // AI FOR FACTIONS >= 3
         // ============================================================================
-        float AI_ORDER_CHANCE = 0.1f;
+        float AI_ORDER_CHANCE = player_rating/1200.f*0.5f*0.1f; // 0.1f is competent but not unbeatable
         float AI_ORDER_RADIUS = 10.0f;
 
         for (int i = 0; i < num_units; i++) {
