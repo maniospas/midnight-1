@@ -1400,12 +1400,26 @@ int main() {
         240.0f,
         60.0f
     };
+    Rectangle fortBtn = {
+        GetScreenWidth() - 260.0f,
+        GetScreenHeight() - 95.0f-65.f-95.f,
+        240.0f,
+        90.0f
+    };
     Rectangle optionsButton = {
         GetScreenWidth() - 260.0f,
         10.f,
         240.0f,
         60.0f
     };
+
+
+
+    static float fort_creation_px = 0;
+    static float fort_creation_py = 0;
+    static int fort_creation_num = 0;
+    static float fort_creation_total_health = 0;
+    static bool fort_creation_has_nearby = false;
 
     // preallocate stuff
     Terrain* terrainBlock = (Terrain*)malloc(GRID_SIZE * GRID_SIZE * sizeof(Terrain));
@@ -1432,9 +1446,8 @@ int main() {
         PREFERENCE_RAILGUN
     };
     auto RevealUnitToAllFactions = [&](int unitIndex) {
-        for (int fi = 0; fi < max_factions; fi++) {
+        for(int fi = 0; fi < max_factions; fi++)
             factions[fi].visible_knowledge.set(unitIndex);
-        }
     };
 
     // main loop
@@ -1555,6 +1568,7 @@ int main() {
     }
 
     NEW_GAME:
+    max_factions = GetRandomValue(5,11);
     NOISE_SEED = GetRandomValue(1, 1'000'000);
     GenerateGrass(terrainGrid);
     GenerateHillsAndDesert(terrainGrid);
@@ -1609,7 +1623,7 @@ int main() {
             Rectangle{0,0,(float)tex::earth.width,(float)tex::earth.height},
             Rectangle{baseX-256, baseY+100, 512, 256},
             {0,0}, 0, Fade(WHITE, 0.85f));
-        DrawText("Terrain peek", baseX - 320, baseY+400, 128, WHITE);
+        DrawText(TextFormat("%d opponents", max_factions-3), baseX - 320, baseY+400, 128, WHITE);
 
         DrawTexturePro(
             minimap.texture,
@@ -1923,8 +1937,7 @@ int main() {
 
 
 
-    START_GAME:
-    max_factions = 7;
+    START_GAME:;
     num_units = 0;
     for(int i=0;i<max_factions;i++) {
         factions[i].visible_knowledge.reset();
@@ -2408,58 +2421,34 @@ int main() {
             showHelp = !showHelp;
             PlaySound(sound::select2);
         }
-        if(IsKeyPressed(KEY_BACKSPACE)) {
-            float total_health = 0;
-            float px = 0;
-            float py = 0;
-            int num = 0;
+
+        fort_creation_px = 0;
+        fort_creation_py = 0;
+        fort_creation_num = 0;
+        fort_creation_total_health = 0;
+        fort_creation_has_nearby = false;
+
+        {
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
-                if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) {
-                    total_health += u.health;
-                    px += u.x;
-                    py += u.y;
-                    num++;
+                if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::tank || u.texture==&tex::fort)) {
+                    fort_creation_total_health += u.max_health;
+                    fort_creation_px += u.x;
+                    fort_creation_py += u.y;
+                    fort_creation_num++;
                 }
             }
-            if(num) {
-                bool has_nearby = false;
-                px /= num;
-                py /= num;
-                for (int i = 0; i < num_units; i++) {
-                    Unit &u = units[i];
-                    if (!u.selected && u.health && !u.speed && (u.x-px)*(u.x-px)+(u.y-py)*(u.y-py)<25) {
-                        has_nearby = true;
-                        break;
-                    }
-                }
-                if(has_nearby) {
-                    last_message = "Cannot create fort close to other structures";
-                    last_message_counter = 0.f;
-                }
-                else if(total_health<20) {
-                    last_message = "Forts need at least 20 stationed health";
-                    last_message_counter = 0.f;
-                }
-                else {
-                    for (int i = 0; i < num_units; i++) {
-                        Unit &u = units[i];
-                        if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) {
-                            u.health = 0;
-                            u.texture = &tex::ghost;
-                        }
-                    }
-                    CREATE_FORT(factions, px, py);
-                    total_health = total_health/5;
-                    units[num_units-1].max_health = total_health;
-                    units[num_units-1].health = total_health;
-                    units[num_units-1].size = sqrtf(total_health/10);
-                    PlaySound(sound::select2);
-                    last_message = "Created a fort";
-                    last_message_counter = 0.f;
+            fort_creation_px /= fort_creation_num;
+            fort_creation_py /= fort_creation_num;
+            for (int i = 0; i < num_units; i++) {
+                Unit &u = units[i];
+                if (!u.selected && u.health && !u.speed && (u.x-fort_creation_px)*(u.x-fort_creation_px)+(u.y-fort_creation_py)*(u.y-fort_creation_py)<25) {
+                    fort_creation_has_nearby = true;
+                    break;
                 }
             }
         }
+
         if (CheckCollisionPointRec(GetMousePosition(), techBtn)) {
             mouseCapturedByUI = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -2474,6 +2463,38 @@ int main() {
                 PlaySound(sound::select2);
             }
         }
+
+
+        if(!showTechTree && !mouseCapturedByUI && (IsKeyPressed(KEY_DELETE) || (CheckCollisionPointRec(GetMousePosition(), fortBtn) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))) && fort_creation_num) {
+            mouseCapturedByUI = true;
+            if(fort_creation_has_nearby) {
+                last_message = "Cannot build fort close to other structures";
+                last_message_counter = 0.f;
+            }
+            else if(fort_creation_total_health<100) {
+                last_message = "Forts need at least 20 stationed non-bloo industry";
+                last_message_counter = 0.f;
+            }
+            else {
+                for (int i = 0; i < num_units; i++) {
+                    Unit &u = units[i];
+                    if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::tank || u.texture==&tex::fort)) {
+                        u.health = 0;
+                        u.texture = &tex::ghost;
+                    }
+                }
+                CREATE_FORT(factions, fort_creation_px, fort_creation_py);
+                fort_creation_total_health = fort_creation_total_health/10;
+                units[num_units-1].max_health = fort_creation_total_health;
+                units[num_units-1].health = fort_creation_total_health;
+                units[num_units-1].size = sqrtf(fort_creation_total_health/5);
+                PlaySound(sound::select2);
+                last_message = "Built a fort";
+                last_message_counter = 0.f;
+                fort_creation_num = 0;
+            }
+        }
+
         if (showTechTree) showHelp = false;
 
 
@@ -4722,8 +4743,8 @@ int main() {
             DrawText("Move",px,py,32,WHITE);
             DrawText("Right click (units auto-attack and may stop when near target), SPACE to change move mode",px+200,py,32,WHITE);
             py += 40;
-            DrawText("Fort",px,py,32,WHITE);
-            DrawText("Backspace (station selected humans with at least 20 total health in a proportionally strong fort)",px+200,py,32,WHITE);
+            DrawText("Build fort",px,py,32,WHITE);
+            DrawText("Del (station selected humans and tanks with at least 20 industry in a proportionally strong fort)",px+200,py,32,WHITE);
         }
 
 
@@ -4747,10 +4768,31 @@ int main() {
         float bx = techBtn.x + padding;
         float by = techBtn.y + techBtn.height - barH - 18.0f;
         DrawTechProgressBar(bx, by, barW, barH, prog);
-
         DrawRectangleRounded({techBtn.x+techBtn.width-70, techBtn.y+15, 50, 25},0.2f, 8, WHITE);
         DrawTextSmall("esc",techBtn.x+techBtn.width-65+5,techBtn.y+15,24,BLACK);
 
+
+        // --------------------------------------------------
+        // FORT BUTTON
+        // --------------------------------------------------
+        if(!showTechTree && fort_creation_num) {
+            float prog = fort_creation_total_health/100.0;
+            if(prog>=2) prog = 1;
+            bool techHover = CheckCollisionPointRec(GetMousePosition(), fortBtn);
+            DrawRectangleRounded(fortBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
+            const char* title = fort_creation_has_nearby ? "Cannot build" : (fort_creation_total_health>=100?"Build fort":"Select more");
+            DrawText(title,fortBtn.x + 20,fortBtn.y + 14,32,WHITE);
+            float padding = 20.0f;
+            float barW = fortBtn.width - padding * 2;
+            float barH = 20.0f;
+            float bx = fortBtn.x + padding;
+            float by = fortBtn.y + fortBtn.height - barH - 18.0f;
+            DrawTechProgressBar(bx, by, barW, barH, prog);
+            if(!fort_creation_has_nearby && fort_creation_total_health>=100) {
+                DrawRectangleRounded({fortBtn.x+fortBtn.width-70, fortBtn.y+15, 50, 25},0.2f, 8, WHITE);
+                DrawTextSmall("del",fortBtn.x+fortBtn.width-65+5,fortBtn.y+15,24,BLACK);
+            }
+        }
 
         // --------------------------------------------------
         // EXIT APP BUTTON
@@ -5022,7 +5064,7 @@ int main() {
                     DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::fort) {
-                    DrawText("Fills industry", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5)), px + 80, textY, DESC_FONT_SIZE, WHITE);
                     DrawUnitStatCircle(hovered, px + 120, textY + 40);
                     DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
@@ -5047,7 +5089,7 @@ int main() {
                     if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(is_mecha((*hovered))) {
-                    DrawText("Mecha, fills industry", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawText(TextFormat("Mecha, %d industry cost", (int)(hovered->max_health/5)), px + 80, textY, DESC_FONT_SIZE, WHITE);
                     DrawUnitStatCircle(hovered, px + 120, textY + 40);
                     if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
@@ -5060,7 +5102,7 @@ int main() {
                         DrawUnitStatCircle(hovered, px + 120, textY + 40);
                     }
                     else {
-                        DrawText("Fills industry", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                        DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5)), px + 80, textY, DESC_FONT_SIZE, WHITE);
                         DrawUnitStatCircle(hovered, px + 120, textY + 40);
                     }
                 }
