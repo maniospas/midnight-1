@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <raymath.h>
 #include <cmath>
 #include <iostream>
 #include <bitset>
@@ -13,7 +14,7 @@ static const int TILE_SIZE = 128;
 static const float CAMERA_ZOOM = 0.8f;
 static const float movement_speed_multiplier = 0.5f;
 static const int SHOW_MINIMAP = 1;
-static const float DESC_FONT_SIZE = 28;
+static const float DESC_FONT_SIZE = 24;
 
 // difficulty controls
 static const float CAMP_SPAWN_RATE = 2.f; //
@@ -53,6 +54,7 @@ namespace tex {
     static Texture2D tank;
     static Texture2D datacenter;
     static Texture2D railgun;
+    static Texture2D fort;
     static Texture2D bison;
     static Texture2D wolf;
     static Texture2D hide;
@@ -334,7 +336,7 @@ struct Unit {
 void DrawUnitStatCircle(Unit* unit, int px, int py) {
     const float RADIUS    = 55.0f;
     const float INNER     = RADIUS * 0.08f;
-    const int   FONT_SIZE = 13;
+    const int   FONT_SIZE = 16;
     const int   RINGS     = 4;
 
     float cx = px + RADIUS;
@@ -390,13 +392,13 @@ void DrawUnitStatCircle(Unit* unit, int px, int py) {
     for (int i = 0; i < 4; i++)
         DrawCircleV(pts[i], 3.0f, WHITE);
 
-    // Labels
-    float labelR = RADIUS + 13.0f;
+    // Labels — outward horizontally with extra push left/right, inward vertically
     for (int i = 0; i < 4; i++) {
-        float lx = cx + cosf(angles[i]) * labelR;
-        float ly = cy + sinf(angles[i]) * labelR;
+        float lx = cx + cosf(angles[i]) * (RADIUS + 10.0f);
+        float ly = cy + sinf(angles[i]) * (RADIUS - 8.0f);
         int tw = MeasureText(stats[i].label, FONT_SIZE);
-        DrawTextSmall(stats[i].label, (int)(lx - tw / 2.f), (int)(ly - 7.f), FONT_SIZE, Fade(WHITE, 0.85f));
+        int drawX = (int)(lx - tw / 2.f + copysignf(tw / 2.f, cosf(angles[i])));
+        DrawTextSmall(stats[i].label, drawX, (int)(ly - 7.f), FONT_SIZE, Fade(WHITE, 1.f));
     }
 }
 
@@ -590,6 +592,27 @@ int NOISE_SEED = 0;
             (faction),    /* faction */ \
             nullptr,      /* faction */ \
             0.3           /* extra scale*/\
+        };
+
+#define CREATE_FORT(faction, x, y) \
+    if (num_units < MAX_UNITS) \
+        units[num_units++] = { \
+            &tex::fort,   /* texture */ \
+            "Fort",       /* name */ \
+            0.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            5.0,          /* attack_rate */ \
+            3.0,           /* range */ \
+            1,          /* damage */ \
+            0.0,          /* experience */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
+            0.7,          /* size */ \
+            20.0,         /* health */ \
+            20.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            (faction),    /* faction */ \
+            0.0           /* extra scale*/\
         };
 
 #define CREATE_RAILGUN(faction, x, y) \
@@ -1208,6 +1231,7 @@ void unload() {
     UnloadTexture(tex::info);
     UnloadTexture(tex::overlay);
     UnloadTexture(tex::railgun);
+    UnloadTexture(tex::fort);
     UnloadTexture(tex::road);
     UnloadTexture(tex::road_transition);
     UnloadTexture(tex::mine);
@@ -1295,6 +1319,7 @@ int main() {
     tex::research = LoadTexture("data/research.png");
     tex::snowman = LoadTexture("data/snowman.png");
     tex::railgun = LoadTexture("data/railgun.png");
+    tex::fort = LoadTexture("data/fort.png");
     tex::hide = LoadTexture("data/hide.png");
     tex::rat = LoadTexture("data/rat.png");
     tex::roomba = LoadTexture("data/roomba.png");
@@ -2383,6 +2408,58 @@ int main() {
             showHelp = !showHelp;
             PlaySound(sound::select2);
         }
+        if(IsKeyPressed(KEY_BACKSPACE)) {
+            float total_health = 0;
+            float px = 0;
+            float py = 0;
+            int num = 0;
+            for (int i = 0; i < num_units; i++) {
+                Unit &u = units[i];
+                if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) {
+                    total_health += u.health;
+                    px += u.x;
+                    py += u.y;
+                    num++;
+                }
+            }
+            if(num) {
+                bool has_nearby = false;
+                px /= num;
+                py /= num;
+                for (int i = 0; i < num_units; i++) {
+                    Unit &u = units[i];
+                    if (!u.selected && u.health && !u.speed && (u.x-px)*(u.x-px)+(u.y-py)*(u.y-py)<25) {
+                        has_nearby = true;
+                        break;
+                    }
+                }
+                if(has_nearby) {
+                    last_message = "Cannot create fort close to other structures";
+                    last_message_counter = 0.f;
+                }
+                else if(total_health<20) {
+                    last_message = "Forts need at least 20 stationed health";
+                    last_message_counter = 0.f;
+                }
+                else {
+                    for (int i = 0; i < num_units; i++) {
+                        Unit &u = units[i];
+                        if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) {
+                            u.health = 0;
+                            u.texture = &tex::ghost;
+                        }
+                    }
+                    CREATE_FORT(factions, px, py);
+                    total_health = total_health/5;
+                    units[num_units-1].max_health = total_health;
+                    units[num_units-1].health = total_health;
+                    units[num_units-1].size = sqrtf(total_health/10);
+                    PlaySound(sound::select2);
+                    last_message = "Created a fort";
+                    last_message_counter = 0.f;
+                }
+            }
+        }
         if (CheckCollisionPointRec(GetMousePosition(), techBtn)) {
             mouseCapturedByUI = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -2561,6 +2638,10 @@ int main() {
                 if(u.faction->technology & TECHNOLOGY_MECHANISED) u.faction->industry += u.health/5.f;
                 if(u.faction->technology & TECHNOLOGY_GIGAJOULE) continue;
             }
+            if(u.texture==&tex::fort) {
+                u.faction->count_members += u.max_health/5.f;
+                continue;
+            }
             if(!u.faction) continue;
             if(u.capturing) continue;
             if(!u.speed) continue;
@@ -2726,6 +2807,8 @@ int main() {
                 u.faction->victory_points += 2.f;
             if(u.texture==&tex::warehouse)
                 u.faction->victory_points += 2.f;
+            // if(u.texture==&tex::fort)
+            //     u.faction->victory_points -= 0.334f;
             if(u.texture==&tex::radio && u.faction && (u.faction->technology & TECHNOLOGY_PROPAGANDA) )
                 u.faction->victory_points += 0.334f;
             if(u.texture==&tex::lab)
@@ -2867,7 +2950,7 @@ int main() {
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range = 25.f;
-            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 2.0f;
+            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && (u.texture==&tex::radio || u.texture==&tex::fort)) u_range *= 2.0f;
             // attack (interrupt movement to attack)
             if (u.attack_target_x == 0 && u.attack_target_y == 0 && u.capturing!=factions+1) {
                 float r = (float)GetRandomValue(0, 1000000) / 1000000.0f;
@@ -2939,8 +3022,10 @@ int main() {
 
                 // normalize angles into [-180, +180]
                 float diff = targetAngle - u.angle;
+                if(u.texture==&tex::fort) diff = 0;
                 while (diff > 180.0f) diff -= 360.0f;
                 while (diff < -180.0f) diff += 360.0f;
+
 
                 // if not facing target, rotate toward it
                 if (fabs(diff) > AIM_THRESHOLD) {
@@ -2960,8 +3045,7 @@ int main() {
                 }
                 float rad = u.size*TILE_SIZE;//(u.size+u.extra_scale) * TILE_SIZE;   // same radius as the drawn circle, NOT the image that may be larger
 
-                float ang = u.angle * DEG2RAD;
-
+                float ang = (u.texture==&tex::fort?targetAngle:u.angle) * DEG2RAD;
                 u.attack_x = u.x + cosf(ang) * (rad / TILE_SIZE);
                 u.attack_y = u.y + sinf(ang) * (rad / TILE_SIZE);
                 u.stunned += 0.1/u.attack_rate;
@@ -3046,6 +3130,7 @@ int main() {
                 factions[i].victory_points += factions[i].industry*0.01f;
                 //factions[i].industry *= 0.5f;
             }
+            if(factions[i].victory_points<0) factions[i].victory_points = 0;
             game_time += dt*0.08f*factions[i].industry/200.f;
             polution_speedup += 0.08f*factions[i].industry/200.f;
             game_time += dt*0.08f*factions[i].count_members/200.f;
@@ -3175,7 +3260,7 @@ int main() {
                                 u.size *= 1.2;
                                 u.name = veteran_name;
                                 if(u.texture==&tex::human) u.texture = &tex::scout;
-                                u.damage *= 1.5;
+                                u.damage *= 2;
                                 u.max_health += 5;
                                 u.health += 5;
                                 u.popup = "new veteran";
@@ -3539,7 +3624,7 @@ int main() {
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.5f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
-            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 2.0f;
+            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && (u.texture==&tex::radio || u.texture==&tex::fort)) u_range *= 2.0f;
             int VISION_RADIUS = (int)u_range+2;
             for (int dy = -VISION_RADIUS; dy <= VISION_RADIUS; dy++) {
                 for (int dx = -VISION_RADIUS; dx <= VISION_RADIUS; dx++) {
@@ -4117,7 +4202,7 @@ int main() {
             float u_range = u.range*(1+extra_sight);
             // important that here we extend the sight range only for stuff controlled by the player
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
-            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && u.texture==&tex::radio) u_range *= 2.0f;
+            if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && (u.texture==&tex::radio || u.texture==&tex::fort)) u_range *= 2.0f;
             float radiusPixels = (u_range * TILE_SIZE) * camera.zoom;
             Rectangle src = { 0, 0, (float)fog_hole.width, (float)fog_hole.height };
             Rectangle dst = {
@@ -4483,7 +4568,7 @@ int main() {
             }
             if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TAMING | TECHNOLOGY_HEROICS)) {
                 DrawTechNode(heroics.x, heroics.y, "HEROICS", "+30\% vet & heroes dodge", tech, TECHNOLOGY_HEROICS);
-                DrawTextureEx(tex::blood, {heroics.x + ICON_DX, heroics.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
+                DrawTextureEx(tex::hero, {heroics.x + ICON_DX, heroics.y + ICON_DY}, 0, ICON_SIZE / tex::hero.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_GRIT)) {
                 DrawTechNode(grit.x, grit.y, "GRIT", "+50\% dodge vs lethal", tech, TECHNOLOGY_GRIT);
@@ -4495,7 +4580,7 @@ int main() {
             }
             if(prev_tech & (TECHNOLOGY_HEROICS | TECHNOLOGY_HELLBRINGER)) {
                 DrawTechNode(hellbringer.x, hellbringer.y, "HELLBRINGER", "Rapid hero and veteran fire", tech, TECHNOLOGY_HELLBRINGER);
-                DrawTextureEx(tex::blood, {hellbringer.x + ICON_DX, hellbringer.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
+                DrawTextureEx(tex::hero, {hellbringer.x + ICON_DX, hellbringer.y + ICON_DY}, 0, ICON_SIZE / tex::hero.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HELLBRINGER | TECHNOLOGY_SPEEDY)) {
                 DrawTechNode(speedy.x, speedy.y, "360 ANGLE", "Rotate faster", tech, TECHNOLOGY_SPEEDY);
@@ -4506,7 +4591,7 @@ int main() {
                 DrawTextureEx(tex::track, {seafaring.x + ICON_DX, seafaring.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_FARMING | TECHNOLOGY_RESEARCH | TECHNOLOGY_INFRASTRUCTURE)) {
-                DrawTechNode(infrastructure.x, infrastructure.y, "MEDIA", "x2 radio sight", tech, TECHNOLOGY_INFRASTRUCTURE);
+                DrawTechNode(infrastructure.x, infrastructure.y, "MEDIA", "x2 radio and fort sight", tech, TECHNOLOGY_INFRASTRUCTURE);
                 DrawTextureEx(tex::track, {infrastructure.x + ICON_DX, infrastructure.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_SEAFARERING | TECHNOLOGY_INFRASTRUCTURE | TECHNOLOGY_OWNERSHIP)) {
@@ -4606,7 +4691,7 @@ int main() {
         if (showHelp) {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.85f));
             float px = GetScreenWidth()*0.5f-600;
-            float py = GetScreenHeight()*0.5f-340;
+            float py = GetScreenHeight()*0.5f-380;
             DrawRectangleRounded(Rectangle{px-5, py-3, 260, 60}, 0.2f, 8, Fade(WHITE, 0.5f));
             DrawText("What to do",px,py,52,BLACK);
             py += 80;
@@ -4636,6 +4721,9 @@ int main() {
             py += 40;
             DrawText("Move",px,py,32,WHITE);
             DrawText("Right click (units auto-attack and may stop when near target), SPACE to change move mode",px+200,py,32,WHITE);
+            py += 40;
+            DrawText("Fort",px,py,32,WHITE);
+            DrawText("Backspace (station selected humans with at least 20 total health in a proportionally strong fort)",px+200,py,32,WHITE);
         }
 
 
@@ -4866,7 +4954,9 @@ int main() {
             Rectangle src = { 0, 0, (float)tex::info.width, (float)tex::info.height };
             Rectangle dst = { px, py, panelSize, panelSize };
             Vector2 origin = { 0, 0 };
-            DrawTexturePro(tex::info, src, dst, origin, 0.0f, hovered->faction?hovered->faction->color:BLACK);
+            Color fc = hovered->faction ? hovered->faction->color : BLACK;
+            Color inv = { (unsigned char)(255 - fc.r), (unsigned char)(255 - fc.g), (unsigned char)(255 - fc.b), fc.a };
+            DrawTexturePro(tex::info, src, dst, origin, 0.0f, fc);
             float textY = py - 26;
             px -= 55;
             if (hovered && hovered->health) {
@@ -4888,59 +4978,78 @@ int main() {
                 textY += 140;
                 if(hovered->texture==&tex::camp) {
                     DrawText("Spawns humans if", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("below industry cap", px + 80, textY+30, DESC_FONT_SIZE, WHITE);
+                    DrawText("below industry cap", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::lab) {
                     DrawText("+10% research", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::field) {
                     DrawText("+4 industry (bloom)", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("Eratic crop cycle", px + 80, textY+30, DESC_FONT_SIZE, WHITE);
+                    DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::field_little) {
                     DrawText("+2 industry (grows)", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("Eratic crop cycle", px + 80, textY+30, DESC_FONT_SIZE, WHITE);
+                    DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::field_empty) {
                     DrawText("+0 industry (barren)", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("Irrational crop cycle", px + 80, textY+30, DESC_FONT_SIZE, WHITE);
+                    DrawText("Irrational crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::hide) {
                     DrawText("+4 industry", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("May become rats", px + 80, textY+30, DESC_FONT_SIZE, WHITE);
+                    DrawText("May become rats", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::mine) {
                     DrawText("+12 industry", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::oil) {
                     DrawText("+3 utopia", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::datacenter) {
                     DrawText("Random benefits", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::warehouse) {
                     DrawText("+2 utopia", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                }
+                else if(hovered->texture==&tex::fort) {
+                    DrawText("Fills industry", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawUnitStatCircle(hovered, px + 120, textY + 40);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::railgun) {
                     DrawText("Mecha", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawUnitStatCircle(hovered, px + 100, textY + 30);
+                    DrawUnitStatCircle(hovered, px + 120, textY + 40);
+                    if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::roomba) {
-                    DrawText("Mecha", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("Only attacks animal & bloo", px + 80, textY+30, DESC_FONT_SIZE, WHITE);
-                    DrawUnitStatCircle(hovered, px + 100, textY + 30);
+                    DrawText("Mecha, only attacks", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawText("animal & bloo", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+                    DrawUnitStatCircle(hovered, px + 120, textY + 40);
                 }
                 else if(hovered->texture==&tex::esper) {
                     DrawText("+2 utopia, unruly", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawUnitStatCircle(hovered, px + 100, textY + 30);
+                    DrawUnitStatCircle(hovered, px + 120, textY + 40);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(is_mecha((*hovered)) && hovered->speed==0) {
                     DrawText("Mecha", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawUnitStatCircle(hovered, px + 100, textY + 30);
+                    DrawUnitStatCircle(hovered, px + 120, textY + 40);
+                    if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(is_mecha((*hovered))) {
                     DrawText("Mecha, fills industry", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawUnitStatCircle(hovered, px + 100, textY + 30);
+                    DrawUnitStatCircle(hovered, px + 120, textY + 40);
+                    if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->damage) {
                     if(hovered->range<3.f) {
@@ -4948,15 +5057,16 @@ int main() {
                         else if(hovered->texture==&tex::rat) DrawText("Animal, proliferates", px + 80, textY, DESC_FONT_SIZE, WHITE);
                         else if(hovered->texture==&tex::wolf) DrawText("Animal, 50\% taming", px + 80, textY, DESC_FONT_SIZE, WHITE);
                         else DrawText("Animal, drops hide", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                        DrawUnitStatCircle(hovered, px + 100, textY + 30);
+                        DrawUnitStatCircle(hovered, px + 120, textY + 40);
                     }
                     else {
                         DrawText("Fills industry", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                        DrawUnitStatCircle(hovered, px + 100, textY + 30);
+                        DrawUnitStatCircle(hovered, px + 120, textY + 40);
                     }
                 }
                 else {
                     DrawText("Far sight", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
             }
             else {
