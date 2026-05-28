@@ -268,7 +268,7 @@ const char* preference_desc[PREFERENCE_COUNT] = {
     "+starting speed",
     "+8 humans",
     "near roombas",
-    "near animals",
+    "+tech, near animals",
     "near esper"
 };
 
@@ -351,9 +351,9 @@ void DrawUnitStatCircle(Unit* unit, int px, int py) {
     };
 
     struct { const char* label; float val; float max; } stats[4] = {
-        { "speed",  unit->speed,                      10.0f  },
+        { "speed",  unit->speed,                      15.0f  },
         { "combat", unit->damage * unit->attack_rate, 10.0f  },
-        { "health", (float)unit->max_health,          30.0f  },
+        { "health", (float)unit->max_health,          40.0f  },
         { "sight",  unit->range / 2.0f,                8.0f  },
     };
 
@@ -603,7 +603,7 @@ int NOISE_SEED = 0;
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
             5.0,          /* attack_rate */ \
-            3.0,           /* range */ \
+            6.0,           /* range */ \
             1,          /* damage */ \
             0.0,          /* experience */ \
             (float)GetRandomValue(0,360),          /* angle */ \
@@ -1568,7 +1568,7 @@ int main() {
     }
 
     NEW_GAME:
-    max_factions = GetRandomValue(5,11);
+    max_factions = GetRandomValue(6,11);
     NOISE_SEED = GetRandomValue(1, 1'000'000);
     GenerateGrass(terrainGrid);
     GenerateHillsAndDesert(terrainGrid);
@@ -2063,8 +2063,11 @@ int main() {
             else if(pref==PREFERENCE_ANIMAL) {
                 if(GetRandomValue(0,99)<50) {CREATE_BISON(&factions[2], px, by-4);}
                 else CREATE_WOLF(&factions[2], px, by-4);
+                if(GetRandomValue(0,99)<50) {CREATE_BISON(&factions[2], px, by);}
+                else CREATE_WOLF(&factions[2], px, by);
                 if(GetRandomValue(0,99)<50) {CREATE_BISON(&factions[2], px, by+4);}
                 else CREATE_WOLF(&factions[2], px, by+4);
+                factions->technology_progress += 0.5;
             }
             else if(pref==PREFERENCE_TANK) {
                 if(GetRandomValue(0,99)<50) {CREATE_TANK(&factions[1], px, by);}
@@ -2136,8 +2139,11 @@ int main() {
                 else if(pref==PREFERENCE_ANIMAL) {
                     if(GetRandomValue(0,99)<50) {CREATE_BISON(&factions[2], px, by-4);}
                     else CREATE_WOLF(&factions[2], px, by-4);
+                    if(GetRandomValue(0,99)<50) {CREATE_BISON(&factions[2], px, by);}
+                    else CREATE_WOLF(&factions[2], px, by);
                     if(GetRandomValue(0,99)<50) {CREATE_BISON(&factions[2], px, by+4);}
                     else CREATE_WOLF(&factions[2], px, by+4);
+                    factions[fi].technology_progress += 0.5;
                 }
                 else if(pref==PREFERENCE_TANK) {
                     if(GetRandomValue(0,99)<50) {CREATE_TANK(&factions[1], px, by);}
@@ -2484,10 +2490,10 @@ int main() {
                     }
                 }
                 CREATE_FORT(factions, fort_creation_px, fort_creation_py);
-                fort_creation_total_health = fort_creation_total_health/10;
+                fort_creation_total_health = fort_creation_total_health/5;
                 units[num_units-1].max_health = fort_creation_total_health;
                 units[num_units-1].health = fort_creation_total_health;
-                units[num_units-1].size = sqrtf(fort_creation_total_health/5);
+                units[num_units-1].size = sqrtf(fort_creation_total_health/10);
                 PlaySound(sound::select2);
                 last_message = "Built a fort";
                 last_message_counter = 0.f;
