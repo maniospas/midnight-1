@@ -95,14 +95,96 @@ ul{padding-left:1.2rem}
 .tech-row .tech-desc{font-size:12px;color:var(--color-text-secondary);flex:1}
 .tech-group{margin-bottom:1rem}
 .tech-group-label{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;margin-top:1rem}
+
+
+        .button {
+            padding: 14px 26px;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            text-decoration: none;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: var(--text);
+            background: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition:
+                background 0.25s ease,
+                border-color 0.25s ease,
+                transform 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .button.download {
+            border-color: var(--accent);
+            background:
+                linear-gradient(180deg, rgba(210,75,75,0.18), rgba(210,75,75,0.05));
+            box-shadow:
+                inset 0 0 0 1px rgba(210,75,75,0.15),
+                0 6px 20px rgba(0,0,0,0.35);
+        }
+        .button.spread {
+            width: 100%;
+            border-color: var(--muted);
+            background:
+                linear-gradient(180deg, rgba(75,210,75,0.18), rgba(75,210,75,0.05));
+            box-shadow:
+                inset 0 0 0 1px rgba(75,210,75,0.15),
+                0 6px 20px rgba(0,0,0,0.35);
+        }
+
+        .button.spread:hover {
+            background:
+                linear-gradient(180deg, rgba(75,210,75,0.35), rgba(75,210,75,0.12));
+            box-shadow:
+                inset 0 0 0 1px rgba(75,210,75,0.3),
+                0 10px 30px rgba(0,0,0,0.5);
+            /*transform: translateY(-1px);*/
+        }
+
+        .button.spread:active {
+            transform: translateY(0);
+            box-shadow:
+                inset 0 0 0 1px rgba(75,210,75,0.3),
+                0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .button.download:hover {
+            background:
+                linear-gradient(180deg, rgba(210,75,75,0.35), rgba(210,75,75,0.12));
+            box-shadow:
+                inset 0 0 0 1px rgba(210,75,75,0.3),
+                0 10px 30px rgba(0,0,0,0.5);
+            /*transform: translateY(-1px);*/
+        }
+
+        .button.download:active {
+            transform: translateY(0);
+            box-shadow:
+                inset 0 0 0 1px rgba(210,75,75,0.3),
+                0 4px 12px rgba(0,0,0,0.4);
+        }
+
 </style>
 </head>
 <body>
 
-<div class="page">
-<h1>MIDNIGHT</h1>
-<p class="sub" style="margin-bottom:1rem">next morn - player guide</p>
 
+<header class="page">
+    <div class="container">
+        <img src="data/sun.png" style="max-width:512px" alt="sun">
+        <h1>MIDNIGHT <sup>next morn</sup></h1>
+        <p><i>Classified commander's manual. Unauthorized bunker personnel are forbidden from reading further.</i></p>
+  </div>
+  <div class="container">
+    <a href="index.html" class="button spread">
+        Back
+    </a>
+  </div>
+</header>
+
+<div class="page">
 <div class="section-rule"><img class="utopia-icon" src="data/utopia.png" alt="utopia"><span>Capture utopia points</span></div>
 
 <div>
