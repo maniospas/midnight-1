@@ -101,6 +101,31 @@
                 inset 0 0 0 1px rgba(210,75,75,0.15),
                 0 6px 20px rgba(0,0,0,0.35);
         }
+        .button.spread {
+            width: 100%;
+            border-color: var(--muted);
+            background:
+                linear-gradient(180deg, rgba(75,210,75,0.18), rgba(75,210,75,0.05));
+            box-shadow:
+                inset 0 0 0 1px rgba(75,210,75,0.15),
+                0 6px 20px rgba(0,0,0,0.35);
+        }
+
+        .button.spread:hover {
+            background:
+                linear-gradient(180deg, rgba(75,210,75,0.35), rgba(75,210,75,0.12));
+            box-shadow:
+                inset 0 0 0 1px rgba(75,210,75,0.3),
+                0 10px 30px rgba(0,0,0,0.5);
+            /*transform: translateY(-1px);*/
+        }
+
+        .button.spread:active {
+            transform: translateY(0);
+            box-shadow:
+                inset 0 0 0 1px rgba(75,210,75,0.3),
+                0 4px 12px rgba(0,0,0,0.4);
+        }
 
         .button.download:hover {
             background:
@@ -108,7 +133,7 @@
             box-shadow:
                 inset 0 0 0 1px rgba(210,75,75,0.3),
                 0 10px 30px rgba(0,0,0,0.5);
-            transform: translateY(-1px);
+            /*transform: translateY(-1px);*/
         }
 
         .button.download:active {
@@ -121,7 +146,7 @@
 
         section {
             padding: 80px 24px;
-            border-bottom: 1px solid var(--line);
+            /*border-bottom: 1px solid var(--line);*/
         }
 
         .grid {
@@ -241,6 +266,12 @@
         </div>
     </div>
 </section>
+
+<div class="container">
+<a href="catalogue.html" class="button spread">
+    Player guide
+</a>
+</div>
 
 <footer>
     <div class="container">
