@@ -90,6 +90,8 @@ namespace tex {
     static Texture2D rotate;
     static Texture2D flank;
     static Texture2D mind;
+    static Texture2D wonder;
+    static Texture2D nuclear;
     static Texture2D snipe;
     static Texture2D grit;
     static Texture2D heroics;
@@ -1262,6 +1264,8 @@ void unload() {
     UnloadTexture(tex::rotate);
     UnloadTexture(tex::flank);
     UnloadTexture(tex::mind);
+    UnloadTexture(tex::wonder);
+    UnloadTexture(tex::nuclear);
     UnloadTexture(tex::snipe);
     UnloadTexture(tex::grit);
     UnloadTexture(tex::heroics);
@@ -1351,6 +1355,8 @@ int main() {
     tex::rotate = LoadTexture("data/rotate.png");
     tex::flank = LoadTexture("data/flank.png");
     tex::mind = LoadTexture("data/hivemind.png");
+    tex::wonder = LoadTexture("data/wonder.png");
+    tex::nuclear = LoadTexture("data/nuclear.png");
     tex::snipe = LoadTexture("data/snipe.png");
     tex::grit = LoadTexture("data/grit.png");
     tex::heroics = LoadTexture("data/heroics.png");
@@ -2487,7 +2493,7 @@ int main() {
         {
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
-                if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::tank || u.texture==&tex::fort)) {
+                if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::fort)) {
                     fort_creation_total_health += u.max_health;
                     fort_creation_px += u.x;
                     fort_creation_py += u.y;
@@ -2534,7 +2540,7 @@ int main() {
             else {
                 for (int i = 0; i < num_units; i++) {
                     Unit &u = units[i];
-                    if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::tank || u.texture==&tex::fort)) {
+                    if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::fort)) {
                         u.health = 0;
                         u.texture = &tex::ghost;
                     }
@@ -2702,6 +2708,25 @@ int main() {
             if(u.texture==&tex::camp && u.faction && (u.faction->technology & TECHNOLOGY_HARDCORE)) u.faction->industry -= 7.f;
             if(u.texture==&tex::camp || u.speed) u.faction->count_members += 0.00001f;
             if(u.texture==&tex::oil && u.faction && (u.faction->technology & TECHNOLOGY_REFINERY)) u.faction->industry += 25.f;
+            if(u.texture==&tex::field && (float)GetRandomValue(0, 1000000) / 1000000.0f*(u.faction && (u.faction->technology&TECHNOLOGY_TERRAFORIMING)?100.f:200.f)<dt) {
+                // stranded fields grow once every 200 seconds, but in truth it's every 400 seconds due to two sides being occupied
+                float px = u.x;
+                float py = u.y;
+                int r = GetRandomValue(0, 4);
+                if(r==0) px += 1.4f;
+                else if(r==1) px -= 1.4f;
+                else if(r==2) py += 1.4f;
+                else if(r==3) py -= 1.4f;
+                bool allowed = true;
+                for (int i = 0; i < num_units; i++) {
+                    Unit &v = units[i];
+                    if(v.health && !v.speed && (v.x-px)*(v.x-px)+(v.y-py)*(v.y-py)<1) {
+                        allowed = false;
+                        break;
+                    }
+                }
+                if(allowed) { CREATE_FIELD(&factions[1], px, py); }
+            }
             if(u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty || u.texture==&tex::mine || u.texture==&tex::hide) {
                 if((u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty) && u.faction && (u.faction->technology & TECHNOLOGY_ATMOSPHERE)) {
                     game_time -= dt*0.02f;
@@ -3063,11 +3088,10 @@ int main() {
                         bool in_range = d2 < effective_range;
                         if(in_range && o.capturing) {
                             if(u.faction && !u.faction->visible_knowledge[j] && (u.faction->technology & TECHNOLOGY_WONDER)) {
-                                u.faction->technology_progress += 0.02f;
-                                // if(u.faction==factions) {
-                                //     last_message_counter = 0.f;
-                                //     last_message = "Wonder: research from new discovery";
-                                // }
+                                u.faction->technology_progress += 0.05f;
+                                if(o.faction==factions) {
+                                    o.popup = "wonder";
+                                    o.popup_texture = &tex::wonder;                                }
                             }
                             u.faction->visible_knowledge.set(j);
                         }
@@ -3214,10 +3238,10 @@ int main() {
             }
             if(factions[i].technology & TECHNOLOGY_SNIFFING) factions[i].victory_points += 1;
             if(factions[i].victory_points<0) factions[i].victory_points = 0;
-            game_time += dt*0.08f*factions[i].industry/200.f;
-            polution_speedup += 0.08f*factions[i].industry/200.f;
-            game_time += dt*0.08f*factions[i].count_members/200.f;
-            polution_speedup += 0.08f*factions[i].count_members/200.f;
+            game_time += dt*0.08f*factions[i].industry/30.f/max_factions;
+            polution_speedup += 0.08f*factions[i].industry/30.f/max_factions;
+            game_time += dt*0.08f*factions[i].count_members/30.f/max_factions;
+            polution_speedup += 0.08f*factions[i].count_members/30.f/max_factions;
         }
 
         // repulse units
@@ -3309,7 +3333,7 @@ int main() {
                             u_damage *= 2.f;
                             if(GetRandomValue(0, 100)<20 || !u.popup) {
                                 u.popup = "nuclear";
-                                u.popup_texture=nullptr;
+                                u.popup_texture=&tex::nuclear;
                             }
                         }
                         if(u.faction && (u.faction->technology & TECHNOLOGY_FLANKING)) {
@@ -3393,7 +3417,7 @@ int main() {
                         if (o.health >= o.max_health) o.health = o.max_health;
                         if (o.health < 0) o.health = 0;
                         if (o.health <=0 && u.max_health) {
-                            float experience_bonus = o.experience/2 + (float)o.max_health/(float)u.max_health;
+                            float experience_bonus = o.experience/2 + (float)(o.max_health*o.attack_rate*o.damage)/(float)(u.max_health*u.attack_rate*u.damage);
                             if(u.faction && (u.faction->technology&TECHNOLOGY_FIGHT)) experience_bonus *= 2.f;
                             if(u.texture==&tex::ghost && u.faction && (u.faction->technology&TECHNOLOGY_ARTIFICIAL)) experience_bonus *= 5.f;
                             u.experience += experience_bonus;
@@ -3569,30 +3593,6 @@ int main() {
                                 if(o.texture==&tex::van) o.capturing = nullptr; // only capture vans once
                                 if(o.texture==&tex::railgun) o.capturing = nullptr; // only capture railguns once
                                 if(o.texture==&tex::roomba) o.capturing = nullptr; // only capture roombas once
-                            }
-
-
-                            if(u.faction && (u.faction->technology & TECHNOLOGY_TERRAFORIMING)) {
-                                units[j] = { \
-                                    &tex::field,   /* texture */ \
-                                    "Field",       /* name */ \
-                                    0.0,          /* speed */ \
-                                    (float)(o.x),   /* x */ \
-                                    (float)(o.y),   /* y */ \
-                                    6.0,          /* attack_rate (6 industry)*/ \
-                                    4.0,         /* range */ \
-                                    0.0,          /* damage */ \
-                                    0.0,          /* experience */ \
-                                    0.0,          /* angle */ \
-                                    1.3,          /* size */ \
-                                    50.0,         /* health */ \
-                                    50.0,         /* max_health */ \
-                                    (u.faction),    /* faction */ \
-                                    (u.faction),    /* can only be captured */ \
-                                    -0.1f \
-                                };
-                                units[j].popup = "terraform";
-                                units[j].popup_texture = nullptr;
                             }
 
                         }
@@ -4701,7 +4701,7 @@ int main() {
             }
             if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_TAMING | TECHNOLOGY_WONDER)) {
                 DrawTechNode(wonder.x, wonder.y, "WONDER", "Discoveries grant research", tech, TECHNOLOGY_WONDER);
-                DrawTextureEx(tex::track, {wonder.x + ICON_DX, wonder.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
+                DrawTextureEx(tex::wonder, {wonder.x + ICON_DX, wonder.y + ICON_DY}, 0, ICON_SIZE / tex::wonder.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_AGILE)) {
                 DrawTechNode(agile.x, agile.y, "AGILE", "Terrain slows less", tech, TECHNOLOGY_AGILE);
@@ -4809,7 +4809,7 @@ int main() {
             }
             if(prev_tech & (TECHNOLOGY_RESEARCH | TECHNOLOGY_NUCLEAR)) {
                 DrawTechNode(nuclear.x, nuclear.y, "NUCLEAR", "x2 damage for no regen", tech, TECHNOLOGY_NUCLEAR);
-                DrawTextureEx(tex::blood, {nuclear.x + ICON_DX, nuclear.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
+                DrawTextureEx(tex::nuclear, {nuclear.x + ICON_DX, nuclear.y + ICON_DY}, 0, ICON_SIZE / tex::nuclear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_MOBILE_FORTRESS)) {
                 DrawTechNode(mobile.x, mobile.y, "MOBILE FORT", "Railguns may become tanks", tech, TECHNOLOGY_MOBILE_FORTRESS);
@@ -4820,7 +4820,7 @@ int main() {
                 DrawTextureEx(tex::research, {luxury.x + ICON_DX, luxury.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_GIGAJOULE | TECHNOLOGY_TERRAFORIMING)) {
-                DrawTechNode(terraforming.x, terraforming.y, "TERRAFORMING", "Captures become fields", tech, TECHNOLOGY_TERRAFORIMING);
+                DrawTechNode(terraforming.x, terraforming.y, "TERRAFORMING", "Double field expansion", tech, TECHNOLOGY_TERRAFORIMING);
                 DrawTextureEx(tex::field, {terraforming.x + ICON_DX, terraforming.y + ICON_DY}, 0, ICON_SIZE / tex::field.width, WHITE);
             }
             if(prev_tech & TECHNOLOGY_TERRAFORIMING) {
@@ -4849,7 +4849,7 @@ int main() {
             }
             if(prev_tech & (TECHNOLOGY_NUCLEAR | TECHNOLOGY_REACTOR)) {
                 DrawTechNode(reactor.x, reactor.y, "REACTOR", "+40 industry", tech, TECHNOLOGY_REACTOR);
-                DrawTextureEx(tex::gear, {reactor.x + ICON_DX, reactor.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
+                DrawTextureEx(tex::nuclear, {reactor.x + ICON_DX, reactor.y + ICON_DY}, 0, ICON_SIZE / tex::nuclear.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_REACTOR | TECHNOLOGY_HYPERMAGNET)) {
                 DrawTechNode(hypermagnet.x, hypermagnet.y, "HYPERMAGNET", "x2 industry cost and speed", tech, TECHNOLOGY_HYPERMAGNET);
