@@ -91,6 +91,9 @@ namespace tex {
     static Texture2D flank;
     static Texture2D mind;
     static Texture2D snipe;
+    static Texture2D grit;
+    static Texture2D heroics;
+    static Texture2D shield;
     static Texture2D agile;
     static Texture2D driver;
     static Texture2D gigajoule;
@@ -347,6 +350,7 @@ struct Unit {
     float attack_target_x, attack_target_y;
     float stunned;
     const char* popup;
+    Texture* popup_texture;
     float animation;
 };
 void DrawUnitStatCircle(Unit* unit, int px, int py) {
@@ -1259,6 +1263,9 @@ void unload() {
     UnloadTexture(tex::flank);
     UnloadTexture(tex::mind);
     UnloadTexture(tex::snipe);
+    UnloadTexture(tex::grit);
+    UnloadTexture(tex::heroics);
+    UnloadTexture(tex::shield);
     UnloadTexture(tex::agile);
     UnloadTexture(tex::driver);
     UnloadTexture(tex::gigajoule);
@@ -1345,6 +1352,9 @@ int main() {
     tex::flank = LoadTexture("data/flank.png");
     tex::mind = LoadTexture("data/hivemind.png");
     tex::snipe = LoadTexture("data/snipe.png");
+    tex::grit = LoadTexture("data/grit.png");
+    tex::heroics = LoadTexture("data/heroics.png");
+    tex::shield = LoadTexture("data/shield.png");
     tex::agile = LoadTexture("data/agile.png");
     tex::driver = LoadTexture("data/driver.png");
     tex::gigajoule = LoadTexture("data/gigajoule.png");
@@ -2653,6 +2663,7 @@ int main() {
                             units[j].health += 2;
                             units[j].max_health += 2;
                             units[j].popup = "healthcare";
+                            units[j].popup_texture = nullptr;
                             applied = true;
                         }
                     if(u.faction==factions && applied) {
@@ -2666,6 +2677,7 @@ int main() {
                         if (units[j].faction==u.faction && is_mecha(units[j]) && units[j].health<units[j].max_health) {
                             units[j].health = units[j].max_health;
                             units[j].popup = "parts";
+                            units[j].popup_texture = nullptr;
                             applied = true;
                         }
                     if(u.faction==factions && applied) {
@@ -2678,6 +2690,7 @@ int main() {
                     if(!(u.faction->technology & candidate)) {
                         u.faction->technology = u.faction->technology | candidate;
                         u.popup = "new tech";
+                        u.popup_texture = nullptr;
                         if(u.faction==factions) {
                             last_message = "Databank: recovered a tech";
                             last_message_counter = 0.f;
@@ -2734,6 +2747,7 @@ int main() {
                 if(u.animation>1.0f) {
                     u.animation = 0.f;
                     u.popup = nullptr;
+                    u.popup_texture = nullptr;
                 }
             }
             if(u.x<2) u.x = 2;
@@ -2882,20 +2896,20 @@ int main() {
                 continue;
             if(u.texture==&tex::field) {
                 if(u.faction->technology & TECHNOLOGY_FARMING) {
-                    if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.01) {u.texture = &tex::field_empty;u.popup = "barren";} // once every 100 sec
+                    if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.01) {u.texture = &tex::field_empty;u.popup = "barren";u.popup_texture=nullptr;} // once every 100 sec
                 }
-                else if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.05) {u.texture = &tex::field_empty;u.popup = "barren";} // once every 20 sec
+                else if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.05) {u.texture = &tex::field_empty;u.popup = "barren";u.popup_texture=nullptr;} // once every 20 sec
                 continue;
             }
             if(u.texture==&tex::field_little) {
-                if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.05) {u.texture = &tex::field;u.popup = "bloom";} // once every 20 sec
+                if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.05) {u.texture = &tex::field;u.popup = "bloom";u.popup_texture=nullptr;} // once every 20 sec
                 continue;
             }
             if(u.texture==&tex::field_empty) {
                 if(u.faction->technology & TECHNOLOGY_FARMING) {
-                    if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.1) {u.texture = &tex::field_little;u.popup = "grows";} // once every 10 sec
+                    if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.1) {u.texture = &tex::field_little;u.popup = "grows";u.popup_texture=nullptr;} // once every 10 sec
                 }
-                else if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.05) {u.texture = &tex::field_little;u.popup = "grows";} // once every 20 sec
+                else if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.05) {u.texture = &tex::field_little;u.popup = "grows";u.popup_texture=nullptr;} // once every 20 sec
                 continue;
             }
             if(u.texture==&tex::hide) {
@@ -2995,6 +3009,7 @@ int main() {
                     0.3           /* extra scale*/\
                 };
                 u.popup = "mobile fort";
+                u.popup_texture=nullptr;
                 continue;
             }
             if(u.texture==&tex::esper && (float)GetRandomValue(0, 1000000) / 1000000.0f<0.03*dt) { // once every 30 seconds the esper changes their mind
@@ -3292,7 +3307,10 @@ int main() {
                         float u_damage = u.damage;
                         if(u.faction && (u.faction->technology & TECHNOLOGY_NUCLEAR)) {
                             u_damage *= 2.f;
-                            if(GetRandomValue(0, 100)<20 || !u.popup) u.popup = "nuclear";
+                            if(GetRandomValue(0, 100)<20 || !u.popup) {
+                                u.popup = "nuclear";
+                                u.popup_texture=nullptr;
+                            }
                         }
                         if(u.faction && (u.faction->technology & TECHNOLOGY_FLANKING)) {
                             if((u.speed||u.texture==&tex::railgun) && (o.speed||o.texture==&tex::railgun)) {
@@ -3302,7 +3320,10 @@ int main() {
                                 if(diff<0) diff = -diff;
                                 if(diff<70.0) { // the angles should be opposite
                                     u_damage *= 2.f;
-                                    if(GetRandomValue(0, 100)<20 || !u.popup) u.popup = "flanking";
+                                    if(GetRandomValue(0, 100)<20 || !u.popup) {
+                                        u.popup = "flanking";
+                                        u.popup_texture=&tex::flank;
+                                    }
                                 }
                             }
                         }
@@ -3330,22 +3351,45 @@ int main() {
                                     if(u.faction && (u.faction->technology&TECHNOLOGY_ANTIMECHA) && GetRandomValue(0, 100)>=25) {
                                         u_damage *= 3.0f;
                                         u.popup = "saboteur";
+                                        u.popup_texture = nullptr;
                                     }
                                 }
                                 else if(o.texture==&tex::fort && u.faction && (u.faction->technology&TECHNOLOGY_ANTIMECHA) && GetRandomValue(0, 100)>=25) {
                                     u_damage *= 3.0f;
                                     u.popup = "saboteur";
+                                    u.popup_texture = nullptr;
                                 }
                                 o.health -= u_damage;
                             }
-                            if(has_used_sniping && GetRandomValue(0, 100)>=50) u.popup = "sniper";
+                            if(has_used_sniping && GetRandomValue(0, 100)>=50) {
+                                o.popup = "sniped";
+                                o.popup_texture = &tex::snipe;
+                            }
                         }
-                        else if(u_damage>=o.health && o.faction && (o.faction->technology & TECHNOLOGY_GRIT)) {o.popup = "grit";}
-                        else if(o.name==hero_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {o.popup = "heroics";}
-                        else if(o.name==veteran_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {o.popup = "heroics";}
-                        else if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && is_mecha(o)) {o.popup = "mecha";}
-                        else if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat || u.texture==&tex::snowman)) {o.popup = "pristine";}
-                        else {o.popup = "cover";}
+                        else if(u_damage>=o.health && o.faction && (o.faction->technology & TECHNOLOGY_GRIT)) {
+                            o.popup = "grit";
+                            o.popup_texture = &tex::grit;
+                        }
+                        else if(o.name==hero_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {
+                            o.popup = "heroics";
+                            o.popup_texture = &tex::heroics;
+                        }
+                        else if(o.name==veteran_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {
+                            o.popup = "heroics";
+                            o.popup_texture = &tex::heroics;
+                        }
+                        else if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && is_mecha(o)) {
+                            o.popup = "mecha";
+                            o.popup_texture = &tex::shield;
+                        }
+                        else if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat || u.texture==&tex::snowman)) {
+                            o.popup = "pristine";
+                            o.popup_texture = nullptr;
+                        }
+                        else {
+                            o.popup = "cover";
+                            o.popup_texture = &tex::shield;
+                        }
                         if (o.health >= o.max_health) o.health = o.max_health;
                         if (o.health < 0) o.health = 0;
                         if (o.health <=0 && u.max_health) {
@@ -3362,6 +3406,7 @@ int main() {
                                 u.max_health += 5;
                                 u.health += 5;
                                 u.popup = "new veteran";
+                                u.popup_texture = nullptr;
                             }
                             if(u.experience>=50 && u.name==veteran_name) {
                                 u.size *= 1.2;
@@ -3371,6 +3416,7 @@ int main() {
                                 u.max_health += 5;
                                 u.health += 5;
                                 u.popup = "new hero";
+                                u.popup_texture = nullptr;
                             }
                             if(u.experience>70 && u.name==hero_name) {
                                 u.experience -= 20;
@@ -3378,19 +3424,23 @@ int main() {
                                 if(r<25) {
                                     u.attack_rate *= 1.5f;
                                     u.popup = "hero: aggression";
+                                    u.popup_texture = nullptr;
                                 }
                                 else if(r<50) {
                                     u.speed *= 1.2f;
                                     u.popup = "hero: faster";
+                                    u.popup_texture = nullptr;
                                 }
                                 else if(r<75){
                                     u.max_health += 2.f;
                                     u.health += 2.f;
                                     u.popup = "hero: healthier";
+                                    u.popup_texture = nullptr;
                                 }
                                 else {
                                     u.range *= 1.2f;
                                     u.popup = "hero: farsight";
+                                    u.popup_texture = nullptr;
                                 }
                             }
                         }
@@ -3398,22 +3448,26 @@ int main() {
                             o.faction = u.faction;
                             o.health = o.max_health;
                             o.popup = "homunculi";
+                            o.popup_texture = nullptr;
                         }
                         else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_HIJACK) && is_mecha(o) && GetRandomValue(0, 99) < 50) {
                             o.faction = u.faction;
                             o.health = o.max_health;
                             o.popup = "hijacked";
+                            o.popup_texture = nullptr;
                             o.animation = 0.f;
                         }
                         else if(o.health<=0 && o.texture==&tex::wolf && GetRandomValue(0, 99) < 50) {
                             o.faction = u.faction;
                             o.health = o.max_health;
                             o.popup = o.faction==ANIMAL_FACTION?"wild":"tamed";
+                            o.popup_texture = nullptr;
                         }
                         else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_TAMING) && (o.texture==&tex::bison || o.texture==&tex::rat || o.texture==&tex::snowman) && GetRandomValue(0, 99) < 50) {
                             o.faction = u.faction;
                             o.health = o.max_health;
                             o.popup = "tamed";
+                            o.popup_texture = nullptr;
                         }
                         else if(o.health<=0 && o.faction && (o.faction->technology & TECHNOLOGY_UNSTABLE) && (o.texture==&tex::human || o.texture==&tex::scout || o.texture==&tex::hero)) {
                             units[j] = { \
@@ -3434,6 +3488,7 @@ int main() {
                                 nullptr   /* faction */
                             };
                             units[j].popup = "unstable";
+                            units[j].popup_texture = nullptr;
                         }
                         else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_BIOWEAPON) && (o.texture==&tex::human || o.texture==&tex::scout || o.texture==&tex::hero)) {
                             units[j] = { \
@@ -3454,10 +3509,12 @@ int main() {
                                 nullptr   /* faction */
                             };
                             units[j].popup = "bioweapon";
+                            units[j].popup_texture = nullptr;
                         }
                         if (o.health>0 && o.health<o.max_health && o.capturing) {
                             if(o.capturing==factions+1) o.popup = "capturing";
                             else o.popup = "contested";
+                            o.popup_texture = nullptr;
                         }
                         if (o.health<=0 && o.capturing) {
                             o.animation = 0.f;
@@ -3498,6 +3555,7 @@ int main() {
                                 }
                             }
                             o.popup = "captured";
+                            o.popup_texture = nullptr;
                             o.capturing = u.faction;
                             if(o.capturing==ANIMAL_FACTION) {
                                 o.capturing = factions+1; // animals cannot capture
@@ -3534,6 +3592,7 @@ int main() {
                                     -0.1f \
                                 };
                                 units[j].popup = "terraform";
+                                units[j].popup_texture = nullptr;
                             }
 
                         }
@@ -4396,6 +4455,7 @@ int main() {
 
             // main text
             DrawText(u.popup, pos.x, pos.y, 32, c);
+            if(u.popup_texture) DrawTextureEx(*u.popup_texture, {screen.x-20.f, pos.y-40}, 0, 40.f / u.popup_texture->width, WHITE);
         }
 
         // ---------------------
