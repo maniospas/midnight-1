@@ -3054,6 +3054,7 @@ int main() {
             u_speed *= u.speed;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             if((u.texture==&tex::railgun || u.texture==&tex::radio) && extra_sight<0.f) extra_sight = 0.f;
+            float u_base_range = u.range*(1+extra_sight);
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE)) u_range = 25.f;
@@ -3073,6 +3074,7 @@ int main() {
                     Unit* best = nullptr;
                     Unit* bestCapture = nullptr;
                     bool is_roomba = u.texture==&tex::roomba;
+                    bool best_found_via_tracking = false;
                     // find closest enemy in range
                     for (int j = 0; j < num_units; j++) {
                         if(i == j) continue;
@@ -3085,13 +3087,17 @@ int main() {
                         float d2 = dx*dx + dy*dy;
                         float effective_range = (u_range+1+o.size);
                         effective_range *= effective_range;
+                        float effective_base_range = u_base_range+1+o.size;
+                        effective_base_range *= effective_base_range;
                         bool in_range = d2 < effective_range;
+                        bool in_effective_base_range = d2 < effective_base_range;
                         if(in_range && o.capturing) {
                             if(u.faction && !u.faction->visible_knowledge[j] && (u.faction->technology & TECHNOLOGY_WONDER)) {
                                 u.faction->technology_progress += 0.05f;
                                 if(o.faction==factions) {
                                     o.popup = "wonder";
-                                    o.popup_texture = &tex::wonder;                                }
+                                    o.popup_texture = &tex::wonder;
+                                }
                             }
                             u.faction->visible_knowledge.set(j);
                         }
@@ -3102,12 +3108,14 @@ int main() {
                                 if(d2 < bestCaptureDist) {
                                     bestCaptureDist = d2;
                                     bestCapture = &o;
+                                    best_found_via_tracking = !in_effective_base_range;
                                 }
                             }
                             else {
                                 if(d2 < bestDist) {
                                     bestDist = d2;
                                     best = &o;
+                                    best_found_via_tracking = !in_effective_base_range;
                                 }
                             }
                         }
@@ -3117,6 +3125,16 @@ int main() {
                     if(best) {
                         u.attack_target_x = best->x;
                         u.attack_target_y = best->y;
+                        if((u.attack_target_x-u.target_x)*(u.attack_target_x-u.target_x)+(u.attack_target_y-u.target_y)*(u.attack_target_y-u.target_y)<u_range*u_range/16
+                            && u.faction!=factions && u.faction /*&& (u.faction->technology & TECHNOLOGY_TRACK)*/) {
+                            u.stunned = 1.0f/u.attack_rate; // only stun non-player units; players are expected to actually manage swarm vs distance
+                        }
+                        else
+                            u.stunned = 0;
+                        if(best_found_via_tracking && (!u.popup && GetRandomValue(0, 100)<20)) {
+                            u.popup = "tracker";
+                            u.popup_texture = &tex::track;
+                        }
                     }
                 }
             }
@@ -3219,11 +3237,14 @@ int main() {
                 continue;
             }
             if(u.stunned>0) {
+                if(u.attack_target_x!=0 || u.attack_target_y!=0) continue;
                 u.stunned -= dt;
                 if(u.stunned<0)
                     u.stunned = 0;
+                continue;
                 if(u.faction!=factions) continue; // non-player factions stay and fight
             }
+
             float step = u_speed * dt * movement_speed_multiplier;
             if(u.faction && (u.faction->technology & TECHNOLOGY_HYPERMAGNET)) step *= 2;
             u.x += (dx / dist) * step;
@@ -3331,7 +3352,7 @@ int main() {
                         float u_damage = u.damage;
                         if(u.faction && (u.faction->technology & TECHNOLOGY_NUCLEAR)) {
                             u_damage *= 2.f;
-                            if(GetRandomValue(0, 100)<20 || !u.popup) {
+                            if(GetRandomValue(0, 100)<20 && !u.popup) {
                                 u.popup = "nuclear";
                                 u.popup_texture=&tex::nuclear;
                             }
@@ -3344,7 +3365,7 @@ int main() {
                                 if(diff<0) diff = -diff;
                                 if(diff<70.0) { // the angles should be opposite
                                     u_damage *= 2.f;
-                                    if(GetRandomValue(0, 100)<20 || !u.popup) {
+                                    if(GetRandomValue(0, 100)<20 && !u.popup) {
                                         u.popup = "flanking";
                                         u.popup_texture=&tex::flank;
                                     }
@@ -4696,7 +4717,7 @@ int main() {
                 DrawTextureEx(tex::snowman, {evolution.x + ICON_DX, evolution.y + ICON_DY}, 0, ICON_SIZE / tex::snowman.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_TRACK)) {
-                DrawTechNode(track.x, track.y, "TRACKER", "+50\% unit sight", tech, TECHNOLOGY_TRACK);
+                DrawTechNode(track.x, track.y, "TRACKER", "+70\% unit sight", tech, TECHNOLOGY_TRACK);
                 DrawTextureEx(tex::track, {track.x + ICON_DX, track.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_TAMING | TECHNOLOGY_WONDER)) {
@@ -5193,16 +5214,19 @@ int main() {
                 else if(hovered->texture==&tex::field) {
                     DrawText("+4 industry (bloom)", px + 80, textY, DESC_FONT_SIZE, WHITE);
                     DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+                    DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITE);
                     DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::field_little) {
                     DrawText("+2 industry (grows)", px + 80, textY, DESC_FONT_SIZE, WHITE);
                     DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+                    DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITE);
                     DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::field_empty) {
                     DrawText("+0 industry (barren)", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("Irrational crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+                    DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+                    DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITE);
                     DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::hide) {
