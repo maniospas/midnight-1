@@ -90,6 +90,7 @@ namespace tex {
     static Texture2D rotate;
     static Texture2D flank;
     static Texture2D mind;
+    static Texture2D snipe;
     static Texture2D agile;
     static Texture2D driver;
     static Texture2D gigajoule;
@@ -1257,6 +1258,7 @@ void unload() {
     UnloadTexture(tex::rotate);
     UnloadTexture(tex::flank);
     UnloadTexture(tex::mind);
+    UnloadTexture(tex::snipe);
     UnloadTexture(tex::agile);
     UnloadTexture(tex::driver);
     UnloadTexture(tex::gigajoule);
@@ -1342,6 +1344,7 @@ int main() {
     tex::rotate = LoadTexture("data/rotate.png");
     tex::flank = LoadTexture("data/flank.png");
     tex::mind = LoadTexture("data/hivemind.png");
+    tex::snipe = LoadTexture("data/snipe.png");
     tex::agile = LoadTexture("data/agile.png");
     tex::driver = LoadTexture("data/driver.png");
     tex::gigajoule = LoadTexture("data/gigajoule.png");
@@ -3309,7 +3312,11 @@ int main() {
                         if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==veteran_name) skipChance += 0.3f;
                         if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat || u.texture==&tex::snowman)) skipChance += 0.5f;
                         if(u_damage>=o.health && o.faction && (o.faction->technology & TECHNOLOGY_GRIT)) skipChance += 0.5f;
-                        if(u.faction && (u.faction->technology&TECHNOLOGY_SNIPING)) skipChance -= 0.5f;
+                        float has_used_sniping = 0;
+                        if(u.faction && (u.faction->technology&TECHNOLOGY_SNIPING)) {
+                            has_used_sniping = skipChance;
+                            skipChance -= 0.5f;
+                        }
                         if(skipChance<0.f) skipChance = 0.f;
                         if(skipChance>0.95f) skipChance = 0.95f;
 
@@ -3331,6 +3338,7 @@ int main() {
                                 }
                                 o.health -= u_damage;
                             }
+                            if(has_used_sniping && GetRandomValue(0, 100)>=50) u.popup = "sniper";
                         }
                         else if(u_damage>=o.health && o.faction && (o.faction->technology & TECHNOLOGY_GRIT)) {o.popup = "grit";}
                         else if(o.name==hero_name && (o.faction->technology&TECHNOLOGY_HEROICS)) {o.popup = "heroics";}
@@ -4733,7 +4741,7 @@ int main() {
             }
             if(prev_tech & (TECHNOLOGY_TRACK | TECHNOLOGY_SNIPING)) {
                 DrawTechNode(sniping.x, sniping.y, "SNIPING", "x2 accuracy vs dodge", tech, TECHNOLOGY_SNIPING);
-                DrawTextureEx(tex::blood, {sniping.x + ICON_DX, sniping.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
+                DrawTextureEx(tex::snipe, {sniping.x + ICON_DX, sniping.y + ICON_DY}, 0, ICON_SIZE / tex::snipe.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_TRACK | TECHNOLOGY_SNIFFING)) {
                 DrawTechNode(sniffing.x, sniffing.y, "FREE THINKING", "Unit autonomy, +1 utopia", tech, TECHNOLOGY_SNIFFING);
