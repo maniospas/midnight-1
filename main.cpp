@@ -7,6 +7,10 @@
 
 #define DrawText(txt, x, y, size, col) DrawTextEx(uiFont, txt, (Vector2){ (float)(x), (float)(y) }, (float)(size), 2.0f, col)
 #define DrawTextSmall(txt, x, y, size, col) DrawTextEx(smallerFont, txt, (Vector2){ (float)(x), (float)(y) }, (float)(size), 1.0f, col)
+
+#define DrawTextSmallOutlined(txt, x, y, size, col) {DrawTextSmall(txt, x-1, y+1, size, BLACK);DrawTextSmall(txt, x-1, y-1, size, BLACK);DrawTextSmall(txt, x+1, y+1, size, BLACK);DrawTextSmall(txt, x+1, y-1, size, BLACK);DrawTextSmall(txt, x, y, size, col);}
+#define DrawTextOutlined(txt, x, y, size, col) {DrawText(txt, x-1, y+1, size, BLACK);DrawText(txt, x-1, y-1, size, BLACK);DrawText(txt, x+1, y+1, size, BLACK);DrawText(txt, x+1, y-1, size, BLACK);DrawText(txt, x, y, size, col);}
+
 static const int GRID_SIZE = 196;
 static const int MAX_UNITS = 80000; // up to 200kb worth of units
 static const int MAX_DECORATORS = 1000000;
@@ -14,7 +18,7 @@ static const int TILE_SIZE = 128;
 static const float CAMERA_ZOOM = 0.8f;
 static const float movement_speed_multiplier = 0.5f;
 static const int SHOW_MINIMAP = 1;
-static const float DESC_FONT_SIZE = 24;
+static const float DESC_FONT_SIZE = 28;
 
 // difficulty controls
 static const float CAMP_SPAWN_RATE = 2.f; //
@@ -358,8 +362,10 @@ struct Unit {
 void DrawUnitStatCircle(Unit* unit, int px, int py) {
     const float RADIUS    = 55.0f;
     const float INNER     = RADIUS * 0.08f;
-    const int   FONT_SIZE = 16;
+    const int   FONT_SIZE = 24;
     const int   RINGS     = 4;
+
+    px += 40;
 
     float cx = px + RADIUS;
     float cy = py + RADIUS;
@@ -386,12 +392,12 @@ void DrawUnitStatCircle(Unit* unit, int px, int py) {
             int j = (i + 1) % 4;
             Vector2 p1 = { cx + cosf(angles[i]) * r, cy + sinf(angles[i]) * r };
             Vector2 p2 = { cx + cosf(angles[j]) * r, cy + sinf(angles[j]) * r };
-            DrawLineV(p1, p2, Fade(WHITE, ring == RINGS ? 0.20f : 0.08f));
+            DrawLineV(p1, p2, Fade(WHITE, ring == RINGS ? 0.30f : 0.18f));
         }
     }
     for (int i = 0; i < 4; i++) {
         Vector2 tip = { cx + cosf(angles[i]) * RADIUS, cy + sinf(angles[i]) * RADIUS };
-        DrawLineV({ cx, cy }, tip, Fade(WHITE, 0.20f));
+        DrawLineV({ cx, cy }, tip, Fade(WHITE, 0.80f));
     }
 
     // Stat vertices
@@ -401,14 +407,16 @@ void DrawUnitStatCircle(Unit* unit, int px, int py) {
         float r = INNER + t * (RADIUS - INNER);
         pts[i] = { cx + cosf(angles[i]) * r, cy + sinf(angles[i]) * r };
     }
+    auto faction_color = unit->faction?unit->faction->color:LIGHTGRAY;
+    faction_color = ColorBrightness(faction_color, -0.5f);
 
     // Filled quad as two triangles (CCW winding)
-    DrawTriangle(pts[0], pts[3], pts[1], Fade(SKYBLUE, 0.35f));
-    DrawTriangle(pts[1], pts[3], pts[2], Fade(SKYBLUE, 0.35f));
+    DrawTriangle(pts[0], pts[3], pts[1], Fade(faction_color, 0.65f));
+    DrawTriangle(pts[1], pts[3], pts[2], Fade(faction_color, 0.65f));
 
     // Outline
     for (int i = 0; i < 4; i++)
-        DrawLineV(pts[i], pts[(i + 1) % 4], ColorAlpha(SKYBLUE, 0.90f));
+        DrawLineV(pts[i], pts[(i + 1) % 4], ColorAlpha(faction_color, 0.90f));
 
     // Vertex dots
     for (int i = 0; i < 4; i++)
@@ -420,7 +428,7 @@ void DrawUnitStatCircle(Unit* unit, int px, int py) {
         float ly = cy + sinf(angles[i]) * (RADIUS - 8.0f);
         int tw = MeasureText(stats[i].label, FONT_SIZE);
         int drawX = (int)(lx - tw / 2.f + copysignf(tw / 2.f, cosf(angles[i])));
-        DrawTextSmall(stats[i].label, drawX, (int)(ly - 7.f), FONT_SIZE, Fade(WHITE, 1.f));
+        DrawTextSmallOutlined(stats[i].label, drawX, (int)(ly - 7.f), FONT_SIZE, Fade(WHITE, 1.f));
     }
 }
 
@@ -624,9 +632,9 @@ int NOISE_SEED = 0;
             0.0,          /* speed */ \
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
-            1,          /* attack_rate */ \
+            2,          /* attack_rate */ \
             6.0,          /* range */ \
-            4.0,          /* damage */ \
+            2.0,          /* damage */ \
             0.0,          /* experience */ \
             (float)GetRandomValue(0,360),          /* angle */ \
             0.7,          /* size */ \
@@ -2181,7 +2189,7 @@ int main() {
                 continue;
             for(int p=0;p<2;++p) {
                 float px = p==0?(bx-3):(bx+3);
-                int pref = GetRandomValue(0,PREFERENCE_COUNT-1);
+                int pref = GetRandomValue(0,100)<25?GetRandomValue(0,PREFERENCE_COUNT-1):0; // really prefer railguns in most situations
                 if(p==0) {CREATE_CAMP(&factions[fi], bx-(pref==PREFERENCE_SPACING?8.f:0.3f), by);}
                 else {CREATE_CAMP(&factions[fi], bx+(pref==PREFERENCE_SPACING?8.f:0.3f), by);}
                 if(pref==PREFERENCE_RAILGUN) {
@@ -2489,10 +2497,12 @@ int main() {
         fort_creation_num = 0;
         fort_creation_total_health = 0;
         fort_creation_has_nearby = false;
+        bool has_any_selected = false;
 
         {
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
+                if(u.selected && u.speed) has_any_selected = true;
                 if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::fort)) {
                     fort_creation_total_health += u.max_health;
                     fort_creation_px += u.x;
@@ -2580,7 +2590,7 @@ int main() {
         if (camera.zoom!=target_zoom) {
             Vector2 mouseWorldBefore = GetScreenToWorld2D(GetMousePosition(), camera);
             if (target_zoom < 0.1f) target_zoom = 0.1f;
-            if (target_zoom > 1.5f) target_zoom = 1.5f;
+            if (target_zoom > 1.7f) target_zoom = 1.7f;
             float diff = camera.zoom-target_zoom;
             camera.zoom -= diff*dt*5*(1+camera.zoom);
             if(diff*(camera.zoom-target_zoom)<=0.00001f) {
@@ -2847,16 +2857,16 @@ int main() {
                     };
                 }
                 else if(is_mecha(u)) {
-                    if(visible[(int)u.y][(int)u.x]) {
-                        int ux = (int)u.x;
-                        int uy = (int)u.y;
+                    int ux = (int)(u.x+0.5f);
+                    int uy = (int)(u.y+0.5f);
+                    if(visible[uy][ux]) {
                         int range = (int)u.size + 1;
                         if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range)
                             sound::explosion.Play(camera.zoom*0.2f);
                     }
-                    terrainGrid[(int)u.y][(int)u.x].speed /= 2; // terrain becomes uneven
-                    if(terrainGrid[(int)u.y][(int)u.x].extra_sight>0.5f)
-                        terrainGrid[(int)u.y][(int)u.x].extra_sight = 0.5f; // extra dodge
+                    terrainGrid[uy][ux].speed /= 2; // terrain becomes uneven
+                    if(terrainGrid[uy][ux].extra_sight>-0.5f)
+                        terrainGrid[uy][ux].extra_sight = -0.5f; // extra dodge
                     u = { \
                         &tex::crater,  /* texture */
                         "Crater",      /* name */
@@ -3046,11 +3056,13 @@ int main() {
                 if(u.target_y>=GRID_SIZE-2) u.target_y = GRID_SIZE-2;
             }
 
-            float u_speed = terrainGrid[(int)u.y][(int)u.x].speed;
-            if(u_speed<1.f && u.texture==&tex::snowman && (terrainGrid[(int)u.y][(int)u.x].texture==&tex::mountain || terrainGrid[(int)u.y][(int)u.x].texture==&tex::hill)) u_speed = 2.f;
-            if(u_speed<1.f && is_mecha(u) && u.faction && (u.faction->technology && TECHNOLOGY_DRIVER)) u_speed = 1.f;
+            int ux = (int)(u.x+0.5f);
+            int uy = (int)(u.y+0.5f);
+            float u_speed = terrainGrid[uy][ux].speed;
+            if(u_speed<1.f && u.texture==&tex::snowman && (terrainGrid[uy][ux].texture==&tex::mountain || terrainGrid[uy][ux].texture==&tex::hill)) u_speed = 2.f;
+            if(u_speed<1.2f && is_mecha(u) && u.faction && (u.faction->technology && TECHNOLOGY_DRIVER)) u_speed = 1.2f;
             if(u_speed<1.f && u.faction && (u.faction->technology && TECHNOLOGY_AGILE)) u_speed = (1.f+u_speed)*0.5f;
-            if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_SEAFARERING) && terrainGrid[(int)u.y][(int)u.x].texture==&tex::water) u_speed = 1.5f;
+            if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_SEAFARERING) && terrainGrid[uy][ux].texture==&tex::water) u_speed = 1.5f;
             u_speed *= u.speed;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
             if((u.texture==&tex::railgun || u.texture==&tex::radio) && extra_sight<0.f) extra_sight = 0.f;
@@ -3172,10 +3184,10 @@ int main() {
                 float ang = (u.texture==&tex::fort?targetAngle:u.angle) * DEG2RAD;
                 u.attack_x = u.x + cosf(ang) * (rad / TILE_SIZE);
                 u.attack_y = u.y + sinf(ang) * (rad / TILE_SIZE);
-                u.stunned += 0.1/u.attack_rate;
-                if(visible[(int)u.y][(int)u.x]) {
-                    int ux = (int)u.x;
-                    int uy = (int)u.y;
+                u.stunned = 0.1/u.attack_rate;
+                int ux = (int)(u.x+0.5f);
+                int uy = (int)(u.y+0.5f);
+                if(visible[uy][ux]) {
                     int range = (int)u.size + 1;
                     if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range) {
                         if(u.texture==&tex::bison) sound::moo.Play(camera.zoom*0.5f);
@@ -3346,8 +3358,8 @@ int main() {
                     float pdx = ox - tx;
                     float pdy = oy - ty;
                     if (pdx*pdx + pdy*pdy < 0.3f) { // hit radius approx
-                        int oxi = (int)o.x;
-                        int oyi = (int)o.y;
+                        int oxi = (int)(o.x+0.5f);
+                        int oyi = (int)(o.y+0.5f);
                         float skipChance = 0.f;//0.25f;
                         float u_damage = u.damage;
                         if(u.faction && (u.faction->technology & TECHNOLOGY_NUCLEAR)) {
@@ -3363,9 +3375,9 @@ int main() {
                                 while (diff > 180.0f) diff -= 360.0f;
                                 while (diff < -180.0f) diff += 360.0f;
                                 if(diff<0) diff = -diff;
-                                if(diff<70.0) { // the angles should be opposite
+                                if(diff<90.0) { // the angles should be opposite
                                     u_damage *= 2.f;
-                                    if(GetRandomValue(0, 100)<20 && !u.popup) {
+                                    if(GetRandomValue(0, 100)<20 || !u.popup) {
                                         u.popup = "flanking";
                                         u.popup_texture=&tex::flank;
                                     }
@@ -3691,6 +3703,14 @@ int main() {
                 hovered = &u;
                 bestDist = dist2;
             }
+        }
+        Terrain* hoveredTerrain = nullptr;
+        {
+            int ux = (int)(worldMouse.x/TILE_SIZE+0.5f);
+            int uy = (int)(worldMouse.y/TILE_SIZE+0.5f);
+            if (ux < 0 || uy < 0 || ux >= GRID_SIZE || uy >= GRID_SIZE){}
+            else if(!visible[uy][ux]) {}
+            else hoveredTerrain = &terrainGrid[uy][ux];
         }
 
         // camera movement
@@ -4745,7 +4765,7 @@ int main() {
                 DrawTextureEx(tex::human, {flanking.x + ICON_DX, flanking.y + ICON_DY}, 0, ICON_SIZE / tex::human.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_DRIVER)) {
-                DrawTechNode(driver.x, driver.y, "DRIVER", "Mechas are often faster", tech, TECHNOLOGY_DRIVER);
+                DrawTechNode(driver.x, driver.y, "DRIVER", "Mechas move & turn faster", tech, TECHNOLOGY_DRIVER);
                 DrawTextureEx(tex::driver, {driver.x + ICON_DX, driver.y + ICON_DY}, 0, ICON_SIZE / tex::driver.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HARDCORE | TECHNOLOGY_FIGHT)) {
@@ -5172,6 +5192,40 @@ int main() {
             else hovered = lasthovered;
         }
         else hoverdelay = 0.f;
+
+        if(!showTechTree && !hovered && hoveredTerrain && has_any_selected) {
+            float panelSize = 320.0f;
+            Vector2 mouse = GetMousePosition();
+            float px = mouse.x - panelSize * 0.5f;
+            float py = mouse.y - panelSize * 0.8f - 64;
+            Rectangle src = { 0, 0, (float)tex::info.width, (float)tex::info.height };
+            Rectangle dst = { px, py, panelSize, panelSize };
+            Vector2 origin = { 0, 0 };
+            Color fc = factions[1].color;
+            DrawTexturePro(tex::info, src, dst, origin, 0.0f, fc);
+            float textY = py - 26;
+            px -= 55;
+            if(hoveredTerrain->texture==&tex::grass || hoveredTerrain->texture==&tex::grass2 || hoveredTerrain->texture==&tex::grass3 || hoveredTerrain->texture==&tex::grass4)
+                DrawText("Grass", px + 80, textY + 80, 42, WHITE);
+            if(hoveredTerrain->texture==&tex::hill || hoveredTerrain->texture==&tex::hill2 || hoveredTerrain->texture==&tex::hill3 || hoveredTerrain->texture==&tex::hill4)
+                DrawText("Hill", px + 80, textY + 80, 42, WHITE);
+            if(hoveredTerrain->texture==&tex::mountain) DrawText("Moutain", px + 80, textY + 80, 42, WHITE);
+            if(hoveredTerrain->texture==&tex::desert) DrawText("Desert", px + 80, textY + 80, 42, WHITE);
+            if(hoveredTerrain->texture==&tex::water) DrawText("Water", px + 80, textY + 80, 42, WHITE);
+            textY += 140;
+            DrawText("Right click to move", px + 80, textY, DESC_FONT_SIZE, WHITE);
+            if(hoveredTerrain->speed!=1.f)
+                DrawText(TextFormat("Speed %d%%", (int)(hoveredTerrain->speed*100.f+0.5f)), px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+            if(hoveredTerrain->extra_sight) {
+                if(hoveredTerrain->extra_sight<0) {
+                    DrawText(TextFormat("Sight %d%%", (int)(100.5f+hoveredTerrain->extra_sight*100)), px + 80, textY+DESC_FONT_SIZE*2+4, DESC_FONT_SIZE, WHITE);
+                    DrawText(TextFormat("Cover %d%%", (int)(-hoveredTerrain->extra_sight*100+0.5f)), px + 80, textY+DESC_FONT_SIZE*3+6, DESC_FONT_SIZE, WHITE);
+                }
+                else
+                    DrawText(TextFormat("Sight %d%%", (int)(100.5f+hoveredTerrain->extra_sight*100)), px + 80, textY+DESC_FONT_SIZE*2+4, DESC_FONT_SIZE, WHITE);
+            }
+
+        }
         if(!showTechTree && hovered) {
             float panelSize = 320.0f;
             Vector2 mouse = GetMousePosition();
@@ -5183,10 +5237,11 @@ int main() {
             Color fc = hovered->faction ? hovered->faction->color : BLACK;
             Color inv = { (unsigned char)(255 - fc.r), (unsigned char)(255 - fc.g), (unsigned char)(255 - fc.b), fc.a };
             DrawTexturePro(tex::info, src, dst, origin, 0.0f, fc);
+            auto WHITECOL = Fade(WHITE,1.f);
             float textY = py - 26;
             px -= 55;
             if (hovered && hovered->health) {
-                DrawText(hovered->name, px + 80, textY + 80, 42, WHITE);
+                DrawText(hovered->name, px + 80, textY + 80, 42, WHITECOL);
                 {
                     Texture2D* t = hovered->texture;
                     float size = 48.0f;
@@ -5199,108 +5254,108 @@ int main() {
                         size
                     };
                     Vector2 origin = { size * 0.5f, size * 0.5f };
-                    DrawTexturePro(*t, src, dst, origin, rot, WHITE);
+                    DrawTexturePro(*t, src, dst, origin, rot, WHITECOL);
                 }
                 textY += 140;
                 if(hovered->texture==&tex::camp) {
-                    DrawText("Spawns humans if", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("below industry cap", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    DrawText("Spawns humans if", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    DrawText("below industry cap", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+                    //DrawTextSmall("capturable", px + 255, textY+125, DESC_FONT_SIZE, inv);
                 }
                 else if(hovered->texture==&tex::lab) {
-                    DrawText("+10% research", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    DrawText("+10% research", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    //DrawTextSmall("capturable", px + 255, textY+125, DESC_FONT_SIZE, inv);
                 }
                 else if(hovered->texture==&tex::field) {
-                    DrawText("+4 industry (bloom)", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
-                    DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITE);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    DrawText("+4 industry (bloom)", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+                    DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITECOL);
+                    //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::field_little) {
-                    DrawText("+2 industry (grows)", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
-                    DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITE);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    DrawText("+2 industry (grows)", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+                    DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITECOL);
+                    //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::field_empty) {
-                    DrawText("+0 industry (barren)", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
-                    DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITE);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    DrawText("+0 industry (barren)", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+                    DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITECOL);
+                    //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::hide) {
-                    DrawText("+4 industry", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("May become rats", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    DrawText("+4 industry", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    DrawText("May become rats", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+                    //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::mine) {
-                    DrawText("+12 industry", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    DrawText("+12 industry", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::oil) {
-                    DrawText("+3 utopia", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    DrawText("+3 utopia", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::datacenter) {
-                    DrawText("Random benefits", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    DrawText("Random benefits", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::warehouse) {
-                    DrawText("+2 utopia", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    DrawText("+2 utopia", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::fort) {
-                    DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5+0.5)), px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5+0.5)), px + 80, textY, DESC_FONT_SIZE, WHITECOL);
                     DrawUnitStatCircle(hovered, px + 120, textY + 40);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::railgun) {
-                    DrawText("Mecha", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawText("Mecha", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
                     DrawUnitStatCircle(hovered, px + 120, textY + 40);
-                    if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    //if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->texture==&tex::roomba) {
-                    DrawText("Mecha, only attacks", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawText("animal & bloo", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+                    DrawText("Mecha, only attacks", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    DrawText("animal & bloo", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
                     DrawUnitStatCircle(hovered, px + 120, textY + 40);
                 }
                 else if(hovered->texture==&tex::esper) {
-                    DrawText("+2 utopia, unruly", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawText("+2 utopia, unruly", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
                     DrawUnitStatCircle(hovered, px + 120, textY + 40);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(is_mecha((*hovered)) && hovered->speed==0) {
-                    DrawText("Mecha", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawText("Mecha", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
                     DrawUnitStatCircle(hovered, px + 120, textY + 40);
                     if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(is_mecha((*hovered))) {
-                    DrawText(TextFormat("Mecha, %d industry cost", (int)(hovered->max_health/5+0.5)), px + 80, textY, DESC_FONT_SIZE, WHITE);
+                    DrawText(TextFormat("Mecha, %d industry cost", (int)(hovered->max_health/5+0.5)), px + 80, textY, DESC_FONT_SIZE, WHITECOL);
                     DrawUnitStatCircle(hovered, px + 120, textY + 40);
-                    if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    //if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
                 else if(hovered->damage) {
                     if(hovered->range<3.f) {
-                        if(hovered->texture==&tex::snowman) DrawText("Animal, fast on hills", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                        else if(hovered->texture==&tex::rat) DrawText("Animal, proliferates", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                        else if(hovered->texture==&tex::wolf) DrawText("Animal, 50\% taming", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                        else DrawText("Animal, drops hide", px + 80, textY, DESC_FONT_SIZE, WHITE);
+                        if(hovered->texture==&tex::snowman) DrawText("Animal, fast on hills", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                        else if(hovered->texture==&tex::rat) DrawText("Animal, proliferates", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                        else if(hovered->texture==&tex::wolf) DrawText("Animal, 50\% taming", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                        else DrawText("Animal, drops hide", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
                         DrawUnitStatCircle(hovered, px + 120, textY + 40);
                     }
                     else {
-                        DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5+0.5)), px + 80, textY, DESC_FONT_SIZE, WHITE);
+                        DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5+0.5)), px + 80, textY, DESC_FONT_SIZE, WHITECOL);
                         DrawUnitStatCircle(hovered, px + 120, textY + 40);
                     }
                 }
                 else {
-                    DrawText("Far sight", px + 80, textY, DESC_FONT_SIZE, WHITE);
-                    DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                    DrawText("Far sight", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
             }
             else {
-                DrawText("No info", px + 80, textY + 80, 42, WHITE);
-                DrawText("Mouse over a unit.", px + 80, textY + 150, DESC_FONT_SIZE, WHITE);
+                DrawText("No info", px + 80, textY + 80, 42, WHITECOL);
+                DrawText("Mouse over a unit.", px + 80, textY + 150, DESC_FONT_SIZE, WHITECOL);
             }
         }
 
