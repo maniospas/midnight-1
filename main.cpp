@@ -4,6 +4,7 @@
 #include <iostream>
 #include <bitset>
 #include <cstring>
+#include <vector>
 
 #define DrawText(txt, x, y, size, col) DrawTextEx(uiFont, txt, (Vector2){ (float)(x), (float)(y) }, (float)(size), 2.0f, col)
 #define DrawTextSmall(txt, x, y, size, col) DrawTextEx(smallerFont, txt, (Vector2){ (float)(x), (float)(y) }, (float)(size), 1.0f, col)
@@ -76,6 +77,7 @@ namespace tex {
     static Texture2D ghost;
     static Texture2D crater;
     static Texture2D radio;
+    static Texture2D lighthouse;
     static Texture2D info;
     static Texture2D oil;
     static Texture2D snow;
@@ -114,6 +116,8 @@ namespace tex {
     static Texture2D research;
     static Texture2D rat;
     static Texture2D roomba;
+    static Texture2D curio;
+    static Texture2D rock;
 }
 
 struct SoundPool {
@@ -160,7 +164,6 @@ namespace sound {
     static SoundPool notify;
     static Sound select;
     static Sound select2;
-
     static Music bg;
 }
 
@@ -180,11 +183,7 @@ RankDef ranks[] = {
     {"UTOPIC",     1800.0, 2200.0, &tex::utopia, WHITE}
 };
 
-static void DrawTechProgressBar(
-    float x, float y,
-    float w, float h,
-    float progress   // 0..1
-) {
+static void DrawTechProgressBar(float x, float y, float w, float h, float progress) {
     if (progress < 0.f) progress = 0.f;
     if (progress > 1.f) progress = 1.f;
     DrawRectangleRounded({x, y, w, h}, 0.3f, 8, Fade(DARKGRAY, 0.6f));
@@ -193,26 +192,15 @@ static void DrawTechProgressBar(
 }
 
 
-enum class MovementMode {
-    Tight,
-    Scattered,
-    Explore
-};
+enum class MovementMode {Tight,Scattered,Explore};
 
 
 static Color ColorForTile(Texture* texture) {
-    if (texture == &tex::water)
-        return (Color){ 40, 120, 160, 255 };
-    if (texture == &tex::grass || texture == &tex::grass2 ||
-        texture == &tex::grass3 || texture == &tex::grass4)
-        return (Color){ 60, 196, 40, 255 };
-    if (texture == &tex::hill || texture == &tex::hill2 ||
-        texture == &tex::hill3 || texture == &tex::hill4)
-        return (Color){ 140, 80, 40, 255 };
-    if (texture == &tex::desert)
-        return (Color){ 196, 196, 64, 255 };
-    if (texture == &tex::mountain)
-        return (Color){ 90, 52, 24, 255 };
+    if (texture == &tex::water) return (Color){ 40, 120, 160, 255 };
+    if (texture == &tex::grass || texture == &tex::grass2 || texture == &tex::grass3 || texture == &tex::grass4) return (Color){ 60, 196, 40, 255 };
+    if (texture == &tex::hill || texture == &tex::hill2 || texture == &tex::hill3 || texture == &tex::hill4) return (Color){ 140, 80, 40, 255 };
+    if (texture == &tex::desert) return (Color){ 196, 196, 64, 255 };
+    if (texture == &tex::mountain) return (Color){ 90, 52, 24, 255 };
     return (Color){ 80, 80, 80, 255 };
 }
 
@@ -279,7 +267,8 @@ static Color ColorForTile(Texture* texture) {
 #define PREFERENCE_ROOMBA      9
 #define PREFERENCE_ANIMAL     10
 #define PREFERENCE_ESPER      11
-#define PREFERENCE_COUNT      12
+#define PREFERENCE_CURIO      12
+#define PREFERENCE_COUNT      13
 
 
 const char* preference_desc[PREFERENCE_COUNT] = {
@@ -294,7 +283,8 @@ const char* preference_desc[PREFERENCE_COUNT] = {
     "+8 humans",
     "near roombas",
     "+tech, near animals",
-    "near esper"
+    "near esper",
+    "near curio",
 };
 
 Texture* preference_icon[PREFERENCE_COUNT] = {
@@ -309,7 +299,8 @@ Texture* preference_icon[PREFERENCE_COUNT] = {
     &tex::human,
     &tex::roomba,
     &tex::bison,
-    &tex::esper
+    &tex::esper,
+    &tex::curio
 };
 
 typedef unsigned long long PrefMask;
@@ -359,33 +350,27 @@ struct Unit {
     Texture* popup_texture;
     float animation;
 };
+
 void DrawUnitStatCircle(Unit* unit, int px, int py) {
     const float RADIUS    = 55.0f;
     const float INNER     = RADIUS * 0.08f;
     const int   FONT_SIZE = 24;
     const int   RINGS     = 4;
-
     px += 40;
-
     float cx = px + RADIUS;
     float cy = py + RADIUS;
-
-    // axes: top-right, bottom-right, bottom-left, top-left
     float angles[4] = {
         -45.0f * DEG2RAD,
         45.0f * DEG2RAD,
         135.0f * DEG2RAD,
         225.0f * DEG2RAD,
     };
-
     struct { const char* label; float val; float max; } stats[4] = {
         { "speed",  unit->speed,                      15.0f  },
         { "combat", unit->damage * unit->attack_rate, 14.0f  },
         { "health", (float)unit->max_health,          50.0f  },
         { "sight",  unit->range / 2.0f,                8.0f  },
     };
-
-    // Background rings + spokes
     for (int ring = 1; ring <= RINGS; ring++) {
         float r = RADIUS * ((float)ring / RINGS);
         for (int i = 0; i < 4; i++) {
@@ -399,8 +384,6 @@ void DrawUnitStatCircle(Unit* unit, int px, int py) {
         Vector2 tip = { cx + cosf(angles[i]) * RADIUS, cy + sinf(angles[i]) * RADIUS };
         DrawLineV({ cx, cy }, tip, Fade(WHITE, 0.80f));
     }
-
-    // Stat vertices
     Vector2 pts[4];
     for (int i = 0; i < 4; i++) {
         float t = fminf(stats[i].val / stats[i].max, 1.0f);
@@ -409,20 +392,10 @@ void DrawUnitStatCircle(Unit* unit, int px, int py) {
     }
     auto faction_color = unit->faction?unit->faction->color:LIGHTGRAY;
     faction_color = ColorBrightness(faction_color, -0.5f);
-
-    // Filled quad as two triangles (CCW winding)
     DrawTriangle(pts[0], pts[3], pts[1], Fade(faction_color, 0.65f));
     DrawTriangle(pts[1], pts[3], pts[2], Fade(faction_color, 0.65f));
-
-    // Outline
-    for (int i = 0; i < 4; i++)
-        DrawLineV(pts[i], pts[(i + 1) % 4], ColorAlpha(faction_color, 0.90f));
-
-    // Vertex dots
-    for (int i = 0; i < 4; i++)
-        DrawCircleV(pts[i], 3.0f, WHITE);
-
-    // Labels — outward horizontally with extra push left/right, inward vertically
+    for (int i = 0; i < 4; i++) DrawLineV(pts[i], pts[(i + 1) % 4], ColorAlpha(faction_color, 0.90f));
+    for (int i = 0; i < 4; i++) DrawCircleV(pts[i], 3.0f, WHITE);
     for (int i = 0; i < 4; i++) {
         float lx = cx + cosf(angles[i]) * (RADIUS + 10.0f);
         float ly = cy + sinf(angles[i]) * (RADIUS - 8.0f);
@@ -440,12 +413,12 @@ int NOISE_SEED = 0;
         units[num_units++] = { \
             &tex::human,  /* texture */ \
             "Human",      /* name */ \
-            5.0,         /* speed */ \
+            GetRandomValue(50,150)*0.05f,         /* speed */ \
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
-            1.0,          /* attack_rate */ \
-            4.0,         /* range */ \
-            1.0,          /* damage */ \
+            GetRandomValue(50,150)*0.01f,          /* attack_rate */ \
+            GetRandomValue(50,150)*0.04f,         /* range */ \
+            GetRandomValue(50,150)*0.01f,          /* damage */ \
             0.0,          /* experience */ \
             (float)GetRandomValue(0,360),          /* angle */ \
             0.3,          /* size */ \
@@ -597,6 +570,26 @@ int NOISE_SEED = 0;
             0.2,          /* size */ \
             2.0,         /* health */ \
             2.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            nullptr,      /* faction */ \
+            0.0           /* extra scale*/\
+        };
+#define CREATE_ROCK(faction, x, y) \
+    if (num_units < MAX_UNITS) \
+        units[num_units++] = { \
+            &tex::rock,   /* texture */ \
+            "Rock",       /* name */ \
+            1.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            0.0,          /* attack_rate */ \
+            1.0,          /* range */ \
+            1.0,          /* damage */ \
+            0.0,          /* experience */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
+            0.8,          /* size */ \
+            10.0,         /* health */ \
+            10.0,         /* max_health */ \
             (faction),    /* faction */ \
             nullptr,      /* faction */ \
             0.0           /* extra scale*/\
@@ -794,6 +787,31 @@ int NOISE_SEED = 0;
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
     }
 
+#define CREATE_LIGHTHOUSE(faction, x, y) \
+    if (num_units < MAX_UNITS) {\
+        units[num_units++] = { \
+            &tex::lighthouse,   /* texture */ \
+            "Big bro",       /* name */ \
+            0.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            0.0,          /* attack_rate */ \
+            5.0,          /* range */ \
+            0.0,          /* damage */ \
+            0.0,          /* experience */ \
+            0.0,          /* angle */ \
+            2.0,          /* size */ \
+            50.0,         /* health */ \
+            50.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            (faction),    /* can only be captured */ \
+            0.5           /* extra scale*/\
+        };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
+    }
+
 
 #define CREATE_LAB(faction, x, y) \
     if (num_units < MAX_UNITS) { \
@@ -860,6 +878,31 @@ int NOISE_SEED = 0;
             2.0,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            (faction)     /* can only be captured */ \
+        };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
+    }
+
+
+#define CREATE_CURIO(faction, x, y) \
+    if (num_units < MAX_UNITS) {\
+        units[num_units++] = { \
+            &tex::curio,   /* texture */ \
+            "Curio",  /* name */ \
+            0.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            0.0,          /* attack_rate */ \
+            5,          /* range */ \
+            0.0,          /* damage */ \
+            0.0,          /* experience */ \
+            0.0,          /* angle */ \
+            1.0,          /* size */ \
+            300.0,         /* health */ \
+            300.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction)     /* can only be captured */ \
         };\
@@ -1129,6 +1172,85 @@ static void GenerateRivers(Terrain** terrainGrid) {
     }
 }
 
+static void GenerateSeas(Terrain** terrainGrid) {
+    int NUM_SEAS = 3 * GRID_SIZE * GRID_SIZE / 512 / 512;
+    if (NUM_SEAS < 1) NUM_SEAS = 1;
+
+    for (int s = 0; s < NUM_SEAS; s++) {
+        // Pick a random center for the sea, away from edges
+        int cx = GetRandomValue(GRID_SIZE / 6, GRID_SIZE * 5 / 6);
+        int cy = GetRandomValue(GRID_SIZE / 6, GRID_SIZE * 5 / 6);
+
+        // Sea is an irregular blob grown via random walk flood-fill
+        int seaRadius   = GetRandomValue(GRID_SIZE / 3, GRID_SIZE *2/3);
+        int targetCells = seaRadius * seaRadius * 3; // approximate area
+
+        // BFS-style expansion with randomness to get organic shapes
+        std::vector<std::pair<int,int>> frontier;
+        frontier.push_back({cx, cy});
+
+        int filled = 0;
+        while (!frontier.empty() && filled < targetCells) {
+            // Pick a random cell from the frontier
+            int idx = GetRandomValue(0, (int)frontier.size() - 1);
+            auto [x, y] = frontier[idx];
+            frontier.erase(frontier.begin() + idx);
+            if (x <= 2 || y <= 2 || x >= GRID_SIZE - 3 || y >= GRID_SIZE - 3)
+                continue;
+            Terrain &T = terrainGrid[y][x];
+            if (T.texture == &tex::water) continue;
+            if (IsMountain(T.texture)) continue;
+            if (IsHill(T.texture)) continue;
+            if (IsDesert(T.texture))      continue;
+            T.texture     = &tex::water;
+            T.speed       = 0.15f;
+            T.extra_sight = -0.8f;
+            filled++;
+            // Add neighbours with a distance-based probability so the
+            // blob stays roughly circular but has ragged edges
+            int dirs[4][2] = {{1,0},{-1,0},{0,1},{0,-1}};
+            for (auto& d : dirs) {
+                int nx = x + d[0];
+                int ny = y + d[1];
+                int dx = nx - cx, dy = ny - cy;
+                float dist = sqrtf((float)(dx*dx + dy*dy));
+                float prob = 1.0f - (dist / (float)(seaRadius + 1));
+                if (prob < 0.2f) prob = 0.2f;
+                if (GetRandomValue(0, 100) < (int)(prob * 85))
+                    frontier.push_back({nx, ny});
+            }
+        }
+
+        // scatter islands in places where the seas hes left back stuff
+        int numIslands = GetRandomValue(6, 12);
+        for (int isle = 0; isle < numIslands; isle++) {
+            int ix = GetRandomValue(cx - seaRadius/2, cx + seaRadius/2);
+            int iy = GetRandomValue(cy - seaRadius/2, cy + seaRadius/2);
+            if (ix < 3 || iy < 3 || ix >= GRID_SIZE - 3 || iy >= GRID_SIZE - 3) continue;
+            if (terrainGrid[iy][ix].texture != &tex::water) continue;
+            int ir = GetRandomValue(2,8);
+            for (int dy = -ir; dy <= ir; dy++) {
+                for (int dx = -ir; dx <= ir; dx++) {
+                    if(dx*dx+dy*dy>ir*ir) continue;
+                    int gx = ix + dx;
+                    int gy = iy + dy;
+                    if (gx <= 2 || gy <= 2 || gx >= GRID_SIZE-3 || gy >= GRID_SIZE-3) continue;
+                    int h = HashNoise2D(gx, gy) * 100;
+                    Texture2D* tex = &tex::hill;
+                    if (h == 1) tex = &tex::hill2;
+                    if (h == 2) tex = &tex::hill3;
+                    if (h == 3) tex = &tex::hill4;
+                    terrainGrid[iy][ix] = {
+                        tex,
+                        0.7f,
+                        0.5f
+                    };
+                }
+            }
+        }
+    }
+}
+
 static void GenerateHillsAndDesert(Terrain** terrainGrid) {
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
@@ -1253,9 +1375,12 @@ void unload() {
     UnloadTexture(tex::roomba);
     UnloadTexture(tex::wolf);
     UnloadTexture(tex::warehouse);
+    UnloadTexture(tex::curio);
+    UnloadTexture(tex::rock);
     UnloadTexture(tex::ghost);
     UnloadTexture(tex::crater);
     UnloadTexture(tex::radio);
+    UnloadTexture(tex::lighthouse);
     UnloadTexture(tex::oil);
     UnloadTexture(tex::datacenter);
     UnloadTexture(tex::info);
@@ -1304,7 +1429,7 @@ void unload() {
 
 int main() {
     PrefMask unlocked_preferences = 0;
-    const double AI_ELO = 1800;
+    const double AI_ELO = 1400;
     double player_rating = 1200;
     {
         FILE* f = fopen("midnight-save.dat", "rb");
@@ -1399,10 +1524,13 @@ int main() {
     tex::camp = LoadTexture("data/camp.png");
     tex::lab = LoadTexture("data/lab.png");;
     tex::warehouse = LoadTexture("data/warehouse.png");
+    tex::curio = LoadTexture("data/curio.png");
+    tex::rock = LoadTexture("data/rock.png");
     tex::blood = LoadTexture("data/blood.png");
     tex::ghost = LoadTexture("data/ghost.png");
     tex::crater = LoadTexture("data/crater.png");
     tex::radio = LoadTexture("data/radio.png");
+    tex::lighthouse = LoadTexture("data/lighthouse.png");
     tex::oil = LoadTexture("data/oil.png");
     tex::datacenter = LoadTexture("data/datacenter.png");
     tex::info = LoadTexture("data/info.png");
@@ -1637,6 +1765,7 @@ int main() {
     GenerateGrass(terrainGrid);
     GenerateHillsAndDesert(terrainGrid);
     GenerateRivers(terrainGrid);
+    GenerateSeas(terrainGrid);
 
     // minimap (used only for new game)
     static const int MINIMAP_SCALE = 2;
@@ -2142,6 +2271,11 @@ int main() {
                 CREATE_WAREHOUSE(&factions[1], px, by);
                 RevealUnitToAllFactions(num_units - 1);
             }
+            else if(pref==PREFERENCE_CURIO) {
+                px = p==0?(bx-5):(bx+5);
+                CREATE_CURIO(&factions[1], px, by);
+                //RevealUnitToAllFactions(num_units - 1);
+            }
             else if(pref==PREFERENCE_LAB) {
                 px = p==0?(bx-5):(bx+5);
                 if(GetRandomValue(0,99)<50) {CREATE_LAB(&factions[1], px, by);}
@@ -2218,6 +2352,11 @@ int main() {
                     CREATE_WAREHOUSE(&factions[1], px, by);
                     RevealUnitToAllFactions(num_units - 1);
                 }
+                else if(pref==PREFERENCE_CURIO) {
+                    px = p==0?(bx-5):(bx+5);
+                    CREATE_CURIO(&factions[1], px, by);
+                    //RevealUnitToAllFactions(num_units - 1);
+                }
                 else if(pref==PREFERENCE_ESPER) {
                     //CREATE_ESPER(ANIMAL_FACTION, px, by);
                     RevealUnitToAllFactions(num_units - 1);
@@ -2267,7 +2406,8 @@ int main() {
 
     auto tooCloseToAnyCamp = [&](float x, float y) {return campExistsTooClose(x, y, AVOID_BASE_RADIUS);};
     int count_warehouses = 0;
-    for (int i = 0; i < NUM_NEUTRAL_STRUCTURES; i++) {
+    int count_curio = 0;
+    for (int i = 0; i < NUM_NEUTRAL_STRUCTURES*2; i+=2) {
         float x, y;
         x = GetRandomValue(20, GRID_SIZE - 20);
         y = GetRandomValue(20, GRID_SIZE - 20);
@@ -2276,6 +2416,9 @@ int main() {
         bool isGrass  = (T.texture == &tex::grass || T.texture == &tex::grass2 || T.texture == &tex::grass3 || T.texture == &tex::grass4);
         bool isDesert = (T.texture == &tex::desert);
         if(T.texture == &tex::water) continue;
+
+        bool isNearWater = (terrainGrid[(int)y-2][(int)x].texture==&tex::water || terrainGrid[(int)y][(int)x-2].texture==&tex::water || terrainGrid[(int)y+2][(int)x].texture==&tex::water || terrainGrid[(int)y][(int)x+2].texture==&tex::water);
+        if(isNearWater) i-=1;
         int type = GetRandomValue(0, 5);
         switch (type) {
             case 1:
@@ -2293,7 +2436,14 @@ int main() {
                 }
                 break;
             case 3:
-                if (!isDesert && GetRandomValue(0, 99) < 80) continue;
+                if (!isDesert && GetRandomValue(0, 99) < 80) {
+                    if(GetRandomValue(0, 99) < 40 && count_curio<3) {
+                        count_curio++;
+                        CREATE_CURIO(&factions[1], x, y);
+                        //RevealUnitToAllFactions(num_units - 1);
+                    }
+                    continue;
+                }
                 CREATE_OIL(&factions[1], x, y);
                 break;
             case 5:
@@ -2305,11 +2455,11 @@ int main() {
                 }
                 else if(count_warehouses<3){
                     count_warehouses++;
-                    CREATE_WAREHOUSE(&factions[1], x, y);
                     CREATE_RAILGUN(&factions[1], x-GetRandomValue(0, 5)-2, y-GetRandomValue(0, 5)-2);
                     CREATE_RAILGUN(&factions[1], x-GetRandomValue(0, 5)-2, y+GetRandomValue(0, 5)+2);
                     CREATE_RAILGUN(&factions[1], x+GetRandomValue(0, 5)+2, y-GetRandomValue(0, 5)-2);
                     CREATE_RAILGUN(&factions[1], x+GetRandomValue(0, 5)+2, y+GetRandomValue(0, 5)-2);
+                    CREATE_WAREHOUSE(&factions[1], x, y);
                     RevealUnitToAllFactions(num_units - 1);
                 }
                 break;
@@ -2322,7 +2472,13 @@ int main() {
                 }
                 break;
             case 2:
-                CREATE_RADIO(&factions[1], x, y);
+                if(isNearWater && GetRandomValue(0, 99) < 50) {
+                    CREATE_LIGHTHOUSE(&factions[1], x, y);
+                    RevealUnitToAllFactions(num_units - 1);
+                }
+                else {
+                    CREATE_RADIO(&factions[1], x, y);
+                }
                 break;
         }
     }
@@ -2335,6 +2491,14 @@ int main() {
         Terrain &T = terrainGrid[(int)y][(int)x];
         bool isDesert = (T.texture == &tex::desert);
         if(T.texture==&tex::water) continue;
+        bool isNearWater = (terrainGrid[(int)y-2][(int)x].texture==&tex::water || terrainGrid[(int)y][(int)x-2].texture==&tex::water || terrainGrid[(int)y+2][(int)x].texture==&tex::water || terrainGrid[(int)y][(int)x+2].texture==&tex::water);
+        if(isNearWater) {
+            if(GetRandomValue(0,100)<50) {
+                CREATE_LIGHTHOUSE(&factions[1], x, y);
+                RevealUnitToAllFactions(num_units - 1);
+            }
+            CREATE_VAN(&factions[1], x, y-1);
+        }
         if (T.texture == &tex::mountain || T.texture == &tex::hill
             || T.texture == &tex::hill2 || T.texture == &tex::hill3 || T.texture == &tex::hill4)
             {CREATE_RAILGUN(&factions[1], x, y);continue;}
@@ -2616,6 +2780,7 @@ int main() {
         if (yMin <= 0) yMin = 1;
         if (xMax >= GRID_SIZE) xMax = GRID_SIZE-1;
         if (yMax >= GRID_SIZE) yMax = GRID_SIZE-1;
+        float t = GetTime();
 
         for(int i=0;i<max_factions;i++) {
             factions[i].industry = (factions[i].technology&TECHNOLOGY_REACTOR)?60:20;
@@ -2635,7 +2800,18 @@ int main() {
                     game_time += dt*0.08f;
                     polution_speedup += 0.08f;
                 }
-                else u.faction->technology_progress += dt*0.0009f;
+                u.faction->technology_progress += dt*0.0009f;
+            }
+            if(u.texture==&tex::lighthouse && u.faction) {
+                if(u.faction->technology & TECHNOLOGY_AIFARM) {
+                    u.faction->industry += 16.f;
+                    game_time += dt*0.08f;
+                    polution_speedup += 0.08f;
+                }
+                {
+                    u.faction->technology_progress += dt*0.0009f;
+                    u.faction->industry += 5.f;
+                }
             }
             if(u.texture==&tex::datacenter &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
                 if((float)GetRandomValue(0, 1000000) / 1000000.0f * 300.f < dt) {
@@ -2884,7 +3060,7 @@ int main() {
                         nullptr       /* faction */
                     };
                 }
-                else if(u.texture==&tex::ghost) { // use bloos to clean up units
+                else if(u.texture==&tex::ghost || u.texture==&tex::rock) { // use bloos to clean up units
                     num_units--;
                     u = units[num_units];
                 }
@@ -2923,10 +3099,14 @@ int main() {
                 u.faction->victory_points += 2.f;
             if(u.texture==&tex::warehouse)
                 u.faction->victory_points += 2.f;
+            if(u.texture==&tex::curio)
+                u.faction->victory_points += 1.f;
             // if(u.texture==&tex::fort)
             //     u.faction->victory_points -= 0.334f;
             if(u.texture==&tex::radio && u.faction && (u.faction->technology & TECHNOLOGY_PROPAGANDA) )
                 u.faction->victory_points += 0.334f;
+            if(u.texture==&tex::lighthouse && u.faction )
+                u.faction->victory_points += 0.5f;
             if(u.texture==&tex::lab)
                 continue;
             if(u.texture==&tex::field) {
@@ -2984,6 +3164,22 @@ int main() {
                         CREATE_RAT(u.faction, sx, sy);
                     }
                 }
+            }
+            if (u.texture == &tex::curio) {
+                if(u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<CAMP_SPAWN_RATE*dt*3) {
+                    int canMake = 1;
+                    if (canMake > 0) {
+                        const int can_make_limit = 1;//(u.faction && u.faction->technology & TECHNOLOGY_HARDCORE)?4:2;
+                        if (canMake > can_make_limit) canMake = can_make_limit;
+                        for (int k = 0; k < canMake; k++) {
+                            if (num_units >= MAX_UNITS) break;
+                            float sx = u.x + (GetRandomValue(-5000, 5000) * 0.0002f);
+                            float sy = u.y + (GetRandomValue(-5000, 5000) * 0.0002f);
+                            CREATE_RAT(ANIMAL_FACTION, sx, sy);
+                        }
+                    }
+                }
+                continue;
             }
             if (u.texture == &tex::camp) {
                 if(u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<CAMP_SPAWN_RATE*dt*u.attack_rate*(1.1f-u.faction->count_members/(float)(1+u.faction->industry)) && u.faction!=factions+1) {
@@ -3065,7 +3261,7 @@ int main() {
             if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_SEAFARERING) && terrainGrid[uy][ux].texture==&tex::water) u_speed = 1.5f;
             u_speed *= u.speed;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
-            if((u.texture==&tex::railgun || u.texture==&tex::radio) && extra_sight<0.f) extra_sight = 0.f;
+            if((u.texture==&tex::railgun || u.texture==&tex::radio || u.texture==&tex::lighthouse) && extra_sight<0.f) extra_sight = 0.f;
             float u_base_range = u.range*(1+extra_sight);
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
             float u_range = u.range*(1+extra_sight);
@@ -3227,13 +3423,18 @@ int main() {
             float dist = sqrtf(dist2);
             float desiredAngle = atan2f(dy, dx) * RAD2DEG;
 
+            if(u.texture==&tex::human && !u.stunned) {
+                desiredAngle += cos(t*20+u.speed*3.14159)*20;
+            }
+
             // compute smallest signed difference
             float diff = desiredAngle - u.angle;
             while (diff > 180.0f) diff -= 360.0f;
             while (diff < -180.0f) diff += 360.0f;
 
             // rotate until close enough
-            if (fabs(diff) > AIM_THRESHOLD) {
+            if (fabs(diff) > 20) {
+                float out_of_threshold = fabs(diff) > AIM_THRESHOLD;
                 float rot = TURN_RATE * dt * u_speed * 2;
                 if(u.texture==&tex::human) rot *= 3.f; // humans turn very fast
                 if(is_mecha(u) && (u.faction->technology&TECHNOLOGY_DRIVER)) rot *= 2.f;
@@ -3246,7 +3447,7 @@ int main() {
                     u.angle -= rot;
                     if(diff+rot>0) u.angle = desiredAngle;
                 }
-                continue;
+                if(out_of_threshold) continue;
             }
             if(u.stunned>0) {
                 if(u.attack_target_x!=0 || u.attack_target_y!=0) continue;
@@ -3592,6 +3793,14 @@ int main() {
                                     last_message = "Important loss: Esper";
                                     last_message_counter = 0.f;
                                 }
+                                else if(o.texture==&tex::lighthouse) {
+                                    last_message = "Important loss: Big bro";
+                                    last_message_counter = 0.f;
+                                }
+                                else if(o.texture==&tex::curio) {
+                                    last_message = "Important loss: Curio";
+                                    last_message_counter = 0.f;
+                                }
                             }
                             if(u.faction==factions) {
                                 if(o.texture==&tex::camp) {
@@ -3608,6 +3817,14 @@ int main() {
                                 }
                                 else if(o.texture==&tex::esper) {
                                     last_message = "Nice capture: Esper";
+                                    last_message_counter = 0.f;
+                                }
+                                else if(o.texture==&tex::curio) {
+                                    last_message = "Nice capture: Curio";
+                                    last_message_counter = 0.f;
+                                }
+                                else if(o.texture==&tex::lighthouse) {
+                                    last_message = "Nice capture: Big bro";
                                     last_message_counter = 0.f;
                                 }
                             }
@@ -3748,6 +3965,7 @@ int main() {
                 Unit &u = units[i];
 
                 if (u.selected && u.speed && u.texture!=&tex::esper) {
+                    u.stunned = 0; // we "cheat" in favor of smooth gameplay
                     if(currentMovementMode==MovementMode::Explore) {
                         u.target_x = tx + (float)GetRandomValue(-10,10);
                         u.target_y = ty + (float)GetRandomValue(-10,10);
@@ -3814,11 +4032,11 @@ int main() {
         // Example vision radius in tile-units
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];
-            if (u.faction != &factions[0] && u.texture!=&tex::warehouse && u.texture!=&tex::esper) continue;  // only the player, warehouses, or espers give vision
+            if (u.faction != &factions[0] && u.texture!=&tex::warehouse && u.texture!=&tex::esper && u.texture!=&tex::lighthouse) continue;  // only the player, warehouses, lighthouses, or espers give vision
             int ux = (int)u.x;
             int uy = (int)u.y;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
-            if((u.texture==&tex::railgun || u.texture==&tex::radio) && extra_sight<0.f) extra_sight = 0.f;
+            if((u.texture==&tex::railgun || u.texture==&tex::radio || u.texture==&tex::lighthouse) && extra_sight<0.f) extra_sight = 0.f;
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.5f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
@@ -3949,7 +4167,7 @@ int main() {
                     if (o.faction==ANIMAL_FACTION) continue;
                     if (o.capturing) continue;
                     if (o.health <= 0) continue;
-                    if (time_norm>0.8f && o.texture!=&tex::oil && o.texture!=&tex::warehouse && o.texture!=&tex::esper) continue; // at the last stretch attack the victory locations with all means
+                    if (time_norm>0.8f && o.texture!=&tex::oil && o.texture!=&tex::warehouse && o.texture!=&tex::esper && o.texture!=&tex::lighthouse) continue; // at the last stretch attack the victory locations with all means (don't go for curio though because they are a pain to capture)
                     float dx = o.x - u.x;
                     float dy = o.y - u.y;
                     float d2 = dx*dx + dy*dy;
@@ -4218,7 +4436,6 @@ int main() {
         // --- UNDER UNIT LAYER ---
         Color target_line_color = Fade(BLUE, 0.3f);
         Color shadow_color = Fade(GRAY, 0.5f);
-        float t = GetTime();
         // draw blood and explosion remnants
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];
@@ -4399,7 +4616,7 @@ int main() {
             Vector2 world = { u.x * TILE_SIZE, u.y * TILE_SIZE };
             Vector2 screen = GetWorldToScreen2D(world, camera);
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
-            if((u.texture==&tex::railgun || u.texture==&tex::radio) && extra_sight<0.f) extra_sight = 0.f;
+            if((u.texture==&tex::railgun || u.texture==&tex::radio || u.texture==&tex::lighthouse) && extra_sight<0.f) extra_sight = 0.f;
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
             float u_range = u.range*(1+extra_sight);
             // important that here we extend the sight range only for stuff controlled by the player
@@ -4801,7 +5018,7 @@ int main() {
                 DrawTextureEx(tex::blood, {tough.x + ICON_DX, tough.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HEROICS | TECHNOLOGY_HELLBRINGER)) {
-                DrawTechNode(hellbringer.x, hellbringer.y, "HELLBRINGER", "Rapid hero and veteran fire", tech, TECHNOLOGY_HELLBRINGER);
+                DrawTechNode(hellbringer.x, hellbringer.y, "HELLBRINGER", "Rapid vet & hero fire", tech, TECHNOLOGY_HELLBRINGER);
                 DrawTextureEx(tex::hero, {hellbringer.x + ICON_DX, hellbringer.y + ICON_DY}, 0, ICON_SIZE / tex::hero.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_HELLBRINGER | TECHNOLOGY_SPEEDY)) {
@@ -4811,9 +5028,9 @@ int main() {
             if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_SEAFARERING)) {
                 DrawTechNode(seafaring.x, seafaring.y, "SEAFARING", "Water increases speed", tech, TECHNOLOGY_SEAFARERING);
                 DrawTextureEx(tex::seafaring, {seafaring.x + ICON_DX, seafaring.y + ICON_DY}, 0, ICON_SIZE / tex::seafaring.width, WHITE);
-            }
+            } // TODO: add commerse that gives x2 utopia from lightouses and propaganda
             if(prev_tech & (TECHNOLOGY_FARMING | TECHNOLOGY_RESEARCH | TECHNOLOGY_INFRASTRUCTURE)) {
-                DrawTechNode(infrastructure.x, infrastructure.y, "MEDIA", "x2 radio and fort sight", tech, TECHNOLOGY_INFRASTRUCTURE);
+                DrawTechNode(infrastructure.x, infrastructure.y, "MEDIA", "x2 radio & fort sight", tech, TECHNOLOGY_INFRASTRUCTURE);
                 DrawTextureEx(tex::radio, {infrastructure.x + ICON_DX, infrastructure.y + ICON_DY}, 0, ICON_SIZE / tex::radio.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_SEAFARERING | TECHNOLOGY_INFRASTRUCTURE | TECHNOLOGY_OWNERSHIP)) {
@@ -4825,7 +5042,7 @@ int main() {
                 DrawTextureEx(tex::ghost, {unstable.x + ICON_DX, unstable.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_INFRASTRUCTURE | TECHNOLOGY_AIFARM)) {
-                DrawTechNode(aifarm.x, aifarm.y, "AI FARM", "+16 industry from labs", tech, TECHNOLOGY_AIFARM);
+                DrawTechNode(aifarm.x, aifarm.y, "AI FARM", "+16 lab & big bro industry", tech, TECHNOLOGY_AIFARM);
                 DrawTextureEx(tex::lab, {aifarm.x + ICON_DX, aifarm.y + ICON_DY}, 0, ICON_SIZE / tex::lab.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_AIFARM | TECHNOLOGY_MECHANISED | TECHNOLOGY_TECHNOCRACY)) {
@@ -5305,6 +5522,11 @@ int main() {
                     DrawText("+2 utopia", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
                     //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
                 }
+                else if(hovered->texture==&tex::lighthouse) {
+                    DrawText("+half utopia", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    DrawText("+5 industry", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+                    //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+                }
                 else if(hovered->texture==&tex::fort) {
                     DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5+0.5)), px + 80, textY, DESC_FONT_SIZE, WHITECOL);
                     DrawUnitStatCircle(hovered, px + 120, textY + 40);
@@ -5318,6 +5540,15 @@ int main() {
                 else if(hovered->texture==&tex::roomba) {
                     DrawText("Mecha, only attacks", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
                     DrawText("animal & bloo", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+                    DrawUnitStatCircle(hovered, px + 120, textY + 40);
+                }
+                else if(hovered->texture==&tex::curio) {
+                    DrawText("+1 utopia", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+                    DrawText("Produces wild rats", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+                    //DrawUnitStatCircle(hovered, px + 120, textY + 40);
+                }
+                else if(hovered->texture==&tex::rock) {
+                    DrawText("Obstacle", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
                     DrawUnitStatCircle(hovered, px + 120, textY + 40);
                 }
                 else if(hovered->texture==&tex::esper) {
