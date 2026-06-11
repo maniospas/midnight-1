@@ -107,6 +107,7 @@ namespace tex {
     static Texture2D gigajoule;
     static Texture2D nerds;
     static Texture2D seafaring;
+    static Texture2D discourse;
     static Texture2D autorepair;
     static Texture2D magnet;
     static Texture2D chart;
@@ -796,7 +797,7 @@ int NOISE_SEED = 0;
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
             0.0,          /* attack_rate */ \
-            5.0,          /* range */ \
+            2.0,          /* range */ \
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
@@ -1408,6 +1409,7 @@ void unload() {
     UnloadTexture(tex::gigajoule);
     UnloadTexture(tex::nerds);
     UnloadTexture(tex::seafaring);
+    UnloadTexture(tex::discourse);
     UnloadTexture(tex::autorepair);
     UnloadTexture(tex::magnet);
     UnloadTexture(tex::chart);
@@ -1499,6 +1501,7 @@ int main() {
     tex::gigajoule = LoadTexture("data/gigajoule.png");
     tex::nerds = LoadTexture("data/nerds.png");
     tex::seafaring = LoadTexture("data/seafaring.png");
+    tex::discourse = LoadTexture("data/discourse.png");
     tex::autorepair = LoadTexture("data/autorepair.png");
     tex::magnet = LoadTexture("data/magnet.png");
     tex::chart = LoadTexture("data/chart.png");
@@ -2472,7 +2475,7 @@ int main() {
                 }
                 break;
             case 2:
-                if(isNearWater && GetRandomValue(0, 99) < 50) {
+                if(isNearWater && GetRandomValue(0, 99) < 30) {
                     CREATE_LIGHTHOUSE(&factions[1], x, y);
                     RevealUnitToAllFactions(num_units - 1);
                 }
@@ -2493,7 +2496,7 @@ int main() {
         if(T.texture==&tex::water) continue;
         bool isNearWater = (terrainGrid[(int)y-2][(int)x].texture==&tex::water || terrainGrid[(int)y][(int)x-2].texture==&tex::water || terrainGrid[(int)y+2][(int)x].texture==&tex::water || terrainGrid[(int)y][(int)x+2].texture==&tex::water);
         if(isNearWater) {
-            if(GetRandomValue(0,100)<50) {
+            if(GetRandomValue(0,100)<30) {
                 CREATE_LIGHTHOUSE(&factions[1], x, y);
                 RevealUnitToAllFactions(num_units - 1);
             }
@@ -3103,10 +3106,16 @@ int main() {
                 u.faction->victory_points += 1.f;
             // if(u.texture==&tex::fort)
             //     u.faction->victory_points -= 0.334f;
-            if(u.texture==&tex::radio && u.faction && (u.faction->technology & TECHNOLOGY_PROPAGANDA) )
-                u.faction->victory_points += 0.334f;
-            if(u.texture==&tex::lighthouse && u.faction )
+            if(u.texture==&tex::radio && u.faction && (u.faction->technology & TECHNOLOGY_PROPAGANDA) ) {
                 u.faction->victory_points += 0.5f;
+            }
+            if(u.texture==&tex::lighthouse && u.faction) {
+                u.faction->victory_points += 0.5f;
+                if(u.faction->technology & TECHNOLOGY_DISCOURSE) {
+                    u.faction->victory_points += 0.5f;
+                    if(u.faction->technology & TECHNOLOGY_AIFARM) u.faction->victory_points += 1.6f;
+                }
+            }
             if(u.texture==&tex::lab)
                 continue;
             if(u.texture==&tex::field) {
@@ -3424,7 +3433,7 @@ int main() {
             float desiredAngle = atan2f(dy, dx) * RAD2DEG;
 
             if(u.texture==&tex::human && !u.stunned) {
-                desiredAngle += cos(t*20+u.speed*3.14159)*20;
+                desiredAngle += cos(t*10+u.speed*3.14159)*20;
             }
 
             // compute smallest signed difference
@@ -3433,8 +3442,8 @@ int main() {
             while (diff < -180.0f) diff += 360.0f;
 
             // rotate until close enough
-            if (fabs(diff) > 20) {
-                float out_of_threshold = fabs(diff) > AIM_THRESHOLD;
+            if (fabs(diff) > AIM_THRESHOLD) {
+                float out_of_threshold = fabs(diff) > 20;
                 float rot = TURN_RATE * dt * u_speed * 2;
                 if(u.texture==&tex::human) rot *= 3.f; // humans turn very fast
                 if(is_mecha(u) && (u.faction->technology&TECHNOLOGY_DRIVER)) rot *= 2.f;
@@ -3618,6 +3627,19 @@ int main() {
                                     u.popup_texture = nullptr;
                                 }
                                 o.health -= u_damage;
+                                if(o.speed) {
+                                    float dx = o.x-u.x;
+                                    float dy = o.y-u.y;
+                                    float r2 = dx*dx+dy*dy;
+                                    if(r2 && o.max_health) {
+                                        float mult = u_damage/(o.max_health);
+                                        if(mult>1) mult = 1;
+                                        mult = mult/sqrtf(r2*10);
+                                        o.x += mult*dx;
+                                        o.y += mult*dy;
+                                        o.angle += mult*cos(10*t)*30;
+                                    }
+                                }
                             }
                             if(has_used_sniping && GetRandomValue(0, 100)>=50) {
                                 o.popup = "sniped";
@@ -4831,7 +4853,8 @@ int main() {
             Vector2 sniping    = { track.x+DX,      track.y };
             Vector2 sniffing   = { track.x+DX,      track.y-DY };
             Vector2 hardcore   = { hunting.x,       hunting.y-2*DY };
-            Vector2 ownership  = { seafaring.x + DX, seafaring.y };
+            Vector2 ownership  = { seafaring.x + DX,seafaring.y };
+            Vector2 discourse  = { seafaring.x+DX,  seafaring.y-3*DY };
 
             Vector2 luxury     = { ownership.x+DX,   ownership.y+DY };
             Vector2 refinery   = { ownership.x+DX,   ownership.y };
@@ -4884,6 +4907,8 @@ int main() {
 
             // AGILE
             DrawConnector(agile.x+actual_cell_width, agile.y+actual_cell_height, seafaring.x, seafaring.y+actual_cell_height, tech & TECHNOLOGY_AGILE);
+            DrawConnector(seafaring.x+actual_cell_width, seafaring.y+actual_cell_height, discourse.x, discourse.y+actual_cell_height, tech & TECHNOLOGY_SEAFARERING);
+            DrawConnector(sniffing.x+actual_cell_width, sniffing.y+actual_cell_height, discourse.x, discourse.y+actual_cell_height, tech & TECHNOLOGY_SNIFFING);
             //DrawConnector(agile.x+actual_cell_width, agile.y+actual_cell_height, speedy.x, speedy.y+actual_cell_height, tech & TECHNOLOGY_AGILE);
             DrawConnector(seafaring.x+actual_cell_width, seafaring.y+actual_cell_height, ownership.x, ownership.y+actual_cell_height, tech & TECHNOLOGY_SEAFARERING);
             DrawConnector(heroics.x+actual_cell_width, heroics.y+actual_cell_height, hellbringer.x, hellbringer.y+actual_cell_height, tech & TECHNOLOGY_HEROICS);
@@ -5028,7 +5053,11 @@ int main() {
             if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_SEAFARERING)) {
                 DrawTechNode(seafaring.x, seafaring.y, "SEAFARING", "Water increases speed", tech, TECHNOLOGY_SEAFARERING);
                 DrawTextureEx(tex::seafaring, {seafaring.x + ICON_DX, seafaring.y + ICON_DY}, 0, ICON_SIZE / tex::seafaring.width, WHITE);
-            } // TODO: add commerse that gives x2 utopia from lightouses and propaganda
+            }
+            if(prev_tech & (TECHNOLOGY_SEAFARERING | TECHNOLOGY_SNIFFING | TECHNOLOGY_DISCOURSE)) {
+                DrawTechNode(discourse.x, discourse.y, "DISCOURSE", "1 utopia per 10 big bro industry", tech, TECHNOLOGY_DISCOURSE);
+                DrawTextureEx(tex::discourse, {discourse.x + ICON_DX, discourse.y + ICON_DY}, 0, ICON_SIZE / tex::discourse.width, WHITE);
+            }
             if(prev_tech & (TECHNOLOGY_FARMING | TECHNOLOGY_RESEARCH | TECHNOLOGY_INFRASTRUCTURE)) {
                 DrawTechNode(infrastructure.x, infrastructure.y, "MEDIA", "x2 radio & fort sight", tech, TECHNOLOGY_INFRASTRUCTURE);
                 DrawTextureEx(tex::radio, {infrastructure.x + ICON_DX, infrastructure.y + ICON_DY}, 0, ICON_SIZE / tex::radio.width, WHITE);
@@ -5090,7 +5119,7 @@ int main() {
                 DrawTextureEx(tex::oil, {refinery.x + ICON_DX, refinery.y + ICON_DY}, 0, ICON_SIZE / tex::oil.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_HEROICS | TECHNOLOGY_PROPAGANDA)) {
-                DrawTechNode(propaganda.x, propaganda.y, "PROPAGANDA", "+1 utopia per 3 radios", tech, TECHNOLOGY_PROPAGANDA);
+                DrawTechNode(propaganda.x, propaganda.y, "PROPAGANDA", "+1 utopia per 2 radios", tech, TECHNOLOGY_PROPAGANDA);
                 DrawTextureEx(tex::utopia, {propaganda.x + ICON_DX, propaganda.y + ICON_DY}, 0, ICON_SIZE / tex::utopia.width, WHITE);
             }
             if(prev_tech & (TECHNOLOGY_PROPAGANDA | TECHNOLOGY_SUPERIORITY)) {
