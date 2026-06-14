@@ -93,6 +93,7 @@ namespace tex {
     static Texture2D curio;
     static Texture2D rock;
     static Texture2D trenches;
+    static Texture2D ownership;
 }
 
 
@@ -189,6 +190,7 @@ void load() {
     tex::banner = LoadTexture("data/banner.png");
     tex::banner = LoadTexture("data/banner.png");
     tex::trenches = LoadTexture("data/trenches.png");
+    tex::ownership = LoadTexture("data/ownership.png");
 
     sound::gun.Load("data/gun.ogg", 24);
     sound::boom.Load("data/boom.ogg", 5);
@@ -294,6 +296,7 @@ void unload() {
     UnloadTexture(tex::chart);
     UnloadTexture(tex::pristine);
     UnloadTexture(tex::trenches);
+    UnloadTexture(tex::ownership);
     sound::boom.Unload();
     sound::explosion.Unload();
     sound::gun.Unload();

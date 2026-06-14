@@ -451,7 +451,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     }
     if(prev_tech & (TECHNOLOGY_SEAFARERING | TECHNOLOGY_INFRASTRUCTURE | TECHNOLOGY_OWNERSHIP)) {
         DrawTechNode(ownership.x, ownership.y, "OWNERSHIP", "Better hold captured assets", tech, TECHNOLOGY_OWNERSHIP, !showing_preview);
-        DrawTextureEx(tex::blood, {ownership.x + ICON_DX, ownership.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
+        DrawTextureEx(tex::ownership, {ownership.x + ICON_DX, ownership.y + ICON_DY}, 0, ICON_SIZE / tex::ownership.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_HOMUNCULI | TECHNOLOGY_UNSTABLE)) {
         DrawTechNode(unstable.x, unstable.y, "UNSTABLE", "-1 spawn HP, bloo on death", tech, TECHNOLOGY_UNSTABLE, !showing_preview);
@@ -462,7 +462,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTextureEx(tex::utopia, {technocracy.x + ICON_DX, technocracy.y + ICON_DY}, 0, ICON_SIZE / tex::utopia.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_DRIVER | TECHNOLOGY_INDUSTRY)) {
-        DrawTechNode(industry.x, industry.y, "LOST INDUSTRY", "Mechas gain experience", tech, TECHNOLOGY_INDUSTRY, !showing_preview);
+        DrawTechNode(industry.x, industry.y, "LOST .INC", "Mechas gain experience", tech, TECHNOLOGY_INDUSTRY, !showing_preview);
         DrawTextureEx(tex::gear, {industry.x + ICON_DX, industry.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_HIJACK)) {
@@ -536,7 +536,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     }
 
     if(prev_tech & (TECHNOLOGY_SNIPING | TECHNOLOGY_TURTLING)) {
-        DrawTechNode(turtling.x, turtling.y, "TURTLING", "Units lose 3 max health to stack rocks", tech, TECHNOLOGY_TURTLING, !showing_preview);
+        DrawTechNode(turtling.x, turtling.y, "TURTLING", "Can take -3 max health to stack rocks", tech, TECHNOLOGY_TURTLING, !showing_preview);
         DrawTextureEx(tex::rock, {turtling.x + ICON_DX, turtling.y + ICON_DY}, 0, ICON_SIZE / tex::rock.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_NUCLEAR | TECHNOLOGY_REACTOR)) {
