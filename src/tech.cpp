@@ -55,6 +55,7 @@
 #define TECHNOLOGY_CENTRAL   1125899906842624ULL // fields grow around forts and radios
 #define TECHNOLOGY_TURTLING  2251799813685248ULL // humans can lose 3 health to create rocks
 #define TECHNOLOGY_TRENCHES  4503599627370496ULL // can turn tanks and vans to railguns
+#define TECHNOLOGY_IMPERIAL  9007199254740992ULL // get victory points from camps
 
 #define PREFERENCE_RAILGUN     0
 #define PREFERENCE_TANK        1

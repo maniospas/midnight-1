@@ -1008,6 +1008,16 @@ int main() {
                 }
                 else {
                     CREATE_RADIO(&factions[1], x, y);
+                    float spacing = 10.f;
+                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x-spacing, y-spacing); }
+                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x-spacing, y+spacing); }
+                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x+spacing, y+spacing); }
+                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x+spacing, y-spacing); }
+                    spacing = 15.f;
+                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x-spacing, y); }
+                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x+spacing, y); }
+                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x, y+spacing); }
+                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x, y-spacing); }
                 }
                 break;
         }
