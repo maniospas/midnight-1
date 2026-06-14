@@ -201,7 +201,7 @@ struct Unit {
         units[num_units++] = { \
             &tex::rock,   /* texture */ \
             "Rock",       /* name */ \
-            1.0,          /* speed */ \
+            0.0,          /* speed */ \
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
             0.0,          /* attack_rate */ \
@@ -209,12 +209,12 @@ struct Unit {
             1.0,          /* damage */ \
             0.0,          /* experience */ \
             (float)GetRandomValue(0,360),          /* angle */ \
-            0.8,          /* size */ \
+            0.3,          /* size */ \
             10.0,         /* health */ \
             10.0,         /* max_health */ \
             (faction),    /* faction */ \
             nullptr,      /* faction */ \
-            0.0           /* extra scale*/\
+            0.3           /* extra scale*/\
         };
 
 

@@ -92,6 +92,7 @@ namespace tex {
     static Texture2D roomba;
     static Texture2D curio;
     static Texture2D rock;
+    static Texture2D trenches;
 }
 
 
@@ -187,6 +188,7 @@ void load() {
     tex::overlay = LoadTexture("data/overlay.png");
     tex::banner = LoadTexture("data/banner.png");
     tex::banner = LoadTexture("data/banner.png");
+    tex::trenches = LoadTexture("data/trenches.png");
 
     sound::gun.Load("data/gun.ogg", 24);
     sound::boom.Load("data/boom.ogg", 5);
@@ -291,6 +293,7 @@ void unload() {
     UnloadTexture(tex::magnet);
     UnloadTexture(tex::chart);
     UnloadTexture(tex::pristine);
+    UnloadTexture(tex::trenches);
     sound::boom.Unload();
     sound::explosion.Unload();
     sound::gun.Unload();

@@ -2,17 +2,11 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <cmath>
+#include <vector>
 #include "terrain.cpp"
 
 static const int GRID_SIZE = 196;
 int NOISE_SEED = 0;
-
-static void DrawConnector(float x1, float y1, float x2, float y2, bool active) {
-    if(!active) return;
-    Color c = active ? Fade(GREEN, 0.8f) : Fade(GRAY, 0.4f);
-    DrawLineBezier({ x1, y1 }, { x2, y2 }, 3.0f, c);
-}
-
 
 // Draw dashed line between two world-space points
 static void DrawDashedLine(float x1, float y1, float x2, float y2, Color c) {
