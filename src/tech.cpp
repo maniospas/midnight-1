@@ -373,7 +373,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTextureEx(tex::shield, {mecha.x + ICON_DX, mecha.y + ICON_DY}, 0, ICON_SIZE / tex::shield.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_HOMUNCULI)) {
-        DrawTechNode(homunculi.x, homunculi.y, "HOMUNCULI", "Killed bloos become allies", tech, TECHNOLOGY_HOMUNCULI, !showing_preview);
+        DrawTechNode(homunculi.x, homunculi.y, "HOMUNCULI", "50\% to control killed bloo", tech, TECHNOLOGY_HOMUNCULI, !showing_preview);
         DrawTextureEx(tex::ghost, {homunculi.x + ICON_DX, homunculi.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_RESEARCH)) {
@@ -456,7 +456,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     }
     if(prev_tech & (TECHNOLOGY_HOMUNCULI | TECHNOLOGY_UNSTABLE)) {
         DrawTechNode(unstable.x, unstable.y, "UNSTABLE", "-1 spawn HP, bloo on death", tech, TECHNOLOGY_UNSTABLE, !showing_preview);
-        DrawTextureEx(tex::ghost, {unstable.x + ICON_DX, unstable.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
+        DrawTextureEx(tex::unstable, {unstable.x + ICON_DX, unstable.y + ICON_DY}, 0, ICON_SIZE / tex::unstable.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_AIFARM | TECHNOLOGY_MECHANISED | TECHNOLOGY_TECHNOCRACY)) {
         DrawTechNode(technocracy.x, technocracy.y, "TECHNOCRACY", "+1 utopia per 100 industry", tech, TECHNOLOGY_TECHNOCRACY, !showing_preview);
@@ -476,7 +476,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     }
     if(prev_tech & (TECHNOLOGY_UNSTABLE | TECHNOLOGY_BIOWEAPON)) {
         DrawTechNode(bioweapon.x, bioweapon.y, "BIOWEAPON", "Kills become bloo", tech, TECHNOLOGY_BIOWEAPON, !showing_preview);
-        DrawTextureEx(tex::ghost, {bioweapon.x + ICON_DX, bioweapon.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
+        DrawTextureEx(tex::bioweapon, {bioweapon.x + ICON_DX, bioweapon.y + ICON_DY}, 0, ICON_SIZE / tex::bioweapon.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_TRACK | TECHNOLOGY_SNIFFING)) {
         DrawTechNode(sniffing.x, sniffing.y, "FREE THINKING", "Unit autonomy, +1 utopia", tech, TECHNOLOGY_SNIFFING, !showing_preview);

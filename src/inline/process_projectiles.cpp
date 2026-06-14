@@ -178,7 +178,7 @@ for (int i = 0; i < num_units; i++) {
                         }
                     }
                 }
-                if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_HOMUNCULI) && o.texture==&tex::ghost) {
+                if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_HOMUNCULI) && o.texture==&tex::ghost && GetRandomValue(0, 99) < 50) {
                     o.faction = u.faction;
                     o.health = o.max_health;
                     o.popup = "homunculi";

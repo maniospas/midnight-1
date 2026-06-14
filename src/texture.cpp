@@ -94,6 +94,8 @@ namespace tex {
     static Texture2D rock;
     static Texture2D trenches;
     static Texture2D ownership;
+    static Texture2D unstable;
+    static Texture2D bioweapon;
 }
 
 
@@ -191,6 +193,8 @@ void load() {
     tex::banner = LoadTexture("data/banner.png");
     tex::trenches = LoadTexture("data/trenches.png");
     tex::ownership = LoadTexture("data/ownership.png");
+    tex::unstable = LoadTexture("data/unstable.png");
+    tex::bioweapon = LoadTexture("data/bioweapon.png");
 
     sound::gun.Load("data/gun.ogg", 24);
     sound::boom.Load("data/boom.ogg", 5);
@@ -297,6 +301,8 @@ void unload() {
     UnloadTexture(tex::pristine);
     UnloadTexture(tex::trenches);
     UnloadTexture(tex::ownership);
+    UnloadTexture(tex::unstable);
+    UnloadTexture(tex::bioweapon);
     sound::boom.Unload();
     sound::explosion.Unload();
     sound::gun.Unload();
