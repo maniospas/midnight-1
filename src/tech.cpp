@@ -347,10 +347,10 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     DrawTechNode(hunting.x, hunting.y, "CIVILIZED", "+3 camp & hide industry", tech, TECHNOLOGY_HUNTING, !showing_preview);
     DrawTextureEx(tex::hide, {hunting.x + ICON_DX, hunting.y + ICON_DY}, 0, ICON_SIZE / tex::hide.width, WHITE);
 
-    DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "+30\% research, -1 spawn HP", tech, TECHNOLOGY_NERDS, !showing_preview);
+    DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "+30% research, -1 spawn HP", tech, TECHNOLOGY_NERDS, !showing_preview);
     DrawTextureEx(tex::nerds, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::nerds.width, WHITE);
 
-    DrawTechNode(taming.x, taming.y, "TAMER", "-50\% research, 50\% taming", tech, TECHNOLOGY_TAMING, !showing_preview);
+    DrawTechNode(taming.x, taming.y, "TAMER", "-50% research, 50% taming", tech, TECHNOLOGY_TAMING, !showing_preview);
     DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
 
     DrawTechNode(hardcore.x, hardcore.y, "HARDCORE", "-7 camp industry, 2x spawn", tech, TECHNOLOGY_HARDCORE, !showing_preview);
@@ -365,19 +365,19 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTextureEx(tex::driver, {driver.x + ICON_DX, driver.y + ICON_DY}, 0, ICON_SIZE / tex::driver.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_TRACK)) {
-        DrawTechNode(track.x, track.y, "TRACKER", "+70\% unit sight", tech, TECHNOLOGY_TRACK, !showing_preview);
+        DrawTechNode(track.x, track.y, "TRACKER", "+70% unit sight", tech, TECHNOLOGY_TRACK, !showing_preview);
         DrawTextureEx(tex::track, {track.x + ICON_DX, track.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_MECHA)) {
-        DrawTechNode(mecha.x, mecha.y, "HULL", "+50\% mecha dodge", tech, TECHNOLOGY_MECHA, !showing_preview);
+        DrawTechNode(mecha.x, mecha.y, "HULL", "+50% mecha dodge", tech, TECHNOLOGY_MECHA, !showing_preview);
         DrawTextureEx(tex::shield, {mecha.x + ICON_DX, mecha.y + ICON_DY}, 0, ICON_SIZE / tex::shield.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_HOMUNCULI)) {
-        DrawTechNode(homunculi.x, homunculi.y, "HOMUNCULI", "50\% to control killed bloo", tech, TECHNOLOGY_HOMUNCULI, !showing_preview);
+        DrawTechNode(homunculi.x, homunculi.y, "HOMUNCULI", "50% to control killed bloo", tech, TECHNOLOGY_HOMUNCULI, !showing_preview);
         DrawTextureEx(tex::ghost, {homunculi.x + ICON_DX, homunculi.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_RESEARCH)) {
-        DrawTechNode(research.x, research.y, "RESEARCH", "+30\% research", tech, TECHNOLOGY_RESEARCH, !showing_preview);
+        DrawTechNode(research.x, research.y, "RESEARCH", "+30% research", tech, TECHNOLOGY_RESEARCH, !showing_preview);
         DrawTextureEx(tex::research, {research.x + ICON_DX, research.y + ICON_DY}, 0, ICON_SIZE / tex::research.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_FARMING)) {
@@ -393,7 +393,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTextureEx(tex::flank, {flanking.x + ICON_DX, flanking.y + ICON_DY}, 0, ICON_SIZE / tex::flank.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_GRIT)) {
-        DrawTechNode(grit.x, grit.y, "GRIT", "+50\% dodge vs lethal", tech, TECHNOLOGY_GRIT, !showing_preview);
+        DrawTechNode(grit.x, grit.y, "GRIT", "+50% dodge vs lethal", tech, TECHNOLOGY_GRIT, !showing_preview);
         DrawTextureEx(tex::grit, {grit.x + ICON_DX, grit.y + ICON_DY}, 0, ICON_SIZE / tex::grit.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_HARDCORE | TECHNOLOGY_FIGHT)) {
@@ -409,7 +409,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTextureEx(tex::tough, {tough.x + ICON_DX, tough.y + ICON_DY}, 0, ICON_SIZE / tex::tough.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_FIGHT | TECHNOLOGY_TAMING | TECHNOLOGY_HEROICS)) {
-        DrawTechNode(heroics.x, heroics.y, "HEROICS", "+30\% vet & hero dodge", tech, TECHNOLOGY_HEROICS, !showing_preview);
+        DrawTechNode(heroics.x, heroics.y, "HEROICS", "+30% vet & hero dodge", tech, TECHNOLOGY_HEROICS, !showing_preview);
         DrawTextureEx(tex::heroics, {heroics.x + ICON_DX, heroics.y + ICON_DY}, 0, ICON_SIZE / tex::heroics.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_TAMING | TECHNOLOGY_WONDER)) {
@@ -508,7 +508,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     }
 
     if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_WONDER | TECHNOLOGY_LUXURY)) {
-        DrawTechNode(luxury.x, luxury.y, "PRISTINE", "+50\% dodge vs animal & bloo", tech, TECHNOLOGY_LUXURY, !showing_preview);
+        DrawTechNode(luxury.x, luxury.y, "PRISTINE", "+50% dodge vs animal & bloo", tech, TECHNOLOGY_LUXURY, !showing_preview);
         DrawTextureEx(tex::pristine, {luxury.x + ICON_DX, luxury.y + ICON_DY}, 0, ICON_SIZE / tex::pristine.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_OWNERSHIP | TECHNOLOGY_GIGAJOULE | TECHNOLOGY_REFINERY)) {

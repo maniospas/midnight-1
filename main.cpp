@@ -344,7 +344,7 @@ int main() {
                 goto MAIN_MENU;
             }
         }
-        float baseY = (float)GetScreenHeight()/2 - 600;
+        float baseY = (float)GetScreenHeight()/2 - 700;
         float baseX = (float)GetScreenWidth()/2;
         if(new_game_transition_mode==-1) baseX += (1.0f-new_game_progress)*(1.0f-new_game_progress)*GetScreenWidth();
         else if(new_game_transition_mode==2) baseX += new_game_progress*new_game_progress*GetScreenWidth();
@@ -359,10 +359,12 @@ int main() {
         BeginDrawing();
         ClearBackground(BLACK);
 
+        
+
         DrawTexturePro(
             tex::earth,
             Rectangle{0,0,(float)tex::earth.width,(float)tex::earth.height},
-            Rectangle{baseX-256, baseY+100, 512, 256},
+            Rectangle{baseX-256, baseY+200, 512, 256},
             {0,0}, 0, Fade(WHITE, 0.85f));
         //DrawText(TextFormat("%d opponents", max_factions-3), baseX - 320, baseY+400, 128, WHITE);
 
@@ -404,14 +406,14 @@ int main() {
                 bool hoverL = !new_game_transition_mode && CheckCollisionPointRec(mouse, leftArrow);
                 bool hoverR = !new_game_transition_mode && CheckCollisionPointRec(mouse, rightArrow);
                 DrawTriangle(
-                    (Vector2){ leftArrow.x + leftArrow.width, leftArrow.y },
-                             (Vector2){ leftArrow.x, leftArrow.y + leftArrow.height/2 },
-                             (Vector2){ leftArrow.x + leftArrow.width, leftArrow.y + leftArrow.height },
+                    Vector2{ leftArrow.x + leftArrow.width, leftArrow.y },
+                             Vector2{ leftArrow.x, leftArrow.y + leftArrow.height/2 },
+                             Vector2{ leftArrow.x + leftArrow.width, leftArrow.y + leftArrow.height },
                              hoverL ? ORANGE : DARKGRAY);
                 DrawTriangle(
-                    (Vector2){ rightArrow.x, rightArrow.y },
-                             (Vector2){ rightArrow.x, rightArrow.y + rightArrow.height },
-                             (Vector2){ rightArrow.x + rightArrow.width, rightArrow.y + rightArrow.height/2 },
+                    Vector2{ rightArrow.x, rightArrow.y },
+                             Vector2{ rightArrow.x, rightArrow.y + rightArrow.height },
+                             Vector2{ rightArrow.x + rightArrow.width, rightArrow.y + rightArrow.height/2 },
                              hoverR ? ORANGE : DARKGRAY);
 
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -1866,8 +1868,8 @@ int main() {
         //         DrawRectangleLines(px, py, TILE_SIZE, TILE_SIZE, Fade(WHITE, 0.4f));
         //         int fontSize = 24;
         //         int pad = 4;
-        //         DrawText(TextFormat("Cover: %.0f\%", ter.speed>0.f?(1.0-ter.speed)*100:0.f), px + pad, py + pad, fontSize, WHITE);
-        //         DrawText(TextFormat("Sight: +%.0f\%", ter.extra_sight*100), px + pad, py + pad + fontSize + 2, fontSize,WHITE);
+        //         DrawText(TextFormat("Cover: %.0f%", ter.speed>0.f?(1.0-ter.speed)*100:0.f), px + pad, py + pad, fontSize, WHITE);
+        //         DrawText(TextFormat("Sight: +%.0f%", ter.extra_sight*100), px + pad, py + pad + fontSize + 2, fontSize,WHITE);
         //     }
         // }
 

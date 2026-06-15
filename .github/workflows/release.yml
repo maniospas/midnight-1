@@ -67,12 +67,11 @@ jobs:
 
     - name: Build game (Windows)
       if: matrix.os == 'windows-latest'
-      run: g++ -std=c++17 -O3 -static -static-libgcc -static-libstdc++ -Wall ^
+      run: g++ -std=c++17 -O2 -Wall ^
         main.cpp -o game.exe ^
         -IC:/vcpkg/installed/x64-mingw-static/include ^
         -LC:/vcpkg/installed/x64-mingw-static/lib ^
-        -lraylib -lglfw3 ^
-        -lopengl32 -lgdi32 -lwinmm -luser32 -lshell32 -lole32 -luuid
+        -lraylib -lgdi32 -lwinmm -luser32 -lshell32 -lole32 -luuid
       shell: cmd
 
 

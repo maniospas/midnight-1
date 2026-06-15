@@ -92,45 +92,45 @@ if (hovered && hovered->health) {
         //if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
     else if(hovered->texture==&tex::roomba) {
-        DrawText("Mecha, only attacks", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
-        DrawText("animal & bloo", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
-        DrawUnitStatCircle(hovered, px + 120, textY + 40);
+        DrawText("Mecha, only attacks", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText("animal & bloo", px + 80.f, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+        DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
     }
     else if(hovered->texture==&tex::curio) {
-        DrawText("+1 utopia", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
-        DrawText("Produces wild rats", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+        DrawText("+1 utopia", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText("Produces wild rats", px + 80.f, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
         //DrawUnitStatCircle(hovered, px + 120, textY + 40);
     }
     else if(hovered->texture==&tex::rock) {
-        DrawText("Obstacle", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
-        DrawUnitStatCircle(hovered, px + 120, textY + 40);
+        DrawText("Obstacle", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
     }
     else if(hovered->texture==&tex::esper) {
         DrawText("+2 utopia, unruly", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
-        DrawUnitStatCircle(hovered, px + 120, textY + 40);
+        DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
     else if(is_mecha((*hovered)) && hovered->speed==0) {
         DrawText("Mecha", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
-        DrawUnitStatCircle(hovered, px + 120, textY + 40);
+        DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
         if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
     else if(is_mecha((*hovered))) {
         DrawText(TextFormat("Mecha, %d industry cost", (int)(hovered->max_health/5+0.5)), px + 80, textY, DESC_FONT_SIZE, WHITECOL);
-        DrawUnitStatCircle(hovered, px + 120, textY + 40);
+        DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
         //if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
     else if(hovered->damage) {
         if(hovered->range<3.f) {
-            if(hovered->texture==&tex::snowman) DrawText("Animal, fast on hills", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
-            else if(hovered->texture==&tex::rat) DrawText("Animal, proliferates", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
-            else if(hovered->texture==&tex::wolf) DrawText("Animal, 50\% taming", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
-            else DrawText("Animal, drops hide", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
-            DrawUnitStatCircle(hovered, px + 120, textY + 40);
+            if(hovered->texture==&tex::snowman) DrawText("Animal, fast on hills", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+            else if(hovered->texture==&tex::rat) DrawText("Animal, proliferates", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+            else if(hovered->texture==&tex::wolf) DrawText("Animal, 50% taming", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+            else DrawText("Animal, drops hide", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+            DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
         }
         else {
-            DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5+0.5)), px + 80, textY, DESC_FONT_SIZE, WHITECOL);
-            DrawUnitStatCircle(hovered, px + 120, textY + 40);
+            DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5+0.5)), px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+            DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
         }
     }
     else {
@@ -139,6 +139,6 @@ if (hovered && hovered->health) {
     }
 }
 else {
-    DrawText("No info", px + 80, textY + 80, 42, WHITECOL);
-    DrawText("Mouse over a unit.", px + 80, textY + 150, DESC_FONT_SIZE, WHITECOL);
+    DrawText("No info", px + 80.f, textY + 80.f, 42.f, WHITECOL);
+    DrawText("Mouse over a unit.", px + 80.f, textY + 150.f, DESC_FONT_SIZE, WHITECOL);
 }
