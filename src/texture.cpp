@@ -23,8 +23,6 @@ namespace tex {
     static Texture2D mountain;
     static Texture2D mountain_transition;
     static Texture2D mountain_transition2;
-    static Texture2D road;
-    static Texture2D road_transition;
     static Texture2D human;
     static Texture2D esper;
     static Texture2D scout;
@@ -54,7 +52,6 @@ namespace tex {
     static Texture2D lighthouse;
     static Texture2D info;
     static Texture2D oil;
-    static Texture2D snow;
     static Texture2D tree;
     static Texture2D snowman;
     static Texture2D van;
@@ -118,7 +115,6 @@ void load() {
     tex::mountain = LoadTexture("data/mountain.png");
     tex::mountain_transition = LoadTexture("data/mountain_transition.png");
     tex::mountain_transition2 = LoadTexture("data/mountain_transition2.png");
-    tex::snow = LoadTexture("data/snow.png");
     tex::tree = LoadTexture("data/tree.png");
     tex::desert = LoadTexture("data/desert.png");
     tex::water = LoadTexture("data/water.png");
@@ -173,8 +169,6 @@ void load() {
     tex::field_empty = LoadTexture("data/field_empty.png");
     tex::field_little = LoadTexture("data/field_little.png");
     tex::mine = LoadTexture("data/mine.png");
-    tex::road = LoadTexture("data/road.png");
-    tex::road_transition = LoadTexture("data/road_transition.png");
     tex::camp = LoadTexture("data/camp.png");
     tex::lab = LoadTexture("data/lab.png");;
     tex::warehouse = LoadTexture("data/warehouse.png");
@@ -270,10 +264,7 @@ void unload() {
     UnloadTexture(tex::overlay);
     UnloadTexture(tex::railgun);
     UnloadTexture(tex::fort);
-    UnloadTexture(tex::road);
-    UnloadTexture(tex::road_transition);
     UnloadTexture(tex::mine);
-    UnloadTexture(tex::snow);
     UnloadTexture(tex::tree);
     UnloadTexture(tex::water);
     UnloadTexture(tex::earth);

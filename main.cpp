@@ -114,7 +114,7 @@ int main() {
         }
     }
 
-    //SetTraceLogLevel(LOG_NONE); // disable raylib logs
+    SetTraceLogLevel(LOG_NONE); // disable raylib logs
     InitWindow(1, 1, "");
     int w = GetMonitorWidth(0);
     int h = GetMonitorHeight(0);
@@ -168,12 +168,15 @@ int main() {
     static float fort_creation_total_health = 0;
     static bool fort_creation_has_nearby = false;
 
+    std::cout << "prallocating\n";
     // preallocate stuff
     Terrain* terrainBlock = (Terrain*)malloc(GRID_SIZE * GRID_SIZE * sizeof(Terrain));
     Terrain** terrainGrid = (Terrain**)malloc(GRID_SIZE * sizeof(Terrain*));
     for (int y = 0; y < GRID_SIZE; y++)
         terrainGrid[y] = &terrainBlock[y * GRID_SIZE];
+    std::cout << "prallocated\n";
     static Unit units[MAX_UNITS];
+    std::cout << "unis\n";
     static Decorator decorators[MAX_DECORATORS];
     static Faction factions[11] = {
         { BLUE, "Player", 0 },
@@ -187,6 +190,7 @@ int main() {
         { PINK,      "AI", 0 },
         { BEIGE,     "AI", 0 },
     };
+    std::cout << "factions\n";
     Faction* ANIMAL_FACTION = &factions[2];
     int player_preferred_start[2] = {
         PREFERENCE_RAILGUN,
@@ -366,7 +370,7 @@ int main() {
             Rectangle{0,0,(float)tex::earth.width,(float)tex::earth.height},
             Rectangle{baseX-256, baseY+100, 512, 256},
             {0,0}, 0, Fade(WHITE, 0.85f));
-        DrawText(TextFormat("%d opponents", max_factions-3), baseX - 320, baseY+400, 128, WHITE);
+        //DrawText(TextFormat("%d opponents", max_factions-3), baseX - 320, baseY+400, 128, WHITE);
 
         DrawTexturePro(
             minimap.texture,
