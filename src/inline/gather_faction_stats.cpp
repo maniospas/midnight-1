@@ -146,7 +146,7 @@ for (int i = 0; i < num_units; i++) {
         continue;
     }
     if(is_mecha(u) && u.faction) {
-        if(u.faction->technology & TECHNOLOGY_MECHANISED) u.faction->industry += u.health/5.f;
+        if(u.faction->technology & TECHNOLOGY_MECHANISED) u.faction->industry += u.health/10.f;
         if(u.faction->technology & TECHNOLOGY_GIGAJOULE) continue;
     }
     if(u.texture==&tex::fort) {

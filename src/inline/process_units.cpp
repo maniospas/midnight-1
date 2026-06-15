@@ -15,13 +15,13 @@ for (int i = 0; i < num_units; i++) {
     if(u.x>=GRID_SIZE-2) u.x = GRID_SIZE-2;
     if(u.y>=GRID_SIZE-2) u.y = GRID_SIZE-2;
     if (u.texture == &tex::blood) {
-        if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.005f * dt) {
+        if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.005f * dt * BLOO_RATE) {
             num_units--;
             u = units[num_units];
             i--;
             continue;
         }
-        else if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.005f * dt) {
+        else if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.005f * dt * BLOO_RATE) {
             u = { \
                 &tex::ghost,  /* texture */
                 "Bloo",       /* name */
@@ -211,7 +211,7 @@ for (int i = 0; i < num_units; i++) {
     if(u.texture==&tex::mine)
         continue;
     if (u.texture == &tex::rat) {
-        if((float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<dt*u.attack_rate*(1-time_norm)*(1-time_norm)*(1-time_norm)*(1-time_norm)) {
+        if((float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<dt*u.attack_rate*RAT_RATE) {
             int canMake = (int)u.faction->industry-(int)u.faction->count_members;
             float sx = u.x + (GetRandomValue(-5000, 5000) * 0.0002f);
             float sy = u.y + (GetRandomValue(-5000, 5000) * 0.0002f);
@@ -221,7 +221,7 @@ for (int i = 0; i < num_units; i++) {
         }
     }
     if (u.texture == &tex::curio) {
-        if(u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<CAMP_SPAWN_RATE*dt*3) {
+        if(u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<CAMP_SPAWN_RATE*dt*CURIO_RAT_RATE) {
             int canMake = 1;
             if (canMake > 0) {
                 const int can_make_limit = 1;//(u.faction && u.faction->technology & TECHNOLOGY_HARDCORE)?4:2;
@@ -317,6 +317,10 @@ for (int i = 0; i < num_units; i++) {
         if(u.target_y<1) u.target_y = 1;
         if(u.target_x>=GRID_SIZE-2) u.target_x = GRID_SIZE-2;
         if(u.target_y>=GRID_SIZE-2) u.target_y = GRID_SIZE-2;
+        if(terrainGrid[(int)u.target_y][(int)u.target_x].texture==&tex::water) {
+            u.target_x = u.x;
+            u.target_y = u.y;
+        }
     }
 
     int ux = (int)(u.x+0.5f);
@@ -324,7 +328,6 @@ for (int i = 0; i < num_units; i++) {
     float u_speed = terrainGrid[uy][ux].speed;
     if(u.texture==&tex::hovercraft && terrainGrid[uy][ux].texture==&tex::water) u_speed = 1.5f;
     if(u_speed<1.f && u.texture==&tex::snowman && (terrainGrid[uy][ux].texture==&tex::mountain || terrainGrid[uy][ux].texture==&tex::hill)) u_speed = 2.f;
-    if(u_speed<1.2f && is_mecha(u) && u.faction && (u.faction->technology & TECHNOLOGY_DRIVER)) u_speed = 1.15f;
     if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_AGILE)) u_speed = (1.f+u_speed)*0.5f;
     if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_SEAFARERING) && terrainGrid[uy][ux].texture==&tex::water) u_speed = 1.5f;
     u_speed *= u.speed;

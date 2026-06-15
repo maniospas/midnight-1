@@ -317,6 +317,7 @@ for (int i = 0; i < num_units; i++) {
                         o.health = o.max_health;
                         if(o.texture==&tex::tank) o.capturing = nullptr; // only capture tanks once
                         if(o.texture==&tex::van) o.capturing = nullptr; // only capture vans once
+                        if(o.texture==&tex::hovercraft) o.capturing = nullptr; // only capture vans once
                         if(o.texture==&tex::railgun) o.capturing = nullptr; // only capture railguns once
                         if(o.texture==&tex::roomba) o.capturing = nullptr; // only capture roombas once
                     }

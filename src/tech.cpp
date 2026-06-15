@@ -27,7 +27,7 @@
 #define TECHNOLOGY_SUPERIORITY 4194304ULL // 2 utopia, 25% of spawned units are hostile
 #define TECHNOLOGY_SNIFFING    8388608ULL // idle units have a chance to move towards an unknown capturable location
 #define TECHNOLOGY_MECHA      16777216ULL // 50% chance of mecha dodge
-#define TECHNOLOGY_DRIVER     33554432ULL // mecha speed cannot be reduced
+#define TECHNOLOGY_DRIVER     33554432ULL // mechas turn faster
 #define TECHNOLOGY_FARMING    67108864ULL // +3 industry from farms
 #define TECHNOLOGY_HARDCORE  134217728ULL // -6 industry per camp, x2 spawn
 #define TECHNOLOGY_AUTOREPAIRS 268435456ULL // mecha regeneration
@@ -39,7 +39,7 @@
 #define TECHNOLOGY_EVOLUTION     17179869184ULL // 10% chance of spawning a snowman
 #define TECHNOLOGY_ARTIFICIAL    34359738368ULL // bloos start as veterans (actual name in-game: HIVEMENIND)
 #define TECHNOLOGY_TERRAFORIMING 68719476736ULL // anything you capture becomes farms
-#define TECHNOLOGY_MECHANISED   137438953472ULL // 1 industry per 5 mecha health
+#define TECHNOLOGY_MECHANISED   137438953472ULL // 1 industry per 10 mecha health
 #define TECHNOLOGY_HIJACK       274877906944ULL // hijack instead of destroying mecha
 #define TECHNOLOGY_WONDER       549755813888ULL // new discoveries grant experience
 #define TECHNOLOGY_HELLBRINGER 1099511627776ULL // rapid hero and veteran fire
@@ -361,7 +361,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTextureEx(tex::agile, {agile.x + ICON_DX, agile.y + ICON_DY}, 0, ICON_SIZE / tex::agile.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_DRIVER)) {
-        DrawTechNode(driver.x, driver.y, "DRIVER", "Mechas move & turn faster", tech, TECHNOLOGY_DRIVER, !showing_preview);
+        DrawTechNode(driver.x, driver.y, "DRIVER", "Mechas turn faster", tech, TECHNOLOGY_DRIVER, !showing_preview);
         DrawTextureEx(tex::driver, {driver.x + ICON_DX, driver.y + ICON_DY}, 0, ICON_SIZE / tex::driver.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_TRACK)) {
@@ -516,7 +516,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTextureEx(tex::oil, {refinery.x + ICON_DX, refinery.y + ICON_DY}, 0, ICON_SIZE / tex::oil.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_GIGAJOULE | TECHNOLOGY_MECHANISED)) {
-        DrawTechNode(mechanised.x, mechanised.y, "MECHANIZED", "+1 industry per 5 mecha HP", tech, TECHNOLOGY_MECHANISED, !showing_preview);
+        DrawTechNode(mechanised.x, mechanised.y, "MECHANIZED", "+1 industry per 10 mecha HP", tech, TECHNOLOGY_MECHANISED, !showing_preview);
         DrawTextureEx(tex::gear, {mechanised.x + ICON_DX, mechanised.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_GIGAJOULE | TECHNOLOGY_TURTLING | TECHNOLOGY_TERRAFORIMING)) {

@@ -207,6 +207,7 @@ void load() {
     sound::moo.Load("data/moo.wav", 10);
     sound::noise.Load("data/noise.wav", 5);
     sound::notify.Load("data/notify.ogg", 5);
+    sound::water.Load("data/water.ogg", 5);
     sound::select = LoadSound("data/select.wav");
     sound::select2 = LoadSound("data/select2.wav");
     sound::bg = LoadMusicStream("data/track.ogg");
@@ -316,6 +317,7 @@ void unload() {
     sound::moo.Unload();
     sound::noise.Unload();
     sound::notify.Unload();
+    sound::water.Unload();
     UnloadSound(sound::select);
     UnloadSound(sound::select2);
     CloseAudioDevice();

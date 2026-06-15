@@ -16,7 +16,7 @@ for (int i = 0; i < num_units; i++) {
     if(u.faction==factions+1) continue;
     if (u.faction == ANIMAL_FACTION) {
         if ((float)GetRandomValue(0, 1000000) / 1000000.0f > AI_ORDER_CHANCE * 20.f * dt) continue;
-        Texture2D* baseTex = terrainGrid[(int)u.y][(int)u.x].texture;
+        //Texture2D* baseTex = terrainGrid[(int)(u.y+0.5f)][(int)(u.x+0.5f)].texture;
         float tx = 0, ty = 0;
         bool found = false;
         float bestDist = 40.f*40.f;
@@ -45,11 +45,21 @@ for (int i = 0; i < num_units; i++) {
             }
         }
         if (!found) {
-            tx = GetRandomValue(10, GRID_SIZE - 10);
-            ty = GetRandomValue(10, GRID_SIZE - 10);
-            if(baseTex==terrainGrid[(int)ty][(int)tx].texture) {
-                u.target_x = tx;
-                u.target_y = ty;
+            // tx = GetRandomValue(10, GRID_SIZE - 10);
+            // ty = GetRandomValue(10, GRID_SIZE - 10);
+            // if(terrainGrid[(int)(ty+0.5f)][(int)(ty+0.5f)].texture) {
+            //     u.target_x = tx;
+            //     u.target_y = ty;
+            // }
+            u.target_x = u.x+GetRandomValue(-40,40);
+            u.target_y = u.y+GetRandomValue(-40,40);
+            if(u.target_x<1) u.target_x = 1;
+            if(u.target_y<1) u.target_y = 1;
+            if(u.target_x>=GRID_SIZE-2) u.target_x = GRID_SIZE-2;
+            if(u.target_y>=GRID_SIZE-2) u.target_y = GRID_SIZE-2;
+            if(terrainGrid[(int)u.target_y][(int)u.target_x].texture==&tex::water) {
+                u.target_x = u.x;
+                u.target_y = u.y;
             }
         }
         else if(bestDist>u.range*u.range) {
@@ -69,17 +79,20 @@ for (int i = 0; i < num_units; i++) {
     if(u.target_x && u.target_y && (u.target_x-u.x)*(u.target_x-u.x)+(u.target_y-u.y)*(u.target_y-u.y)>10) bestDist = 40.f;
     if(GetRandomValue(0, 100) > 10)
         for (int j = 0; j < num_units; j++) {
-            if(!u.faction->visible_knowledge[j]) continue;
+            if(!u.faction->visible_knowledge[j]) {
+                if(GetRandomValue(0, 100)<5) u.faction->visible_knowledge[j] = 1; // players can "ceat" and see where the ai is going, the ai can chat this way
+                continue;
+            }
             Unit &o = units[j];
             //if (!o.faction) continue;
-            if (o.health <= 0) continue;
+            if (o.health <= 0) continue; // move units of same type as pack only
             bool isEnemyCapturable =
                 (o.capturing != nullptr) &&
                 (o.faction != u.faction && o.faction);
             bool isOwnDamagedStructure =
                 (o.faction == u.faction) &&
                 (o.speed == 0 && o.capturing) &&
-                (o.health < o.max_health*0.8f);
+                (o.health < o.max_health*0.8f) && (o.texture!=&tex::rock && o.texture!=&tex::railgun);
             if (!isEnemyCapturable && !isOwnDamagedStructure && o.faction) continue;
             if ((time_norm>0.8f || (time_norm>0.35f && time_norm>0.5f)) && o.texture!=&tex::oil && o.texture!=&tex::warehouse && o.texture!=&tex::esper && o.texture!=&tex::lighthouse) continue; // at the last stretch attack the victory locations with all means
             float dx = o.x - u.x;
@@ -139,6 +152,7 @@ for (int i = 0; i < num_units; i++) {
         if (o.health <= 0) continue;
         if (o.speed <= 0) continue;
         if (o.texture==&tex::esper) continue;
+        if (o.texture!=u.texture && u.faction==ANIMAL_FACTION) continue; // move same-typed stuff
         float dx = o.x - u.x;
         float dy = o.y - u.y;
         // grab everything if the game has progressed enough

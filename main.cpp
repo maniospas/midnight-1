@@ -23,8 +23,11 @@ static const int SHOW_MINIMAP = 1;
 static const float DESC_FONT_SIZE = 28;
 
 // difficulty controls
+static const float CURIO_RAT_RATE = 3.f;
+static float BLOO_RATE = 0.5F;
+static float RAT_RATE = 0.5F; // duplicate rats per 30*RAT_RATE seconds
+static float ANIMAL_SPAWN_RATE = 0.1f; // expected spawns per second
 static const float CAMP_SPAWN_RATE = 2.f; //
-static const float ANIMAL_SPAWN_RATE = 0.1f; // expected spawns per second
 static const float CAPTURE_RATE = 1.0f; // also heals espers and partial captures
 static const float OVER_CAP_REGEN_RATE = 0.3f; // 1.f is normal restoration from units being captured, this is lower if we have over-saturated industry
 
@@ -303,7 +306,7 @@ int main() {
     }
 
     NEW_GAME:
-    max_factions = GetRandomValue(6,11);
+    max_factions = GetRandomValue(6,11); // at least 3 enemies
     NOISE_SEED = GetRandomValue(1, 1'000'000);
     GenerateGrass(terrainGrid);
     GenerateHillsAndDesert(terrainGrid);
@@ -502,6 +505,7 @@ int main() {
 
         bool victory = player_points > best_ai_points;
         if(player_points<0) player_points = -player_points;
+        if(victory) best_faction = factions;
 
         const char* badTechNames[8];
         const Texture* badTechTextures[8];
@@ -978,7 +982,7 @@ int main() {
     int NUM_NEUTRAL_TANKS = GRID_SIZE*GRID_SIZE/512/2;
     if(GetRandomValue(0,99)<50) NUM_NEUTRAL_TANKS *= 2;
     if(GetRandomValue(0,99)<50) NUM_NEUTRAL_TANKS *= 2;
-    if(GetRandomValue(0,99)<50) NUM_NEUTRAL_TANKS *= 2;
+    //if(GetRandomValue(0,99)<50) NUM_NEUTRAL_TANKS *= 2;
     int NUM_WILD_ANIMALS= GRID_SIZE*GRID_SIZE/512/8;
     float AVOID_BASE_RADIUS = 7.0f;
 
@@ -1078,15 +1082,15 @@ int main() {
                 else {
                     CREATE_RADIO(&factions[1], x, y);
                     float spacing = 10.f;
-                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x-spacing, y-spacing); }
-                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x-spacing, y+spacing); }
-                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x+spacing, y+spacing); }
-                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x+spacing, y-spacing); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_VAN(&factions[1], x-spacing, y-spacing); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_VAN(&factions[1], x-spacing, y+spacing); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_VAN(&factions[1], x+spacing, y+spacing); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_VAN(&factions[1], x+spacing, y-spacing); }
                     spacing = 15.f;
-                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x-spacing, y); }
-                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x+spacing, y); }
-                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x, y+spacing); }
-                    if(GetRandomValue(0, 99) < 30) { CREATE_VAN(&factions[1], x, y-spacing); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_VAN(&factions[1], x-spacing, y); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_VAN(&factions[1], x+spacing, y); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_VAN(&factions[1], x, y+spacing); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_VAN(&factions[1], x, y-spacing); }
                 }
                 break;
         }
@@ -1124,9 +1128,9 @@ int main() {
         if (GetRandomValue(0, 99) < 70) continue; // too many mechas saturate the early game, so make them rarer without droping firepowser by clustering
         //if (GetRandomValue(0, 99) < 85) continue;
         //cluster some tanks - the player should feel lucky to find something like this
-        CREATE_TANK(&factions[1], x-0.3f, y-0.3f);
-        CREATE_TANK(&factions[1], x+0.3f, y-0.3f);
-        CREATE_TANK(&factions[1], x, y+0.3f);
+        if(GetRandomValue(0,99)<60) {CREATE_TANK(&factions[1], x-0.3f, y-0.3f);}
+        if(GetRandomValue(0,99)<60) {CREATE_TANK(&factions[1], x+0.3f, y-0.3f);}
+        if(GetRandomValue(0,99)<60) {CREATE_TANK(&factions[1], x, y+0.3f);}
     }
 
     for (int i = 0; i < NUM_WILD_ANIMALS; i++) {
@@ -1259,7 +1263,7 @@ int main() {
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
                 if(u.selected && u.speed) has_any_selected = true;
-                if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::fort)) {
+                if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) {
                     fort_creation_total_health += u.max_health;
                     fort_creation_px += u.x;
                     fort_creation_py += u.y;
@@ -1350,7 +1354,7 @@ int main() {
             else {
                 for (int i = 0; i < num_units; i++) {
                     Unit &u = units[i];
-                    if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::fort)) {
+                    if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) {
                         u.health = 0;
                         u.texture = &tex::ghost;
                     }
@@ -1620,7 +1624,7 @@ int main() {
             }
         EndShaderMode();
 
-
+        float water_sound_intensity = 0.0;
         for (int y = yMin; y < yMax; y++)
             for (int x = xMin; x < xMax; x++) {
                 if (!explored[y][x]) continue;
@@ -1643,6 +1647,7 @@ int main() {
                     bool sS  = IsGrass(s);
                     bool sW  = IsGrass(w);
                     bool sE  = IsGrass(e);
+                    water_sound_intensity += 1.f;
                     Texture2D &transition = (x+y)%2?tex::grass_transition:tex::grass_transition2;
                     if (sN && sW && !sE && !sS) DrawRot(transition,  px, py,   0);
                     if (sN && sE && !sW && !sS) DrawRot(transition, px, py,  90);
@@ -1756,7 +1761,13 @@ int main() {
                 }
 
             }
-
+        if(water_sound_intensity) {
+            water_sound_intensity = water_sound_intensity/float(yMax-yMin)/float(xMax-xMin);
+            //water_sound_intensity = sqrtf(water_sound_intensity);
+            if(water_sound_intensity>0.3f) water_sound_intensity = 0.3f;
+            if((float)GetRandomValue(0, 1000000) / 1000000.0f<dt)
+                sound::water.Play(water_sound_intensity/2*camera.zoom);
+        }
 
         // --- UNDER UNIT LAYER ---
         Color target_line_color = Fade(BLUE, 0.3f);
