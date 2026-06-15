@@ -124,9 +124,31 @@ struct Unit {
             1.0,          /* damage */ \
             0.0,          /* experience */ \
             (float)GetRandomValue(0,360),          /* angle */ \
-            0.7,          /* size */ \
+            0.6,          /* size */ \
             20.0,         /* health */ \
             20.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            (faction),    /* faction */ \
+            0.2           /* extra scale*/\
+        };
+
+
+#define CREATE_HOVERCRAFT(faction, x, y) \
+    if (num_units < MAX_UNITS) \
+        units[num_units++] = { \
+            &tex::hovercraft,   /* texture */ \
+            "Hovercraft",       /* name */ \
+            7.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            3.0,          /* attack_rate */ \
+            4.0,          /* range */ \
+            2.0,          /* damage */ \
+            0.0,          /* experience */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
+            0.7,          /* size */ \
+            8.0,          /* health */ \
+            8.0,          /* max_health */ \
             (faction),    /* faction */ \
             (faction),    /* faction */ \
             0.3           /* extra scale*/\

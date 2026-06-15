@@ -226,13 +226,13 @@ static void GenerateSeas(Terrain** terrainGrid) {
         }
 
         // scatter islands in places where the seas hes left back stuff
-        int numIslands = GetRandomValue(6, 12);
+        int numIslands = GetRandomValue(0, 3);
         for (int isle = 0; isle < numIslands; isle++) {
-            int ix = GetRandomValue(cx - seaRadius/2, cx + seaRadius/2);
-            int iy = GetRandomValue(cy - seaRadius/2, cy + seaRadius/2);
-            if (ix < 3 || iy < 3 || ix >= GRID_SIZE - 3 || iy >= GRID_SIZE - 3) continue;
+            int ix = GetRandomValue(cx - seaRadius/4, cx + seaRadius/4);
+            int iy = GetRandomValue(cy - seaRadius/4, cy + seaRadius/4);
+            if (ix < 6 || iy < 6 || ix >= GRID_SIZE - 6 || iy >= GRID_SIZE - 6) continue;
             if (terrainGrid[iy][ix].texture != &tex::water) continue;
-            int ir = GetRandomValue(2,8);
+            int ir = GetRandomValue(3,6);
             for (int dy = -ir; dy <= ir; dy++) {
                 for (int dx = -ir; dx <= ir; dx++) {
                     if(dx*dx+dy*dy>ir*ir) continue;
@@ -244,12 +244,40 @@ static void GenerateSeas(Terrain** terrainGrid) {
                     if (h == 1) tex = &tex::hill2;
                     if (h == 2) tex = &tex::hill3;
                     if (h == 3) tex = &tex::hill4;
-                    terrainGrid[iy][ix] = {
+                    terrainGrid[gy][gx] = {
                         tex,
                         0.7f,
                         0.5f
                     };
                 }
+            }
+            terrainGrid[iy][ix] = { &tex::treasure, 1.f, 0.f };
+            ir += 2;
+            for (int dy = -ir; dy <= ir; dy++) {
+                for (int dx = -ir; dx <= ir; dx++) {
+                    if(dx*dx+dy*dy>ir*ir) continue;
+                    int gx = ix + dx;
+                    int gy = iy + dy;
+                    if(terrainGrid[gy][gx].texture!=&tex::water) continue;
+                    terrainGrid[gy][gx] = { &tex::grass, 1.0 };
+                }
+            }
+        }
+    }
+
+    for (int y = 1; y < GRID_SIZE - 1; y++) {
+        for (int x = 1; x < GRID_SIZE - 1; x++) {
+            Terrain& T = terrainGrid[y][x];
+            if (T.texture == &tex::water) continue;
+            bool surrounded =
+                (terrainGrid[y - 1][x].texture == &tex::water &&
+                terrainGrid[y + 1][x].texture == &tex::water ) || (
+                terrainGrid[y][x - 1].texture == &tex::water &&
+                terrainGrid[y][x + 1].texture == &tex::water);
+            if (surrounded) {
+                T.texture     = &tex::water;
+                T.speed       = 0.15f;
+                T.extra_sight = -0.8f;
             }
         }
     }

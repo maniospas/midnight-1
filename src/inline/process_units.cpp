@@ -322,9 +322,10 @@ for (int i = 0; i < num_units; i++) {
     int ux = (int)(u.x+0.5f);
     int uy = (int)(u.y+0.5f);
     float u_speed = terrainGrid[uy][ux].speed;
+    if(u.texture==&tex::hovercraft && terrainGrid[uy][ux].texture==&tex::water) u_speed = 1.5f;
     if(u_speed<1.f && u.texture==&tex::snowman && (terrainGrid[uy][ux].texture==&tex::mountain || terrainGrid[uy][ux].texture==&tex::hill)) u_speed = 2.f;
-    if(u_speed<1.2f && is_mecha(u) && u.faction && (u.faction->technology && TECHNOLOGY_DRIVER)) u_speed = 1.2f;
-    if(u_speed<1.f && u.faction && (u.faction->technology && TECHNOLOGY_AGILE)) u_speed = (1.f+u_speed)*0.5f;
+    if(u_speed<1.2f && is_mecha(u) && u.faction && (u.faction->technology & TECHNOLOGY_DRIVER)) u_speed = 1.15f;
+    if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_AGILE)) u_speed = (1.f+u_speed)*0.5f;
     if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_SEAFARERING) && terrainGrid[uy][ux].texture==&tex::water) u_speed = 1.5f;
     u_speed *= u.speed;
     float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;

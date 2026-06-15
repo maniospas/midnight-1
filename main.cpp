@@ -30,7 +30,7 @@ static const float OVER_CAP_REGEN_RATE = 0.3f; // 1.f is normal restoration from
 
 enum class MovementMode {Tight,Scattered,Explore};
 
-#define is_mecha(u) (u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::railgun || u.texture==&tex::roomba)
+#define is_mecha(u) (u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::railgun || u.texture==&tex::roomba || u.texture==&tex::hovercraft)
 
 void DrawUnitStatCircle(Unit* unit, int px, int py) {
     const float RADIUS    = 55.0f;
@@ -174,7 +174,7 @@ int main() {
     static Unit units[MAX_UNITS];
     static Decorator decorators[MAX_DECORATORS];
     static Faction factions[11] = {
-        { BLUE, "Player", 0 },
+        { ColorBrightness(BLUE, 0.25), "Player", 0 },
         { GRAY, "Unclaimed", 0},
         { WHITE, "Wild", 0},
         { RED,       "AI", 0 },
@@ -230,14 +230,14 @@ int main() {
             }
         }
 
-        float baseY = (float)GetScreenHeight()/2 - 600;
+        float baseY = (float)GetScreenHeight()/2 - 500;
         float baseX = (float)GetScreenWidth()/2;
         if(main_menu_transition_mode==-2) baseX += (1.0f-main_menu_progress)*(1.0f-main_menu_progress)*GetScreenWidth();
         else if(main_menu_transition_mode==-1) baseX -= (1.0f-main_menu_progress)*(1.0f-main_menu_progress)*GetScreenWidth();
         else if(main_menu_transition_mode==2) baseX -= main_menu_progress*main_menu_progress*GetScreenWidth();
         else baseX -= main_menu_progress*main_menu_progress*GetScreenWidth();
-        const Rectangle btnStart = {baseX - 400, baseY+720,900, 80};
-        const Rectangle btnQuit = {baseX - 400, baseY+820,900, 80};
+        const Rectangle btnStart = {GetScreenWidth()-400.f, GetScreenHeight()-100.f,400, 80};
+        const Rectangle btnQuit = {20, GetScreenHeight()-100.f,300, 80};
         BeginDrawing();
         ClearBackground(BLACK);
 
@@ -250,11 +250,7 @@ int main() {
         DrawText("next", baseX +260, baseY+400, 64, WHITE);
         DrawText("morn", baseX +260, baseY+450, 64, WHITE);
         Vector2 mouse = GetMousePosition();
-
-        // Start button
         bool hoverStart = !main_menu_transition_mode && CheckCollisionPointRec(mouse, btnStart);
-        //DrawRectangleRec(btnStart, hoverStart ? Fade(DARKGRAY, 0.3) : BLACK);
-        //DrawRectangleLinesEx(btnStart, 2, Fade(DARKGRAY, 0.3));
         DrawText("New expedition", btnStart.x, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
         {
             int rank_index = 0;
@@ -269,27 +265,27 @@ int main() {
             rank_progress = (player_rating - ranks[rank_index].min) / (ranks[rank_index].max - ranks[rank_index].min);
             if (rank_progress < 0) rank_progress = 0;
             if (rank_progress > 1) rank_progress = 1;
-
             float size = 64.f;
-            float radius = size*0.55f;
+            float radius = size*0.65f;
             float end_angle = (float)(rank_progress * 360.0) - 90;
-            float cx = baseX - 400 + 32;
-            float cy = baseY + 660;
+            float cx = btnStart.x-64;//baseX - 250 + 32;
+            float cy = btnStart.y+32;//baseY + 650;
+            DrawCircle(cx, cy, radius, BLACK);
             DrawRing({cx, cy}, radius - 8, radius, -90, end_angle, 64, ranks[rank_index].color);
             DrawRing({cx, cy}, radius - 8, radius, end_angle, 360-90, 64, Fade(ranks[rank_index].color, 0.4f));
             DrawTexturePro(
                 *ranks[rank_index].tex,
-                {0,0,(float)ranks[rank_index].tex->width,(float)ranks[rank_index].tex->height},
-                           {cx - size/2, cy - size/2, size, size},
-                           {0,0}, 0, ranks[rank_index].color
+                {0,0,(float)ranks[rank_index].tex->width,(float)ranks[rank_index].tex->height}, {cx - size/2, cy - size/2, size, size}, {0,0}, 0, ranks[rank_index].color
             );
-            DrawText(ranks[rank_index].name, cx+40, cy-22, 48, ranks[rank_index].color);
+            Rectangle circleRect = { cx - radius, cy - radius, radius * 2, radius * 2 };
+            if (CheckCollisionPointRec(mouse, circleRect)) {
+                const char* rankName = ranks[rank_index].name;
+                int fontSize = 24;
+                int textWidth = MeasureText(rankName, fontSize);
+                DrawText(rankName, cx - textWidth/2, cy - radius - 30, fontSize, ranks[rank_index].color);
+            }
         }
-
-        // quit button
         bool hoverQuit = !main_menu_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
-        // DrawRectangleRec(btnQuit, hoverQuit ? Fade(RED, 0.85) : BLACK);
-        // DrawRectangleLinesEx(btnQuit, 2, Fade(DARKGRAY, 0.3));
         DrawText("Quit", btnQuit.x, btnQuit.y + 8, 58, hoverQuit ? RED : GRAY);
         EndDrawing();
         if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -344,14 +340,14 @@ int main() {
                 goto MAIN_MENU;
             }
         }
-        float baseY = (float)GetScreenHeight()/2 - 700;
+        float baseY = (float)GetScreenHeight()/2 - 600;
         float baseX = (float)GetScreenWidth()/2;
         if(new_game_transition_mode==-1) baseX += (1.0f-new_game_progress)*(1.0f-new_game_progress)*GetScreenWidth();
         else if(new_game_transition_mode==2) baseX += new_game_progress*new_game_progress*GetScreenWidth();
         else baseX -= new_game_progress*new_game_progress*GetScreenWidth();
-        const Rectangle btnStart = {baseX - 400, baseY+820,900, 80};
-        const Rectangle btnReroll = {baseX - 400, baseY+720,900, 80};
-        const Rectangle btnQuit = {baseX - 400, baseY+920,900, 80};
+        const Rectangle btnStart = {GetScreenWidth()-400.f, GetScreenHeight()-100.f,400, 80};
+        const Rectangle btnQuit = {20, GetScreenHeight()-100.f,300, 80};
+        const Rectangle btnReroll = {baseX - 270, baseY+700,600, 80};
         Rectangle prefBox[2] = {
             { baseX+220-260, baseY + 720-70-10-70-30, 310, 70 },
             { baseX+220-260, baseY + 720-70-30, 310, 70 }
@@ -432,12 +428,43 @@ int main() {
             }
         // Start button
         bool hoverStart = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnStart);
-        // DrawRectangleRec(btnStart, hoverStart ? Fade(GREEN, 0.28) : BLACK);
-        // DrawRectangleLinesEx(btnStart, 2, DARKGRAY);
-        DrawText("Ready", btnStart.x, btnStart.y + 8, 58, hoverStart ? GREEN : GRAY);
+        {
+            int rank_index = 0;
+            double rank_progress = 0;
+            if(player_rating<1200) player_rating = 1200;
+            if(player_rating>2200) player_rating = 2200;
+            for (int i=0;i<4;i++)
+                if (player_rating>=ranks[i].min && player_rating<ranks[i].max) {
+                    rank_index = i;
+                    break;
+                }
+            rank_progress = (player_rating - ranks[rank_index].min) / (ranks[rank_index].max - ranks[rank_index].min);
+            if (rank_progress < 0) rank_progress = 0;
+            if (rank_progress > 1) rank_progress = 1;
+            float size = 64.f;
+            float radius = size*0.65f;
+            float end_angle = (float)(rank_progress * 360.0) - 90;
+            float cx = btnStart.x-64;//baseX - 250 + 32;
+            float cy = btnStart.y+32;//baseY + 650;
+            DrawCircle(cx, cy, radius, BLACK);
+            DrawRing({cx, cy}, radius - 8, radius, -90, end_angle, 64, ranks[rank_index].color);
+            DrawRing({cx, cy}, radius - 8, radius, end_angle, 360-90, 64, Fade(ranks[rank_index].color, 0.4f));
+            DrawTexturePro(
+                *ranks[rank_index].tex,
+                {0,0,(float)ranks[rank_index].tex->width,(float)ranks[rank_index].tex->height}, {cx - size/2, cy - size/2, size, size}, {0,0}, 0, ranks[rank_index].color
+            );
+            Rectangle circleRect = { cx - radius, cy - radius, radius * 2, radius * 2 };
+            if (CheckCollisionPointRec(mouse, circleRect)) {
+                const char* rankName = ranks[rank_index].name;
+                int fontSize = 24;
+                int textWidth = MeasureText(rankName, fontSize);
+                DrawText(rankName, cx - textWidth/2, cy - radius - 30, fontSize, ranks[rank_index].color);
+            }
+        }
+        DrawText("Embark now", btnStart.x, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
         // quit button
         bool hoverReroll = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnReroll);
-        DrawText("Elsewhere", btnReroll.x, btnReroll.y + 8, 58, hoverReroll ? WHITE : GRAY);
+        DrawText("Elsewhere", btnReroll.x, btnReroll.y + 8, 42, hoverReroll ? WHITE : GRAY);
 
 
         bool hoverQuit = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
@@ -464,26 +491,27 @@ int main() {
 
     GAME_OVER:
     {
-        int player_points = factions[0].victory_points;
+        int player_points = factions[0].count_members?factions[0].victory_points:0;
         int best_ai_points = 0;
         Faction* best_faction = factions;
         for (int fi = 3; fi < max_factions; fi++)
-            if (factions[fi].victory_points > best_ai_points) {
+            if (factions[fi].victory_points >= best_ai_points) { // >= important
                 best_ai_points = factions[fi].victory_points;
                 best_faction = &factions[fi];
             }
 
-        bool victory = (player_points > best_ai_points) && factions[0].count_members;
+        bool victory = player_points > best_ai_points;
         if(player_points<0) player_points = -player_points;
 
         const char* badTechNames[8];
+        const Texture* badTechTextures[8];
         int badTechCount = 0;
         auto player_techs = factions[0].technology;
-        if (player_techs & TECHNOLOGY_BIOWEAPON) badTechNames[badTechCount++] = "BIOWEAPONS";
-        if (player_techs & TECHNOLOGY_PROPAGANDA) badTechNames[badTechCount++] = "PROPAGANDA";
-        if (player_techs & TECHNOLOGY_SUPERIORITY) badTechNames[badTechCount++] = "SUPERIORITY";
-        if (player_techs & TECHNOLOGY_ARTIFICIAL) badTechNames[badTechCount++] = "HIVEMENIND";
-        if (player_techs & TECHNOLOGY_AIFARM) badTechNames[badTechCount++] = "AI FARMS";
+        if (player_techs & TECHNOLOGY_BIOWEAPON) {badTechTextures[badTechCount]=&tex::bioweapon;badTechNames[badTechCount++] = "BIOWEAPON";}
+        if (player_techs & TECHNOLOGY_PROPAGANDA) {badTechTextures[badTechCount]=&tex::propaganda;badTechNames[badTechCount++] = "PROPAGANDA";}
+        if (player_techs & TECHNOLOGY_SUPERIORITY) {badTechTextures[badTechCount]=&tex::utopia;badTechNames[badTechCount++] = "SUPERIORITY";}
+        if (player_techs & TECHNOLOGY_ARTIFICIAL) {badTechTextures[badTechCount]=&tex::mind;badTechNames[badTechCount++] = "HIVEMENIND";}
+        if (player_techs & TECHNOLOGY_AIFARM) {badTechTextures[badTechCount]=&tex::lab;badTechNames[badTechCount++] = "AI FARMS";}
         int unlocking_perk = 0; // zero = railgun = always unlocked = used to signify that we unlocked nothing
         if(victory && !badTechCount) {
             unlocking_perk = GetRandomValue(1, PREFERENCE_COUNT - 1);
@@ -532,47 +560,55 @@ int main() {
                 main_menu_transition_mode = -2;
                 goto MAIN_MENU;
             }
-            float baseY = (float)GetScreenHeight()/2 - 600;
+            float baseY = (float)GetScreenHeight()/2 - 450;
             float baseX = (float)GetScreenWidth()/2;
             if(game_over_transition_mode) baseX -= game_over_progress*game_over_progress*GetScreenWidth();
-            Rectangle btnOk = {baseX - 400, baseY+820,800, 80};
+            const Rectangle btnStart = {GetScreenWidth()-400.f, GetScreenHeight()-100.f,400, 80};
+            const Rectangle btnQuit = {20, GetScreenHeight()-100.f,300, 80};
 
             BeginDrawing();
             ClearBackground(BLACK);
             if(victory) {
                 DrawTexturePro(
-                    tex::sun,
+                    tex::victory,
                     Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
                     Rectangle{baseX-256, baseY+100, 512, 256},
                     {0,0}, 0, WHITE);
-                DrawText("BEST UTOPIA", baseX - MeasureText("BEST UTOPIA", 96)/2+70, baseY+420, 96, GREEN);
+                //DrawText("BEST UTOPIA", baseX - MeasureText("BEST UTOPIA", 96)/2+70, baseY+420, 96, GREEN);
             }
             else if (game_time >= GAME_DURATION) {
-                DrawTexturePro(tex::blood, Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{baseX-128, baseY+100, 256, 256}, {0,0}, 0, WHITE);
-                DrawTexturePro(tex::blood, Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{baseX-256+32, baseY+100, 256, 256}, {0,0}, 0, WHITE);
-                DrawTexturePro(tex::blood, Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{baseX-32, baseY+100, 256, 256}, {0,0}, 0, WHITE);
-                DrawText("SURVIVED", baseX - MeasureText("SURVIVED", 96)/2+50, baseY+420, 96, ORANGE);
+                DrawTexturePro(
+                    tex::defeat,
+                    Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
+                    Rectangle{baseX-256, baseY+100, 512, 256},
+                    {0,0}, 0, WHITE);
+                //DrawText("SURVIVED", baseX - MeasureText("SURVIVED", 96)/2+50, baseY+420, 96, ORANGE);
             }
             else {
-                DrawTexturePro(tex::blood, Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{baseX-128, baseY+100, 256, 256}, {0,0}, 0, WHITE);
-                DrawTexturePro(tex::blood, Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{baseX-256+32, baseY+100, 256, 256}, {0,0}, 0, WHITE);
-                DrawTexturePro(tex::blood, Rectangle{0,0,(float)tex::blood.width,(float)tex::blood.height}, Rectangle{baseX-32, baseY+100, 256, 256}, {0,0}, 0, WHITE);
-                DrawText("ELIMINATED", baseX - MeasureText("ELIMINATED", 96)/2+50, baseY+420, 96, RED);
+                DrawTexturePro(
+                    tex::defeat,
+                    Rectangle{0,0,(float)tex::sun.width,(float)tex::sun.height},
+                    Rectangle{baseX-256, baseY+100, 512, 256},
+                    {0,0}, 0, WHITE);
+                //DrawText("ELIMINATED", baseX - MeasureText("ELIMINATED", 96)/2+50, baseY+420, 96, RED);
             }
             char score[128];
             snprintf(score, sizeof(score), "Your utopia: %d   |   Best AI: %d", player_points, best_ai_points);
-            if (game_time >= GAME_DURATION) DrawText(score, baseX - MeasureText(score, 42)/2+40, baseY+540, 42, WHITE);
+            if (game_time >= GAME_DURATION) DrawText(score, baseX - MeasureText(score, 42)/2+40, baseY+440, 42, WHITE);
             if (badTechCount) {
-                DrawTextSmall("Was it really worth it?", baseX - MeasureText("Was it really worth it?", 28)/2,baseY+610,28,ORANGE);
-                for (int i = 0; i < badTechCount; i++)
-                    DrawTextSmall(TextFormat("- %s", badTechNames[i]), baseX - 260,baseY+650 + i * 28,24, DARKGRAY);
+                float offset = MeasureText("Was it really worth it?", 28)/2;
+                DrawTextSmall("Was it really worth it?", baseX - offset,baseY+510,28,ORANGE);
+                for (int i = 0; i < badTechCount; i++) {
+                    DrawTextureEx(*badTechTextures[i], {baseX - offset, baseY+550 + i * 28}, 0, 28 / (float)badTechTextures[i]->width, WHITE);
+                    DrawTextSmall(TextFormat("%s", badTechNames[i]), baseX - offset+40, baseY+550 + i * 32,24, DARKGRAY);
+                }
             }
 
             if (showTechTree) {
                 DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.85f));
                 DrawTechs(*best_faction);
             }
-            bool techHover = CheckCollisionPointRec(GetMousePosition(), techBtn);
+            bool techHover = CheckCollisionPointRec(GetMousePosition(), btnStart);
             if (techHover) {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                     best_faction->technology_progress = 0;
@@ -580,16 +616,13 @@ int main() {
                     PlaySound(sound::select2);
                 }
             }
-            DrawRectangleRounded(techBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
-            const char* title = "Best techs";
-            DrawText(title,techBtn.x + 20, techBtn.y + 24, 42, WHITE);
+            const char* tech_msg = showTechTree?"Close techs":victory?"Your techs":"Winning techs";
+            DrawText(tech_msg, btnStart.x+btnStart.width-MeasureText(tech_msg, 58), btnStart.y + 8, 58, techHover ? WHITE : GRAY);
 
             Vector2 mouse = GetMousePosition();
-            bool hoverOk = !showTechTree && !game_over_transition_mode && CheckCollisionPointRec(mouse, btnOk);
+            bool hoverOk = !showTechTree && !game_over_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
             if(!showTechTree) {
-                DrawRectangleRec(btnOk, hoverOk ? DARKGRAY : BLACK);
-                DrawRectangleLinesEx(btnOk, 2, GRAY);
-                DrawText("OK", btnOk.x + btnOk.width/2 - MeasureText("OK", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
+                DrawText(victory?"Rewards":"Retreat", btnQuit.x, btnQuit.y + 8, 58, hoverOk ? WHITE : GRAY);
             }
             EndDrawing();
             if ((!showTechTree && hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
@@ -950,6 +983,22 @@ int main() {
     float AVOID_BASE_RADIUS = 7.0f;
 
     auto tooCloseToAnyCamp = [&](float x, float y) {return campExistsTooClose(x, y, AVOID_BASE_RADIUS);};
+    for (int iy = 0; iy < GRID_SIZE; ++iy)
+    for (int ix = 0; ix < GRID_SIZE; ++ix)
+        if (terrainGrid[iy][ix].texture == &tex::treasure) {
+            terrainGrid[iy][ix] = {
+                &tex::mountain,
+                0.4f,
+                1.0f
+            };
+            switch (GetRandomValue(0, 3)) {
+                case 0:{ CREATE_MINE(&factions[1], ix, iy);        break;}
+                case 1:{ CREATE_CURIO(&factions[1], ix, iy);       break;}
+                case 2:{ CREATE_LIGHTHOUSE(&factions[1], ix, iy);  break;}
+                case 3:{ CREATE_RADIO(&factions[1], ix, iy);       break;}
+            }
+        }
+
     int count_warehouses = 0;
     int count_curio = 0;
     for (int i = 0; i < NUM_NEUTRAL_STRUCTURES*2; i+=2) {
@@ -960,7 +1009,12 @@ int main() {
         Terrain &T = terrainGrid[(int)y][(int)x];
         bool isGrass  = (T.texture == &tex::grass || T.texture == &tex::grass2 || T.texture == &tex::grass3 || T.texture == &tex::grass4);
         bool isDesert = (T.texture == &tex::desert);
-        if(T.texture == &tex::water) continue;
+        if(T.texture == &tex::water) {
+            if(GetRandomValue(0, 99) < 90) {
+                CREATE_HOVERCRAFT(&factions[1], x, y);
+            }
+            continue;
+        }
 
         bool isNearWater = (terrainGrid[(int)y-2][(int)x].texture==&tex::water || terrainGrid[(int)y][(int)x-2].texture==&tex::water || terrainGrid[(int)y+2][(int)x].texture==&tex::water || terrainGrid[(int)y][(int)x+2].texture==&tex::water);
         if(isNearWater) i-=1;
@@ -1052,7 +1106,8 @@ int main() {
                 CREATE_LIGHTHOUSE(&factions[1], x, y);
                 RevealUnitToAllFactions(num_units - 1);
             }
-            CREATE_VAN(&factions[1], x, y-1);
+            CREATE_HOVERCRAFT(&factions[1], x, y-1);
+            continue;
         }
         if (T.texture == &tex::mountain || T.texture == &tex::hill
             || T.texture == &tex::hill2 || T.texture == &tex::hill3 || T.texture == &tex::hill4)
@@ -1705,7 +1760,7 @@ int main() {
 
         // --- UNDER UNIT LAYER ---
         Color target_line_color = Fade(BLUE, 0.3f);
-        Color shadow_color = Fade(GRAY, 0.5f);
+        Color shadow_color = Fade(BLACK, 0.25f);
         // draw blood and explosion remnants
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];
@@ -1766,14 +1821,14 @@ int main() {
             float radius = (u.size * TILE_SIZE * 0.7f);
             if(!u.faction) continue;
             if (u.speed)
-                DrawCircle(px, py, radius, u.selected?Fade(u.faction->color, 0.5f):shadow_color);//u.health < u.max_health?shadow_color_damaged:shadow_color);
+                DrawCircle(px, py, radius, u.selected?Fade(ColorBrightness(u.faction->color, -0.35f), 0.5f):shadow_color);//u.health < u.max_health?shadow_color_damaged:shadow_color);
             if (u.health < u.max_health) {
                 int maxHealth = (int)(u.max_health+0.01f);
                 int hp = (int)(u.health+0.01);
                 float startBase = 0;//u.angle-45.f+180.f;
                 float segmentAngle = 360.0f / maxHealth;  // 18°
                 float gap = 75.f/maxHealth;
-                Color hc = u.capturing?u.faction->color:RED;
+                Color hc = u.capturing?ColorBrightness(u.faction->color, 0.35f):RED;
                 //Color hc = u.capturing?YELLOW:RED;
                 float outer = radius * 0.99f;
                 float inner = outer + (40.f*(0.82+(0.17*cos(t*8)+0.17f)*0.5f)- 40.f)/camera.zoom;

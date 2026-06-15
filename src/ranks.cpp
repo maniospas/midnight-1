@@ -11,8 +11,8 @@ struct RankDef {
 };
 
 RankDef ranks[] = {
-    {"STRUGGLER",  1200.0, 1400.0, &tex::gear, BROWN},
-    {"SURVIVOR",   1400.0, 1600.0, &tex::grit, ORANGE},
-    {"LEADER",     1600.0, 1800.0, &tex::heroics, YELLOW},
-    {"UTOPIC",     1800.0, 2200.0, &tex::utopia, WHITE}
+    {"Rank: STRUGGLER",  1200.0, 1400.0, &tex::gear, BROWN},
+    {"Rank: SURVIVOR",   1400.0, 1600.0, &tex::grit, ORANGE},
+    {"Rank: LEADER",     1600.0, 1800.0, &tex::heroics, YELLOW},
+    {"Rank: UTOPIC",     1800.0, 2200.0, &tex::utopia, WHITE}
 };

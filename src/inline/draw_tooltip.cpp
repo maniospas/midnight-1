@@ -116,7 +116,8 @@ if (hovered && hovered->health) {
         if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
     else if(is_mecha((*hovered))) {
-        DrawText(TextFormat("Mecha, %d industry cost", (int)(hovered->max_health/5+0.5)), px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText("Mecha", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5+0.5)), px + 80.f, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
         DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
         //if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }

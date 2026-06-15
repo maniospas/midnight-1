@@ -12,6 +12,7 @@ namespace tex {
     static Texture2D water;
     static Texture2D desert;
     static Texture2D desert_transition;
+    static Texture2D treasure;
     static Texture2D hill;
     static Texture2D hill2;
     static Texture2D hill3;
@@ -93,6 +94,9 @@ namespace tex {
     static Texture2D ownership;
     static Texture2D unstable;
     static Texture2D bioweapon;
+    static Texture2D victory;
+    static Texture2D defeat;
+    static Texture2D hovercraft;
 }
 
 
@@ -104,6 +108,7 @@ void load() {
     tex::grass4 = LoadTexture("data/grass4.png");
     tex::grass_transition = LoadTexture("data/grass_transition.png");
     tex::grass_transition2 = LoadTexture("data/grass_transition2.png");
+    tex::treasure  = LoadTexture("data/treasure.png");
     tex::hill  = LoadTexture("data/hill3.png");
     tex::hill2 = LoadTexture("data/hill2.png");
     tex::hill3 = LoadTexture("data/hill.png");
@@ -189,6 +194,9 @@ void load() {
     tex::ownership = LoadTexture("data/ownership.png");
     tex::unstable = LoadTexture("data/unstable.png");
     tex::bioweapon = LoadTexture("data/bioweapon.png");
+    tex::victory = LoadTexture("data/victory.png");
+    tex::defeat = LoadTexture("data/defeat.png");
+    tex::hovercraft = LoadTexture("data/hovercraft.png");
 
     sound::gun.Load("data/gun.ogg", 24);
     sound::boom.Load("data/boom.ogg", 5);
@@ -219,6 +227,7 @@ void unload() {
     UnloadTexture(tex::grass4);
     UnloadTexture(tex::grass_transition);
     UnloadTexture(tex::grass_transition2);
+    UnloadTexture(tex::treasure);
     UnloadTexture(tex::hill);
     UnloadTexture(tex::hill2);
     UnloadTexture(tex::hill3);
@@ -294,6 +303,10 @@ void unload() {
     UnloadTexture(tex::ownership);
     UnloadTexture(tex::unstable);
     UnloadTexture(tex::bioweapon);
+    UnloadTexture(tex::victory);
+    UnloadTexture(tex::defeat);
+    UnloadTexture(tex::hovercraft);
+
     sound::boom.Unload();
     sound::explosion.Unload();
     sound::gun.Unload();
