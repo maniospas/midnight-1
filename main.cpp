@@ -119,11 +119,16 @@ int main() {
     int w = GetMonitorWidth(0);
     int h = GetMonitorHeight(0);
     CloseWindow();
-    SetConfigFlags(FLAG_FULLSCREEN_MODE);
+
+    #ifdef _WIN32
+        SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    #else
+        SetConfigFlags(FLAG_FULLSCREEN_MODE);
+    #endif
     InitWindow(w, h, "MIDNIGHT - next morn");
+    MaximizeWindow();
     InitAudioDevice();
     SetRandomSeed((unsigned)time(NULL));
-    MaximizeWindow();
     load_fonts();
     load();
     sound::bg.looping = true;
@@ -346,8 +351,9 @@ int main() {
         if(new_game_transition_mode==-1) baseX += (1.0f-new_game_progress)*(1.0f-new_game_progress)*GetScreenWidth();
         else if(new_game_transition_mode==2) baseX += new_game_progress*new_game_progress*GetScreenWidth();
         else baseX -= new_game_progress*new_game_progress*GetScreenWidth();
-        const Rectangle btnStart = {baseX - 400, baseY+720,900, 80};
-        const Rectangle btnQuit = {baseX - 400, baseY+820,900, 80};
+        const Rectangle btnStart = {baseX - 400, baseY+820,900, 80};
+        const Rectangle btnReroll = {baseX - 400, baseY+720,900, 80};
+        const Rectangle btnQuit = {baseX - 400, baseY+920,900, 80};
         Rectangle prefBox[2] = {
             { baseX+220-260, baseY + 720-70-10-70-30, 310, 70 },
             { baseX+220-260, baseY + 720-70-30, 310, 70 }
@@ -426,18 +432,29 @@ int main() {
             }
         // Start button
         bool hoverStart = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnStart);
-        DrawRectangleRec(btnStart, hoverStart ? Fade(GREEN, 0.28) : BLACK);
-        DrawRectangleLinesEx(btnStart, 2, DARKGRAY);
-        DrawText("Ready", btnStart.x + 30, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
+        // DrawRectangleRec(btnStart, hoverStart ? Fade(GREEN, 0.28) : BLACK);
+        // DrawRectangleLinesEx(btnStart, 2, DARKGRAY);
+        DrawText("Ready", btnStart.x, btnStart.y + 8, 58, hoverStart ? GREEN : GRAY);
         // quit button
+        bool hoverReroll = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnReroll);
+        DrawText("Elsewhere", btnReroll.x, btnReroll.y + 8, 58, hoverReroll ? WHITE : GRAY);
+
+
         bool hoverQuit = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
-        DrawRectangleRec(btnQuit, hoverQuit ? DARKGRAY : BLACK);
-        DrawRectangleLinesEx(btnQuit, 2, DARKGRAY);
-        DrawText("Back", btnQuit.x + 30, btnQuit.y + 8, 58, hoverQuit ? WHITE : DARKGRAY);
+        // DrawRectangleRec(btnQuit, hoverQuit ? DARKGRAY : BLACK);
+        // DrawRectangleLinesEx(btnQuit, 2, DARKGRAY);
+        DrawText("Back", btnQuit.x, btnQuit.y + 8, 58, hoverQuit ? WHITE : GRAY);
         EndDrawing();
         if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             PlaySound(sound::select);
             new_game_transition_mode = 1;
+        }
+        if (hoverReroll && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            // new_game_transition_mode = -1;
+            // main_menu_transition_mode = -1;
+            showTechTree = false;
+            showHelp = false;
+            goto NEW_GAME;
         }
         if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
             new_game_transition_mode = 2;
