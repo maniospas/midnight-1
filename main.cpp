@@ -114,7 +114,7 @@ int main() {
         }
     }
 
-    SetTraceLogLevel(LOG_NONE); // disable raylib logs
+    //SetTraceLogLevel(LOG_NONE); // disable raylib logs
     InitWindow(1, 1, "");
     int w = GetMonitorWidth(0);
     int h = GetMonitorHeight(0);
