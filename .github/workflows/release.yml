@@ -62,28 +62,29 @@ jobs:
     # =========================================================
     - name: Install deps (Windows)
       if: matrix.os == 'windows-latest'
-      run: vcpkg install raylib:x64-mingw-static
+      run: |
+        & "$env:VCPKG_INSTALLATION_ROOT/vcpkg" install raylib:x64-mingw-static
       shell: pwsh
 
     - name: Build game (Windows)
       if: matrix.os == 'windows-latest'
-      run: g++ -std=c++17 -O3 -static -static-libgcc -static-libstdc++ -Wall ^
-        main.cpp -o game.exe ^
-        -IC:/vcpkg/installed/x64-mingw-static/include ^
-        -LC:/vcpkg/installed/x64-mingw-static/lib ^
-        -lraylib -lglfw3 ^
-        -lopengl32 -lgdi32 -lwinmm -luser32 -lshell32 -lole32 -luuid
-      shell: cmd
-
+      run: |
+        g++ -std=c++17 -O3 -static -static-libgcc -static-libstdc++ -Wall `
+          main.cpp -o game.exe `
+          -I"$env:VCPKG_INSTALLATION_ROOT/installed/x64-mingw-static/include" `
+          -L"$env:VCPKG_INSTALLATION_ROOT/installed/x64-mingw-static/lib" `
+          -lraylib `
+          -lopengl32 -lgdi32 -lwinmm -luser32 -lshell32 -lole32 -luuid
+      shell: pwsh
 
     - name: Package (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        mkdir midnight
-        copy game.exe midnight\
-        xcopy /E /I data midnight\data
-        tar -a -c -f "midnight next morn-windows.zip" midnight
-      shell: cmd
+        New-Item -ItemType Directory -Force -Path midnight
+        Copy-Item game.exe midnight\
+        Copy-Item -Recurse data midnight\data
+        Compress-Archive -Path midnight -DestinationPath "midnight next morn-windows.zip"
+      shell: pwsh
 
     - uses: actions/upload-artifact@v4
       if: matrix.os == 'windows-latest'
