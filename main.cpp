@@ -115,8 +115,12 @@ int main() {
     }
 
     SetTraceLogLevel(LOG_NONE); // disable raylib logs
+    InitWindow(1, 1, "");
+    int w = GetMonitorWidth(0);
+    int h = GetMonitorHeight(0);
+    CloseWindow();
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
-    InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), "MIDNIGHT - next morn");
+    InitWindow(w, h, "MIDNIGHT - next morn");
     InitAudioDevice();
     SetRandomSeed((unsigned)time(NULL));
     MaximizeWindow();

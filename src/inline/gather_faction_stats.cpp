@@ -42,7 +42,7 @@ for (int i = 0; i < num_units; i++) {
                         units[j] = { \
                             &tex::ghost,  /* texture */
                             "Bloo",       /* name */
-                            2.0,          /* speed */
+                            3.0,          /* speed */
                             u.x,          /* x */
                             u.y,          /* y */
                             2.0,          /* attack_rate */
