@@ -115,10 +115,8 @@ int main() {
     }
 
     SetTraceLogLevel(LOG_NONE); // disable raylib logs
-    InitWindow(1, 1, "");
     int w = GetMonitorWidth(0);
     int h = GetMonitorHeight(0);
-    CloseWindow();
 
     #ifdef _WIN32
         SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -209,7 +207,6 @@ int main() {
 
     MAIN_MENU:
     while (true) {
-        std::cout << "loop startt\n";
         UpdateMusicStream(sound::bg);
         if(main_menu_transition_mode)
             main_menu_progress += GetFrameTime()*5.f;
@@ -241,10 +238,8 @@ int main() {
         else baseX -= main_menu_progress*main_menu_progress*GetScreenWidth();
         const Rectangle btnStart = {baseX - 400, baseY+720,900, 80};
         const Rectangle btnQuit = {baseX - 400, baseY+820,900, 80};
-        std::cout << "drawing startt\n";
         BeginDrawing();
         ClearBackground(BLACK);
-        std::cout << "drawing started\n";
 
         DrawTexturePro(
             tex::sun,
@@ -297,7 +292,6 @@ int main() {
         // DrawRectangleLinesEx(btnQuit, 2, Fade(DARKGRAY, 0.3));
         DrawText("Quit", btnQuit.x, btnQuit.y + 8, 58, hoverQuit ? RED : GRAY);
         EndDrawing();
-        std::cout << "drawing ended\n";
         if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             main_menu_transition_mode = 1;
             PlaySound(sound::select);
