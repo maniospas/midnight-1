@@ -250,15 +250,9 @@ int main() {
 
         // Start button
         bool hoverStart = !main_menu_transition_mode && CheckCollisionPointRec(mouse, btnStart);
-        DrawRectangleRec(btnStart, hoverStart ? DARKGRAY : BLACK);
-        DrawRectangleLinesEx(btnStart, 2, DARKGRAY);
-        DrawText("New expedition", btnStart.x + 30, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
-        // DrawTexturePro(tex::utopia,
-        //                Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height},
-        //                Rectangle{baseX+400, btnStart.y+5, 80, 80},
-        //                {0,0}, 0, WHITE);
-
-        // rank
+        //DrawRectangleRec(btnStart, hoverStart ? Fade(DARKGRAY, 0.3) : BLACK);
+        //DrawRectangleLinesEx(btnStart, 2, Fade(DARKGRAY, 0.3));
+        DrawText("New expedition", btnStart.x, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
         {
             int rank_index = 0;
             double rank_progress = 0;
@@ -291,9 +285,9 @@ int main() {
 
         // quit button
         bool hoverQuit = !main_menu_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
-        DrawRectangleRec(btnQuit, hoverQuit ? Fade(RED, 0.85) : BLACK);
-        DrawRectangleLinesEx(btnQuit, 2, DARKGRAY);
-        DrawText("Quit", btnQuit.x + 30, btnQuit.y + 8, 58, hoverQuit ? WHITE : DARKGRAY);
+        // DrawRectangleRec(btnQuit, hoverQuit ? Fade(RED, 0.85) : BLACK);
+        // DrawRectangleLinesEx(btnQuit, 2, Fade(DARKGRAY, 0.3));
+        DrawText("Quit", btnQuit.x, btnQuit.y + 8, 58, hoverQuit ? RED : GRAY);
         EndDrawing();
         if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             main_menu_transition_mode = 1;
