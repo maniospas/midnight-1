@@ -168,15 +168,12 @@ int main() {
     static float fort_creation_total_health = 0;
     static bool fort_creation_has_nearby = false;
 
-    std::cout << "prallocating\n";
     // preallocate stuff
     Terrain* terrainBlock = (Terrain*)malloc(GRID_SIZE * GRID_SIZE * sizeof(Terrain));
     Terrain** terrainGrid = (Terrain**)malloc(GRID_SIZE * sizeof(Terrain*));
     for (int y = 0; y < GRID_SIZE; y++)
         terrainGrid[y] = &terrainBlock[y * GRID_SIZE];
-    std::cout << "prallocated\n";
     static Unit units[MAX_UNITS];
-    std::cout << "unis\n";
     static Decorator decorators[MAX_DECORATORS];
     static Faction factions[11] = {
         { BLUE, "Player", 0 },
@@ -190,7 +187,6 @@ int main() {
         { PINK,      "AI", 0 },
         { BEIGE,     "AI", 0 },
     };
-    std::cout << "factions\n";
     Faction* ANIMAL_FACTION = &factions[2];
     int player_preferred_start[2] = {
         PREFERENCE_RAILGUN,
@@ -213,6 +209,7 @@ int main() {
 
     MAIN_MENU:
     while (true) {
+        std::cout << "loop startt\n";
         UpdateMusicStream(sound::bg);
         if(main_menu_transition_mode)
             main_menu_progress += GetFrameTime()*5.f;
@@ -244,8 +241,10 @@ int main() {
         else baseX -= main_menu_progress*main_menu_progress*GetScreenWidth();
         const Rectangle btnStart = {baseX - 400, baseY+720,900, 80};
         const Rectangle btnQuit = {baseX - 400, baseY+820,900, 80};
+        std::cout << "drawing startt\n";
         BeginDrawing();
         ClearBackground(BLACK);
+        std::cout << "drawing started\n";
 
         DrawTexturePro(
             tex::sun,
@@ -298,6 +297,7 @@ int main() {
         // DrawRectangleLinesEx(btnQuit, 2, Fade(DARKGRAY, 0.3));
         DrawText("Quit", btnQuit.x, btnQuit.y + 8, 58, hoverQuit ? RED : GRAY);
         EndDrawing();
+        std::cout << "drawing ended\n";
         if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             main_menu_transition_mode = 1;
             PlaySound(sound::select);
