@@ -81,6 +81,7 @@ jobs:
             /link ^
             /LIBPATH:"C:\vcpkg\installed\x64-windows-static\lib" ^
             raylib.lib ^
+            glfw3.lib ^
             opengl32.lib ^
             gdi32.lib ^
             winmm.lib ^
