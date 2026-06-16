@@ -128,7 +128,7 @@ int main() {
     //     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     // #endif
     // InitWindow(w, h, "MIDNIGHT - next morn");
-    SetConfigFlags(FLAG_WINDOW_UNDECORATED | FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1280, 720, "MIDNIGHT - next morn");
     for (int i = 0; i < 60; i++) {
         BeginDrawing();
