@@ -58,31 +58,28 @@ jobs:
           name: game-linux
           path: midnight-next-morn-linux.zip
 
-      # =========================================================
-      # WINDOWS
+            # =========================================================
+      # WINDOWS (DYNAMIC)
       # =========================================================
       - name: Setup MSVC
         if: matrix.os == 'windows-latest'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Install raylib (Windows)
+      - name: Install raylib (Windows dynamic)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          vcpkg install raylib:x64-windows-static
+          vcpkg install raylib:x64-windows
 
       - name: Build game (Windows)
         if: matrix.os == 'windows-latest'
         shell: cmd
         run: |
-          cl /EHsc /O2 /std:c++17 /MT main.cpp ^
-            /I"C:\vcpkg\installed\x64-windows-static\include" ^
-            /DPLATFORM_DESKTOP ^
-            /D_GLFW_WIN32 ^
+          cl /EHsc /O2 /std:c++17 main.cpp ^
+            /I"C:\vcpkg\installed\x64-windows\include" ^
             /link ^
-            /LIBPATH:"C:\vcpkg\installed\x64-windows-static\lib" ^
+            /LIBPATH:"C:\vcpkg\installed\x64-windows\lib" ^
             raylib.lib ^
-            glfw3.lib ^
             opengl32.lib ^
             gdi32.lib ^
             winmm.lib ^
@@ -93,13 +90,23 @@ jobs:
             advapi32.lib ^
             /OUT:game.exe
 
+      - name: Collect DLLs (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          mkdir midnight
+
+          copy game.exe midnight\
+
+          xcopy data midnight\data /E /I /Y
+
+          # Copy ALL runtime DLLs from vcpkg bin
+          copy C:\vcpkg\installed\x64-windows\bin\*.dll midnight\
+
       - name: Package (Windows)
         if: matrix.os == 'windows-latest'
         shell: cmd
         run: |
-          mkdir midnight
-          copy game.exe midnight\
-          xcopy data midnight\data /E /I /Y
           tar -a -c -f midnight-next-morn-windows.zip midnight
 
       - name: Upload Windows artifact
