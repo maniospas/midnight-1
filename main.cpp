@@ -105,6 +105,7 @@ const int GAME_H = 1600;
 
 
 int main() {
+    ChangeDirectory(GetApplicationDirectory());
     PrefMask unlocked_preferences = 0;
     const double AI_ELO = 1500;
     double player_rating = 1200;
@@ -118,8 +119,8 @@ int main() {
     }
 
     SetTraceLogLevel(LOG_NONE); // disable raylib logs
-    int w = GetMonitorWidth(0);
-    int h = GetMonitorHeight(0);
+    int w = GAME_W;//GetMonitorWidth(0);
+    int h = GAME_H;//GetMonitorHeight(0);
 
     #ifdef _WIN32
         SetConfigFlags(FLAG_WINDOW_RESIZABLE);
