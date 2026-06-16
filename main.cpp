@@ -626,7 +626,7 @@ int main() {
             Vector2 mouse = GetMousePosition();
             bool hoverOk = !showTechTree && !game_over_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
             if(!showTechTree) {
-                DrawText(victory?"Rewards":"Retreat", btnQuit.x, btnQuit.y + 8, 58, hoverOk ? WHITE : GRAY);
+                DrawText(victory?"Veni, vidi, vici":"Retreat", btnQuit.x, btnQuit.y + 8, 58, hoverOk ? WHITE : GRAY);
             }
             EndDrawing();
             if ((!showTechTree && hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
