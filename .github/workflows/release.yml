@@ -17,11 +17,10 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             artifact_name: midnight-next-morn-linux
-            exe_name: game
+
           - os: windows-latest
             platform: windows
             artifact_name: midnight-next-morn-windows
-            exe_name: game.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -33,20 +32,38 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt update
-          sudo apt install -y build-essential cmake git \
-            libasound2-dev libx11-dev libxrandr-dev libxi-dev \
-            libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev
+          sudo apt install -y \
+            build-essential \
+            cmake \
+            git \
+            zip \
+            libasound2-dev \
+            libx11-dev \
+            libxrandr-dev \
+            libxi-dev \
+            libgl1-mesa-dev \
+            libglu1-mesa-dev \
+            libxcursor-dev \
+            libxinerama-dev \
+            libwayland-dev
 
-          git clone https://github.com/raysan5/raylib.git
+          git clone --depth 1 https://github.com/raysan5/raylib.git
           cd raylib
-          mkdir build && cd build
-          cmake .. -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
+
+          mkdir build
+          cd build
+
+          cmake .. \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=Release
+
           cmake --build . --config Release
+
           sudo cmake --install .
           sudo ldconfig
 
       # =========================
-      # Windows dependencies (MSYS2)
+      # Windows dependencies
       # =========================
       - name: Setup MSYS2
         if: matrix.platform == 'windows'
@@ -61,33 +78,64 @@ jobs:
       # =========================
       # Build Linux
       # =========================
-      - name: Build Linux (-O2 -flto)
+      - name: Build Linux
         if: matrix.platform == 'linux'
         run: |
           mkdir -p build
-          g++ main.cpp -O2 -flto -std=c++17 -o build/game \
-            -lraylib -lm -ldl -lpthread -lGL -lrt -lX11
+
+          g++ main.cpp \
+            -O2 \
+            -flto \
+            -std=c++17 \
+            -o build/game \
+            -lraylib \
+            -lm \
+            -ldl \
+            -lpthread \
+            -lGL \
+            -lrt \
+            -lX11
 
       # =========================
       # Build Windows
       # =========================
-      - name: Build Windows (-O2 -flto)
+      - name: Build Windows
         if: matrix.platform == 'windows'
         shell: msys2 {0}
         run: |
           mkdir -p build
-          g++ main.cpp -O2 -flto -std=c++17 -o build/game.exe \
-            -lraylib -lopengl32 -lgdi32 -lwinmm
+
+          g++ main.cpp \
+            -O2 \
+            -flto \
+            -std=c++17 \
+            -o build/game.exe \
+            -lraylib \
+            -lopengl32 \
+            -lgdi32 \
+            -lwinmm
+
+      # =========================
+      # Bundle Windows DLLs
+      # =========================
+      - name: Bundle Windows DLLs
+        if: matrix.platform == 'windows'
+        shell: msys2 {0}
+        run: |
+          ldd build/game.exe | awk '{print $3}' | grep '^/mingw64/bin/' | while read dll; do
+            cp "$dll" build/
+          done
 
       # =========================
       # Copy assets
       # =========================
       - name: Copy assets
+        shell: bash
         run: |
           cp -r data build/
 
       # =========================
-      # Package (explicit naming)
+      # Package Linux
       # =========================
       - name: Create Linux zip
         if: matrix.platform == 'linux'
@@ -95,6 +143,9 @@ jobs:
           cd build
           zip -r ../${{ matrix.artifact_name }}.zip .
 
+      # =========================
+      # Package Windows
+      # =========================
       - name: Create Windows zip
         if: matrix.platform == 'windows'
         shell: msys2 {0}
@@ -103,7 +154,7 @@ jobs:
           zip -r ../${{ matrix.artifact_name }}.zip .
 
       # =========================
-      # Upload artifacts (explicit names)
+      # Upload artifacts
       # =========================
       - name: Upload Linux artifact
         if: matrix.platform == 'linux'
@@ -119,28 +170,24 @@ jobs:
           name: midnight-next-morn-windows
           path: midnight-next-morn-windows.zip
 
-
   release:
     needs: build
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      # =========================
-      # Delete old snapshot release
-      # =========================
       - name: Delete snapshot release (if exists)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release delete snapshot -y --cleanup-tag || true
 
-      # =========================
-      # Create new snapshot release
-      # =========================
       - name: Create snapshot release
         uses: softprops/action-gh-release@v2
         with:
