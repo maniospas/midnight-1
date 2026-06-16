@@ -30,7 +30,17 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt update
-          sudo apt install -y build-essential libraylib-dev zip
+          sudo apt install -y build-essential cmake git \
+            libasound2-dev libx11-dev libxrandr-dev libxi-dev \
+            libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev
+
+          git clone https://github.com/raysan5/raylib.git
+          cd raylib
+          mkdir build && cd build
+          cmake .. -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+          sudo cmake --install .
+          sudo ldconfig
 
       # =========================
       # Windows dependencies (MSYS2)
