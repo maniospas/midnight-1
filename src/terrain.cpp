@@ -3,12 +3,12 @@
 #include "texture.cpp"
 
 static Color ColorForTile(Texture* texture) {
-    if (texture == &tex::water) return (Color){ 40, 120, 160, 255 };
-    if (texture == &tex::grass || texture == &tex::grass2 || texture == &tex::grass3 || texture == &tex::grass4) return (Color){ 60, 196, 40, 255 };
-    if (texture == &tex::hill || texture == &tex::hill2 || texture == &tex::hill3 || texture == &tex::hill4) return (Color){ 140, 80, 40, 255 };
-    if (texture == &tex::desert) return (Color){ 196, 196, 64, 255 };
-    if (texture == &tex::mountain) return (Color){ 90, 52, 24, 255 };
-    return (Color){ 80, 80, 80, 255 };
+    if (texture == &tex::water) return Color{ 40, 120, 160, 255 };
+    if (texture == &tex::grass || texture == &tex::grass2 || texture == &tex::grass3 || texture == &tex::grass4) return Color{ 60, 196, 40, 255 };
+    if (texture == &tex::hill || texture == &tex::hill2 || texture == &tex::hill3 || texture == &tex::hill4) return Color{ 140, 80, 40, 255 };
+    if (texture == &tex::desert) return Color{ 196, 196, 64, 255 };
+    if (texture == &tex::mountain) return Color{ 90, 52, 24, 255 };
+    return Color{ 80, 80, 80, 255 };
 }
 
 struct Terrain {
