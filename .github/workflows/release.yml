@@ -1,120 +1,111 @@
-name: Build Artifacts
+name: Build + Snapshot Release
 
 on:
   push:
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-
-    runs-on: ${{ matrix.os }}
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact_name: midnight-next-morn-linux
+            exe_name: game
+          - os: windows-latest
+            platform: windows
+            artifact_name: midnight-next-morn-windows
+            exe_name: game.exe
 
     steps:
       - uses: actions/checkout@v4
 
-      # =========================================================
-      # LINUX
-      # =========================================================
-      - name: Install deps (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      # =========================
+      # Linux dependencies
+      # =========================
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
         run: |
           sudo apt update
-          sudo apt install -y \
-            g++ make git zip \
-            libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libxi-dev libgl1-mesa-dev
+          sudo apt install -y build-essential libraylib-dev zip
 
-      - name: Build raylib (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      # =========================
+      # Windows dependencies (MSYS2)
+      # =========================
+      - name: Setup MSYS2
+        if: matrix.platform == 'windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-raylib
+            zip
+
+      # =========================
+      # Build Linux
+      # =========================
+      - name: Build Linux (-O2 -flto)
+        if: matrix.platform == 'linux'
         run: |
-          git clone --depth 1 https://github.com/raysan5/raylib.git
-          cd raylib/src
-          make PLATFORM=PLATFORM_DESKTOP
-          sudo make install
-          sudo ldconfig
+          mkdir -p build
+          g++ main.cpp -O2 -flto -std=c++17 -o build/game \
+            -lraylib -lm -ldl -lpthread -lGL -lrt -lX11
 
-      - name: Build game (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: make
-
-      - name: Package (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      # =========================
+      # Build Windows
+      # =========================
+      - name: Build Windows (-O2 -flto)
+        if: matrix.platform == 'windows'
+        shell: msys2 {0}
         run: |
-          mkdir midnight
-          cp game midnight/
-          cp -r data midnight/
-          ldd game | grep "=> /" | awk '{print $3}' | xargs -I{} cp {} midnight/
-          zip -r midnight-next-morn-linux.zip midnight
+          mkdir -p build
+          g++ main.cpp -O2 -flto -std=c++17 -o build/game.exe \
+            -lraylib -lopengl32 -lgdi32 -lwinmm
 
+      # =========================
+      # Copy assets
+      # =========================
+      - name: Copy assets
+        run: |
+          cp -r data build/
+
+      # =========================
+      # Package (explicit naming)
+      # =========================
+      - name: Create Linux zip
+        if: matrix.platform == 'linux'
+        run: |
+          cd build
+          zip -r ../${{ matrix.artifact_name }}.zip .
+
+      - name: Create Windows zip
+        if: matrix.platform == 'windows'
+        shell: msys2 {0}
+        run: |
+          cd build
+          zip -r ../${{ matrix.artifact_name }}.zip .
+
+      # =========================
+      # Upload artifacts (explicit names)
+      # =========================
       - name: Upload Linux artifact
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.platform == 'linux'
         uses: actions/upload-artifact@v4
         with:
-          name: game-linux
+          name: midnight-next-morn-linux
           path: midnight-next-morn-linux.zip
 
-            # =========================================================
-      # WINDOWS (DYNAMIC)
-      # =========================================================
-      - name: Setup MSVC
-        if: matrix.os == 'windows-latest'
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Install raylib (Windows dynamic)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          vcpkg install raylib:x64-windows
-
-      - name: Build game (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: cmd
-        run: |
-          cl /EHsc /O2 /std:c++17 main.cpp ^
-            /I"C:\vcpkg\installed\x64-windows\include" ^
-            /link ^
-            /LIBPATH:"C:\vcpkg\installed\x64-windows\lib" ^
-            raylib.lib ^
-            opengl32.lib ^
-            gdi32.lib ^
-            winmm.lib ^
-            user32.lib ^
-            shell32.lib ^
-            ole32.lib ^
-            uuid.lib ^
-            advapi32.lib ^
-            /OUT:game.exe
-
-      - name: Collect DLLs (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          mkdir midnight
-
-          copy game.exe midnight\
-
-          xcopy data midnight\data /E /I /Y
-
-          # Copy ALL runtime DLLs from vcpkg bin
-          copy C:\vcpkg\installed\x64-windows\bin\*.dll midnight\
-
-      - name: Package (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: cmd
-        run: |
-          tar -a -c -f midnight-next-morn-windows.zip midnight
-
       - name: Upload Windows artifact
-        if: matrix.os == 'windows-latest'
+        if: matrix.platform == 'windows'
         uses: actions/upload-artifact@v4
         with:
-          name: game-windows
+          name: midnight-next-morn-windows
           path: midnight-next-morn-windows.zip
+
 
   release:
     needs: build
@@ -125,12 +116,18 @@ jobs:
         with:
           path: artifacts
 
+      # =========================
+      # Delete old snapshot release
+      # =========================
       - name: Delete snapshot release (if exists)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete snapshot -y || true
+          gh release delete snapshot -y --cleanup-tag || true
 
+      # =========================
+      # Create new snapshot release
+      # =========================
       - name: Create snapshot release
         uses: softprops/action-gh-release@v2
         with:
@@ -138,5 +135,5 @@ jobs:
           name: Snapshot Build
           prerelease: true
           files: |
-            artifacts/game-linux/midnight-next-morn-linux.zip
-            artifacts/game-windows/midnight-next-morn-windows.zip
+            artifacts/midnight-next-morn-linux/midnight-next-morn-linux.zip
+            artifacts/midnight-next-morn-windows/midnight-next-morn-windows.zip

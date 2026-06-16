@@ -119,25 +119,11 @@ int main() {
     }
 
     SetTraceLogLevel(LOG_NONE); // disable raylib logs
-    // int w = GetMonitorWidth(0);
-    // int h = GetMonitorHeight(0);
+    int w = GetMonitorWidth(0);
+    int h = GetMonitorHeight(0);
 
-    // #ifdef _WIN32
-    //     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    // #else
-    //     SetConfigFlags(FLAG_FULLSCREEN_MODE);
-    // #endif
-    // InitWindow(w, h, "MIDNIGHT - next morn");
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(1280, 720, "MIDNIGHT - next morn");
-    for (int i = 0; i < 60; i++) {
-        BeginDrawing();
-        ClearBackground(BLACK);
-        DrawText("Loading...", 20, 20, 20, WHITE);
-        EndDrawing();
-    }
-    SetWindowState(FLAG_WINDOW_MAXIMIZED);
-
+    SetConfigFlags(FLAG_FULLSCREEN_MODE);
+    InitWindow(w, h, "MIDNIGHT - next morn");
     MaximizeWindow();
     InitAudioDevice();
     SetRandomSeed((unsigned)time(NULL));
