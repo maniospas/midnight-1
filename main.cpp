@@ -119,8 +119,8 @@ int main() {
     }
 
     SetTraceLogLevel(LOG_NONE); // disable raylib logs
-    int w = GAME_W;//GetMonitorWidth(0);
-    int h = GAME_H;//GetMonitorHeight(0);
+    int w = GetMonitorWidth(0);
+    int h = GetMonitorHeight(0);
 
     #ifdef _WIN32
         SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -211,6 +211,12 @@ int main() {
 
     MAIN_MENU:
     while (true) {
+        if(WindowShouldClose()) {
+            free(terrainBlock);
+            free(terrainGrid);
+            unload();
+            return 0;
+        }
         UpdateMusicStream(sound::bg);
         if(main_menu_transition_mode)
             main_menu_progress += GetFrameTime()*5.f;
@@ -325,6 +331,12 @@ int main() {
     EndTextureMode(); // minimap
 
     while (true) {
+        if(WindowShouldClose()) {
+            free(terrainBlock);
+            free(terrainGrid);
+            unload();
+            return 0;
+        }
         UpdateMusicStream(sound::bg);
         if(new_game_transition_mode)
             new_game_progress += GetFrameTime()*5.f;
@@ -551,6 +563,12 @@ int main() {
             }
         }
         while (true) {
+            if(WindowShouldClose()) {
+                free(terrainBlock);
+                free(terrainGrid);
+                unload();
+                return 0;
+            }
             UpdateMusicStream(sound::bg);
             if(game_over_transition_mode)
                 game_over_progress += GetFrameTime()*5.f;
@@ -638,6 +656,12 @@ int main() {
 
         CLAIM_REWARDS:
         while (true) {
+            if(WindowShouldClose()) {
+                free(terrainBlock);
+                free(terrainGrid);
+                unload();
+                return 0;
+            }
             UpdateMusicStream(sound::bg);
             if(reward_transition_mode)
                 reward_progress += GetFrameTime()*5.f;
@@ -1202,6 +1226,12 @@ int main() {
     float prev_game_time = 0.f;
 
     while (true) {
+        if(WindowShouldClose()) {
+            free(terrainBlock);
+            free(terrainGrid);
+            unload();
+            return 0;
+        }
         UpdateMusicStream(sound::bg);
         //factions[0].technology |= TECHNOLOGY_EXPLORE; // for debug
         float dt = GetFrameTime();
