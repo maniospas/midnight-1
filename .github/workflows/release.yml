@@ -72,7 +72,7 @@ jobs:
       - name: Build game (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          cl /EHsc /O2 main.cpp ^
+          cl /EHsc /O2 /std:c++17 main.cpp ^
             /I"C:\vcpkg\installed\x64-windows\include" ^
             /link ^
             /LIBPATH:"C:\vcpkg\installed\x64-windows\lib" ^
