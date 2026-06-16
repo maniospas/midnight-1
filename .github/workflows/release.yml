@@ -78,6 +78,7 @@ jobs:
           cl /EHsc /O2 /std:c++17 /MT main.cpp ^
             /I"C:\vcpkg\installed\x64-windows-static\include" ^
             /DPLATFORM_DESKTOP ^
+            /D_GLFW_WIN32 ^
             /link ^
             /LIBPATH:"C:\vcpkg\installed\x64-windows-static\lib" ^
             raylib.lib ^
