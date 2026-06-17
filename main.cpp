@@ -553,7 +553,7 @@ int main() {
         float py = btnReroll.y + 230;
         float px = btnReroll.x;
         {
-            DrawTextSmall("Open research", px, py, 32, GRAY);
+            DrawTextSmall("Available research", px, py, 32, GRAY);
             py += 40;
         }
         if(global_available_starting_techs&TECHNOLOGY_SCAVENGE) {

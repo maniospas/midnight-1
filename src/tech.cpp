@@ -439,7 +439,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     }
     if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_HOMUNCULI)) {
         DrawTechNode(homunculi.x, homunculi.y, "HOMUNCULI", "50% to control killed bloo", tech, TECHNOLOGY_HOMUNCULI, !showing_preview);
-        DrawTextureEx(tex::ghost, {homunculi.x + ICON_DX, homunculi.y + ICON_DY}, 0, ICON_SIZE / tex::ghost.width, WHITE);
+        DrawTextureEx(tex::homunculi, {homunculi.x + ICON_DX, homunculi.y + ICON_DY}, 0, ICON_SIZE / tex::homunculi.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_RESEARCH)) {
         DrawTechNode(research.x, research.y, "RESEARCH", "+30% research", tech, TECHNOLOGY_RESEARCH, !showing_preview);
