@@ -76,7 +76,7 @@ for (int i = 0; i < num_units; i++) {
                     applied = true;
                 }
             if(u.faction==factions && applied) {
-                last_message = "Databank: found healthcare products and increased HP of your non-mechas.";
+                last_message = "Databank: found healthcare products and increased non-mecha HP.";
                 last_message_counter = 0.f;
             }
         }

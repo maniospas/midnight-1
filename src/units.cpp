@@ -298,7 +298,7 @@ struct Unit {
             20.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),    /* faction */ \
-            0.0           /* extra scale*/\
+            1.0           /* extra scale*/\
         };
 
 #define CREATE_RAILGUN(faction, x, y) \
@@ -420,7 +420,7 @@ struct Unit {
                 10.0,         /* max_health */ \
                 (faction),    /* faction */ \
                 (faction),    /* can only be captured */ \
-                -0.1f \
+                0.2f \
             }; \
         }
 
@@ -563,7 +563,7 @@ struct Unit {
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            2.0,          /* size */ \
+            3.0,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
             (faction),    /* faction */ \
@@ -588,7 +588,7 @@ struct Unit {
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            1.0,          /* size */ \
+            3.0,          /* size */ \
             300.0,         /* health */ \
             300.0,         /* max_health */ \
             (faction),    /* faction */ \

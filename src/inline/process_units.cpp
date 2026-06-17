@@ -249,10 +249,10 @@ for (int i = 0; i < num_units; i++) {
         continue;
     }
     if (u.texture == &tex::camp) {
-        if(u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<CAMP_SPAWN_RATE*dt*u.attack_rate*(1.1f-u.faction->count_members/(float)(1+u.faction->industry)) && u.faction!=factions+1) {
+        if(u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f * 60.f<CAMP_SPAWN_RATE*dt*u.attack_rate*(1.1f-u.faction->count_members/(float)(1+u.faction->industry)) && u.faction!=factions+1) {
             int canMake = (int)u.faction->industry-(int)u.faction->count_members;
             if (canMake > 0) {
-                const int can_make_limit = (u.faction->technology & TECHNOLOGY_HARDCORE)?4:2;
+                const int can_make_limit = (u.faction->technology & TECHNOLOGY_HARDCORE)?8:4;
                 if (canMake > can_make_limit) canMake = can_make_limit;
                 for (int k = 0; k < canMake; k++) {
                     if (num_units >= MAX_UNITS) break;

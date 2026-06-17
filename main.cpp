@@ -151,13 +151,14 @@ int main() {
     MovementMode currentMovementMode = MovementMode::Tight;
     bool showTechTree = false;
     bool showHelp = false;
-    Rectangle techBtn = {GetScreenWidth() - 260.0f, GetScreenHeight() - 95.0f, 240.0f, 90.0f};
-    Rectangle helpBtn = {GetScreenWidth() - 260.0f,GetScreenHeight() - 95.0f-65.f,240.0f,60.0f};
-    Rectangle fortBtn = {GetScreenWidth() - 260.0f, GetScreenHeight() - 95.0f-65.f-95.f, 240.0f, 90.0f};
-    Rectangle trenchBtn = {GetScreenWidth() - 260.0f, GetScreenHeight() - 95.0f-65.f-95.f-65.f, 240.0f, 60.0f};
-    Rectangle turtleBtn = {GetScreenWidth() - 260.0f, GetScreenHeight() - 95.0f-65.f-95.f-65.f-65.f, 240.0f, 60.0f};
-    Rectangle dismantleBtn = {GetScreenWidth() - 260.0f, GetScreenHeight() - 95.0f-65.f-95.f-65.f-65.f-65.f, 240.0f, 60.0f};
-    Rectangle optionsButton = {GetScreenWidth() - 260.0f, 10.f, 240.0f, 60.0f};
+    float icon_sizes = 90.f;
+    Rectangle techBtn = {GetScreenWidth() - 320.0f, GetScreenHeight()      - 140.0f, 280.0f, icon_sizes};
+    //Rectangle helpBtn = {GetScreenWidth() - 260.0f,GetScreenHeight()       - 95.0f-65.f,240.0f,60.0f};
+    Rectangle fortBtn = {GetScreenWidth() - 320.f, GetScreenHeight()       - 140.0f-(icon_sizes+28)*1, 280.0f, icon_sizes};
+    Rectangle turtleBtn = {GetScreenWidth() - 320.0f, GetScreenHeight()    - 140.0f-(icon_sizes+28)*2, 280.0f, icon_sizes};
+    Rectangle trenchBtn = {GetScreenWidth() - 320.0f, GetScreenHeight()    - 140.0f-(icon_sizes+28)*3, 280.0f, icon_sizes};
+    Rectangle dismantleBtn = {GetScreenWidth() - 320.0f, GetScreenHeight() - 140.0f-(icon_sizes+28)*4, 280.0f, icon_sizes};
+    Rectangle optionsButton = {GetScreenWidth() - 280.0f, 10.f, 240.0f, 60.0f};
 
     static float fort_creation_px = 0;
     static float fort_creation_py = 0;
@@ -308,7 +309,7 @@ int main() {
     max_factions = GetRandomValue(6,11); // at least 3 enemies
     NOISE_SEED = GetRandomValue(1, 1'000'000);
 
-    int selected_techs = 0; // set to 4 for debug
+    int selected_techs = 0; // 0, set to 4 for debug
     while(selected_techs<3 || selected_techs>5) {
         selected_techs = 0;
         global_available_starting_techs = 0;
@@ -365,7 +366,7 @@ int main() {
         else baseX -= new_game_progress*new_game_progress*GetScreenWidth();
         const Rectangle btnStart = {GetScreenWidth()-400.f, GetScreenHeight()-100.f,400, 80};
         const Rectangle btnQuit = {20, GetScreenHeight()-100.f,300, 80};
-        const Rectangle btnReroll = {baseX - 270, baseY+700,600, 80};
+        const Rectangle btnReroll = {baseX - 270, baseY+480,600, 80};
         Rectangle prefBox[2] = {
             { baseX+220-260, baseY + 720-70-10-70-30, 310, 70 },
             { baseX+220-260, baseY + 720-70-30, 310, 70 }
@@ -483,6 +484,48 @@ int main() {
         // quit button
         bool hoverReroll = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnReroll);
         DrawText("Elsewhere", btnReroll.x, btnReroll.y + 8, 42, hoverReroll ? WHITE : GRAY);
+
+        float py = btnReroll.y + 230;
+        float px = btnReroll.x;
+        {
+            DrawTextSmall("Open research", px, py, 32, GRAY);
+            py += 40;
+        }
+        if(global_available_starting_techs&TECHNOLOGY_SCAVENGE) {
+            DrawTextureEx(tex::warehouse, {px, py}, 0, 28 / (float)tex::warehouse.width, WHITE);
+            DrawTextSmall("SCAVENGE", px+40, py, 24, GRAY);
+            py += 32;
+        }
+        if(global_available_starting_techs&TECHNOLOGY_EXPLORE) {
+            DrawTextureEx(tex::chart, {px, py}, 0, 28 / (float)tex::chart.width, WHITE);
+            DrawTextSmall("CHARTED", px+40, py, 24, GRAY);
+            py += 32;
+        }
+        if(global_available_starting_techs&TECHNOLOGY_TAMING) {
+            DrawTextureEx(tex::bison, {px, py}, 0, 28 / (float)tex::bison.width, WHITE);
+            DrawTextSmall("TAMING", px+40, py, 24, GRAY);
+            py += 32;
+        }
+        if(global_available_starting_techs&TECHNOLOGY_HARDCORE) {
+            DrawTextureEx(tex::blood, {px, py}, 0, 28 / (float)tex::blood.width, WHITE);
+            DrawTextSmall("HARDCORE", px+40, py, 24, GRAY);
+            py += 32;
+        }
+        if(global_available_starting_techs&TECHNOLOGY_HUNTING) {
+            DrawTextureEx(tex::hide, {px, py}, 0, 28 / (float)tex::hide.width, WHITE);
+            DrawTextSmall("CIVILIZED", px+40, py, 24, GRAY);
+            py += 32;
+        }
+        if(global_available_starting_techs&TECHNOLOGY_NERDS) {
+            DrawTextureEx(tex::nerds, {px, py}, 0, 28 / (float)tex::nerds.width, WHITE);
+            DrawTextSmall("NERDS", px+40, py, 24, GRAY);
+            py += 32;
+        }
+        if(global_available_starting_techs&TECHNOLOGY_COMMAND) {
+            DrawTextureEx(tex::command, {px, py}, 0, 28 / (float)tex::command.width, WHITE);
+            DrawTextSmall("COMMAND", px+40, py, 24, GRAY);
+            py += 32;
+        }
 
 
         bool hoverQuit = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
@@ -612,7 +655,7 @@ int main() {
                 //DrawText("ELIMINATED", baseX - MeasureText("ELIMINATED", 96)/2+50, baseY+420, 96, RED);
             }
             char score[128];
-            snprintf(score, sizeof(score), "Your utopia: %d   |   Best AI: %d", player_points, best_ai_points);
+            snprintf(score, sizeof(score), "Your utopia: %d   |   Top enemy: %d", player_points, best_ai_points);
             if (game_time >= GAME_DURATION) DrawText(score, baseX - MeasureText(score, 42)/2+40, baseY+440, 42, WHITE);
             if (badTechCount) {
                 float offset = MeasureText("Was it really worth it?", 28)/2;
@@ -1053,6 +1096,18 @@ int main() {
                 CREATE_FIELD(&factions[1], x-spacing, y+spacing);
                 CREATE_FIELD(&factions[1], x+spacing, y+spacing);
                 CREATE_FIELD(&factions[1], x+spacing, y-spacing);
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-2*spacing, y-spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-2*spacing, y); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-2*spacing, y+spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+2*spacing, y-spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+2*spacing, y); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+2*spacing, y+spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-spacing, y-2*spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x, y-2*spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+spacing, y-2*spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-spacing, y+2*spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x, y+2*spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+spacing, y+2*spacing); }
                 }
                 break;
             case 3:
@@ -1298,7 +1353,7 @@ int main() {
             fort_creation_py /= fort_creation_num;
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
-                if (!u.selected && u.health && !u.speed && (u.x-fort_creation_px)*(u.x-fort_creation_px)+(u.y-fort_creation_py)*(u.y-fort_creation_py)<25) {
+                if (u.health && !u.speed && (u.x-fort_creation_px)*(u.x-fort_creation_px)+(u.y-fort_creation_py)*(u.y-fort_creation_py)<25) {
                     fort_creation_has_nearby = true;
                     break;
                 }
@@ -1312,13 +1367,13 @@ int main() {
                 PlaySound(sound::select2);
             }
         }
-        if (!showTechTree && CheckCollisionPointRec(GetMousePosition(), helpBtn)) {
-            mouseCapturedByUI = true;
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                showHelp = !showHelp;
-                PlaySound(sound::select2);
-            }
-        }
+        // if (!showTechTree && CheckCollisionPointRec(GetMousePosition(), helpBtn)) {
+        //     mouseCapturedByUI = true;
+        //     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        //         showHelp = !showHelp;
+        //         PlaySound(sound::select2);
+        //     }
+        // }
 
 
         if(!showTechTree && (factions->technology&TECHNOLOGY_DISMANTLE) && !mouseCapturedByUI && (CheckCollisionPointRec(GetMousePosition(), dismantleBtn) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) && engine_creation_num) {
@@ -1386,7 +1441,7 @@ int main() {
                 last_message_counter = 0.f;
             }
             else if(fort_creation_total_health<100) {
-                last_message = "Forts need at least 20 stationed non-bloo industry";
+                last_message = "Forts need stationed humans worth at least 20 industry";
                 last_message_counter = 0.f;
             }
             else {
@@ -2107,7 +2162,7 @@ int main() {
                 0.0f,
                 WHITE
             );
-            DrawRectangleLines(dst.x, dst.y, dst.width, dst.height, WHITE);
+            DrawRectangleLines(dst.x, dst.y, dst.width, dst.height, LIGHTGRAY);
             // ------------------------------------------------------------
             // DRAW CAMERA VIEWPORT OVER MINIMAP
             // ------------------------------------------------------------
@@ -2197,67 +2252,160 @@ int main() {
         // --------------------------------------------------
         // RESEARCH BUTTON
         // --------------------------------------------------
-        float prog = factions[0].technology_progress;
-        bool techHover = CheckCollisionPointRec(GetMousePosition(), techBtn);
-        DrawRectangleRounded(techBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
-        static float prev_prog = 0.f;
-        const char* title = (prog >= 1.0f) ? "New tech" : (showTechTree?"Back":"Research");
-        if(prev_prog<1.f && prog >= 1.0f) {
-            last_message_counter = 0.f;
-            last_message = "New tech can be selected.";
+        {
+            float prog = factions[0].technology_progress;
+            bool techHover = CheckCollisionPointRec(GetMousePosition(), techBtn);
+
+            static float prev_prog = 0.f;
+            if(prev_prog < 1.f && prog >= 1.0f) {
+                last_message_counter = 0.f;
+                last_message = "New tech can be selected.";
+            }
+            prev_prog = prog;
+
+            static float techZoom = techBtn.height;
+            techZoom += ((techHover ? techBtn.height + 20.f : techBtn.height) - techZoom) * 20.f * dt;
+
+            float techX = techBtn.x + techBtn.width - techBtn.height / 2.f;
+            float techY = techBtn.y + techBtn.height / 2.f;
+            float radius = techZoom / 2 + 6;
+
+            // Progress bar to the left of the icon circle
+            float padding = 20.0f;
+            float barW = techBtn.width - techBtn.height - 10.f;
+            float barH = 20.0f;
+            float bx = techBtn.x + padding;
+            float by = techBtn.y + techBtn.height / 2.f - barH / 2.f + 25;
+            DrawTechProgressBar(bx, by, barW, barH, prog);
+
+            // Tooltip
+            const char* title = "";
+            if (techHover) {
+                if (prog >= 1.0f) title = showTechTree ? "Back" : "New tech";
+                else              title = showTechTree ? "Back" : "Research";
+            }
+            DrawTextOutlined(title, techX - MeasureText(title, 30) - 70, techY - 25, 32, Fade(WHITE, 1.f));
+
+            // Circle icon
+            DrawCircle(techX, techY, radius, prog<1.f?Color{20, 20, 20, 255}:Color{0,200,0,255});
+            DrawCircleLines(techX, techY, radius, {80, 80, 80, 255});
+            DrawTextureEx(tex::research,
+                {techX - techZoom / 2, techY - techZoom / 2},
+                0,
+                techZoom / (float)tex::research.width,
+                WHITE);
+            if(prog<1.) DrawTextOutlined("?", techX-radius*0.4f, techY-radius/2-radius*0.2, 2*radius-6, Fade(RED, 1.f));
+
+            if (techHover) mouseCapturedByUI = true;
         }
-        prev_prog = prog;
-        DrawText(title,techBtn.x + 20,techBtn.y + 14,32,WHITE);
-        float padding = 20.0f;
-        float barW = techBtn.width - padding * 2;
-        float barH = 20.0f;
-        float bx = techBtn.x + padding;
-        float by = techBtn.y + techBtn.height - barH - 18.0f;
-        DrawTechProgressBar(bx, by, barW, barH, prog);
-        DrawRectangleRounded({techBtn.x+techBtn.width-70, techBtn.y+15, 50, 25},0.2f, 8, WHITE);
-        DrawTextSmall("esc",techBtn.x+techBtn.width-65+5,techBtn.y+15,24,BLACK);
 
 
+        // --------------------------------------------------   
+        // BUILD BUTTONS
         // --------------------------------------------------
-        // FORT BUTTON
-        // --------------------------------------------------
-        if(!showTechTree && fort_creation_num && (factions->technology&TECHNOLOGY_FORT)) {
+        if(!showTechTree && (factions->technology&TECHNOLOGY_FORT)) {
             float prog = fort_creation_total_health/100.0;
             if(prog>=2) prog = 1;
             bool techHover = CheckCollisionPointRec(GetMousePosition(), fortBtn);
-            DrawRectangleRounded(fortBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
-            const char* title = fort_creation_has_nearby ? "Cannot build" : (fort_creation_total_health>=100?"Build fort":"Select more");
-            DrawText(title,fortBtn.x + 20,fortBtn.y + 14,32,WHITE);
-            float padding = 20.0f;
-            float barW = fortBtn.width - padding * 2;
-            float barH = 20.0f;
-            float bx = fortBtn.x + padding;
-            float by = fortBtn.y + fortBtn.height - barH - 18.0f;
-            DrawTechProgressBar(bx, by, barW, barH, prog);
-            // if(!fort_creation_has_nearby && fort_creation_total_health>=100) {
-            //     DrawRectangleRounded({fortBtn.x+fortBtn.width-70, fortBtn.y+15, 50, 25},0.2f, 8, WHITE);
-            //     DrawTextSmall("del",fortBtn.x+fortBtn.width-65+5,fortBtn.y+15,24,BLACK);
-            // }
+            static float fortZoom = fortBtn.height;
+            fortZoom += ((techHover ? fortBtn.height + 20.f : fortBtn.height) - fortZoom) * 20.f * dt;
+            float fortX = fortBtn.x + fortBtn.width - fortBtn.height/2.f;
+            float fortY = fortBtn.y + fortBtn.height/2.f;
+            float radius = fortZoom/2 + 6;
+
+            bool fortUnavailable = !fort_creation_num || fort_creation_has_nearby || fort_creation_total_health < 100;
+            const char* title = "";
+            if(techHover) {
+                if(!fort_creation_num)            title = "Select humans";
+                else if(fort_creation_has_nearby) title = "Too close to other stuctures";
+                else if(fort_creation_total_health < 100) title = "Select more humans";
+                else                              title = "Build fort";
+            }
+
+            DrawTextOutlined(title, fortX-MeasureText(title, 30)-70, fortY - 16, 32, Fade(WHITE, 1.f));
+            DrawCircle(fortX, fortY, radius, (!fort_creation_num || fort_creation_has_nearby || fort_creation_total_health < 100)?Color{20,20,20,255}:Color{128,128,128,255});
+            DrawCircleLines(fortX, fortY, radius, {80,80,80,255});
+            DrawTextureEx(tex::fort, {fortX - fortZoom/2, fortY - fortZoom/2}, 0, fortZoom / (float)tex::fort.width, fortUnavailable ? Fade(WHITE, 0.5f) : WHITE);
+            if(fortUnavailable) {
+                float pad = radius * 0.35f;
+                DrawLineEx({fortX - pad, fortY - pad}, {fortX + pad, fortY + pad}, 5.f, RED);
+                DrawLineEx({fortX + pad, fortY - pad}, {fortX - pad, fortY + pad}, 5.f, RED);
+            }
+            if(techHover) mouseCapturedByUI = true;
         }
-        if(!showTechTree && engine_creation_num && (factions->technology&TECHNOLOGY_DISMANTLE)) {
+        if(!showTechTree && (factions->technology&TECHNOLOGY_DISMANTLE)) {
             bool techHover = CheckCollisionPointRec(GetMousePosition(), dismantleBtn);
-            DrawRectangleRounded(dismantleBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
-            DrawText("Dismantle",dismantleBtn.x + 50,dismantleBtn.y + 14,32,WHITE);
-            DrawTextureEx(tex::engine, {dismantleBtn.x + 20, dismantleBtn.y + 14}, 0, 20.f / tex::engine.width, WHITE);
+            static float dismantleZoom = dismantleBtn.height;
+            dismantleZoom += ((techHover ? dismantleBtn.height + 20.f : dismantleBtn.height) - dismantleZoom) * 20.f * dt;
+            float dismantleX = dismantleBtn.x + dismantleBtn.width - dismantleBtn.height/2.f;
+            float dismantleY = dismantleBtn.y + dismantleBtn.height/2.f;
+            float radius = dismantleZoom/2 + 6;
+
+            bool dismantleUnavailable = !engine_creation_num;
+            const char* title = "";
+            if(techHover)
+                title = dismantleUnavailable ? "Select undamaged tanks & vans" : TextFormat("Dismantle %d", engine_creation_num);
+
+            DrawTextOutlined(title, dismantleX-MeasureText(title, 30)-70, dismantleY - 16, 32, Fade(WHITE, 1.f));
+            DrawCircle(dismantleX, dismantleY, radius, dismantleUnavailable?Color{20,20,20,255}:Color{128,128,128,255});
+            DrawCircleLines(dismantleX, dismantleY, radius, {80,80,80,255});
+            DrawTextureEx(tex::engine, {dismantleX - dismantleZoom/2, dismantleY - dismantleZoom/2}, 0, dismantleZoom / (float)tex::engine.width, dismantleUnavailable ? Fade(WHITE, 0.5f) : WHITE);
+            if(dismantleUnavailable) {
+                float pad = radius * 0.35f;
+                DrawLineEx({dismantleX - pad, dismantleY - pad}, {dismantleX + pad, dismantleY + pad}, 5.f, RED);
+                DrawLineEx({dismantleX + pad, dismantleY - pad}, {dismantleX - pad, dismantleY + pad}, 5.f, RED);
+            }
+            if(techHover) mouseCapturedByUI = true;
         }
-        if(!showTechTree && trench_creation_num && (factions->technology&TECHNOLOGY_TRENCHES)) {
+        if(!showTechTree && (factions->technology&TECHNOLOGY_TRENCHES)) {
             bool techHover = CheckCollisionPointRec(GetMousePosition(), trenchBtn);
-            DrawRectangleRounded(trenchBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
-            DrawText("Entrench",trenchBtn.x + 50,trenchBtn.y + 14,32,WHITE);
-            DrawTextureEx(tex::railgun, {trenchBtn.x + 20, trenchBtn.y + 14}, 0, 20.f / tex::railgun.width, WHITE);
+            static float trenchZoom = trenchBtn.height;
+            trenchZoom += ((techHover ? trenchBtn.height + 20.f : trenchBtn.height) - trenchZoom) * 20.f * dt;
+            float trenchX = trenchBtn.x + trenchBtn.width - trenchBtn.height/2.f;
+            float trenchY = trenchBtn.y + trenchBtn.height/2.f;
+            float radius = trenchZoom/2 + 6;
+
+            bool trenchUnavailable = !trench_creation_num;
+            const char* title = "";
+            if(techHover)
+                title = trenchUnavailable ? "Select tanks & vans" : TextFormat("Entrench %d", trench_creation_num);
+
+            DrawTextOutlined(title, trenchX-MeasureText(title, 30)-70, trenchY - 16, 32, Fade(WHITE, 1.f));
+            DrawCircle(trenchX, trenchY, radius, trenchUnavailable?Color{20,20,20,255}:Color{128,128,128,255});
+            DrawCircleLines(trenchX, trenchY, radius, {80,80,80,255});
+            DrawTextureEx(tex::railgun, {trenchX - trenchZoom/2, trenchY - trenchZoom/2}, 0, trenchZoom / (float)tex::railgun.width, trenchUnavailable ? Fade(WHITE, 0.5f) : WHITE);
+            if(trenchUnavailable) {
+                float pad = radius * 0.35f;
+                DrawLineEx({trenchX - pad, trenchY - pad}, {trenchX + pad, trenchY + pad}, 5.f, RED);
+                DrawLineEx({trenchX + pad, trenchY - pad}, {trenchX - pad, trenchY + pad}, 5.f, RED);
+            }
+            if(techHover) mouseCapturedByUI = true;
         }
-        if(!showTechTree && turtle_creation_num && (factions->technology&TECHNOLOGY_TURTLING)) {
+        if(!showTechTree && (factions->technology&TECHNOLOGY_TURTLING)) {
             float prog = fort_creation_total_health/100.0;
             if(prog>=2) prog = 1;
             bool techHover = CheckCollisionPointRec(GetMousePosition(), turtleBtn);
-            DrawRectangleRounded(turtleBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
-            DrawText(TextFormat("Stack %d rocks", turtle_creation_num),turtleBtn.x + 50,turtleBtn.y + 14,32,WHITE);
-            DrawTextureEx(tex::rock, {turtleBtn.x + 20, turtleBtn.y + 14}, 0, 20.f / tex::rock.width, WHITE);
+            static float turtleZoom = turtleBtn.height;
+            turtleZoom += ((techHover ? turtleBtn.height + 20.f : turtleBtn.height) - turtleZoom) * 20.f * dt;
+            float turtleX = turtleBtn.x + turtleBtn.width - turtleBtn.height/2.f;
+            float turtleY = turtleBtn.y + turtleBtn.height/2.f;
+            float radius = turtleZoom/2 + 6;
+
+            bool turtleUnavailable = !turtle_creation_num;
+            const char* title = "";
+            if(techHover)
+                title = turtleUnavailable ? "Select humans" : TextFormat("%d rocks", turtle_creation_num);
+
+            DrawTextOutlined(title, turtleX-MeasureText(title, 30)-70, turtleY - 16, 32, Fade(WHITE, 1.f));
+            DrawCircle(turtleX, turtleY, radius, turtleUnavailable?Color{20,20,20,255}:Color{128,128,128,255});
+            DrawCircleLines(turtleX, turtleY, radius, {80,80,80,255});
+            DrawTextureEx(tex::rock, {turtleX - turtleZoom/2, turtleY - turtleZoom/2}, 0, turtleZoom / (float)tex::rock.width, turtleUnavailable ? Fade(WHITE, 0.5f) : WHITE);
+            if(turtleUnavailable) {
+                float pad = radius * 0.35f;
+                DrawLineEx({turtleX - pad, turtleY - pad}, {turtleX + pad, turtleY + pad}, 5.f, RED);
+                DrawLineEx({turtleX + pad, turtleY - pad}, {turtleX - pad, turtleY + pad}, 5.f, RED);
+            }
+            if(techHover) mouseCapturedByUI = true;
         }
 
         // --------------------------------------------------
@@ -2277,18 +2425,18 @@ int main() {
                 goto GAME_OVER;
             }
         }
-        else {
-            Vector2 mouse = GetMousePosition();
-            bool hover = CheckCollisionPointRec(mouse, helpBtn);
-            DrawRectangleRounded(helpBtn, 0.2f, 8, hover ? Fade(DARKGRAY, 0.5f) : Fade(BLACK, 0.5f));
-            DrawText(showHelp?"Close":"Info",
-                     helpBtn.x + 20,
-                     helpBtn.y + 15,
-                     32,WHITE);
+        // else {
+        //     Vector2 mouse = GetMousePosition();
+        //     bool hover = CheckCollisionPointRec(mouse, helpBtn);
+        //     DrawRectangleRounded(helpBtn, 0.2f, 8, hover ? Fade(DARKGRAY, 0.5f) : Fade(BLACK, 0.5f));
+        //     DrawText(showHelp?"Close":"Info",
+        //              helpBtn.x + 20,
+        //              helpBtn.y + 15,
+        //              32,WHITE);
 
-            DrawRectangleRounded({helpBtn.x+helpBtn.width-70, helpBtn.y+15, 50, 25},0.2f, 8, WHITE);
-            DrawTextSmall("tab",helpBtn.x+helpBtn.width-65+5,helpBtn.y+15,24,BLACK);
-        }
+        //     DrawRectangleRounded({helpBtn.x+helpBtn.width-70, helpBtn.y+15, 50, 25},0.2f, 8, WHITE);
+        //     DrawTextSmall("tab",helpBtn.x+helpBtn.width-65+5,helpBtn.y+15,24,BLACK);
+        // }
 
         if (last_message) {
             static int   visible_chars = 0;
@@ -2364,39 +2512,23 @@ int main() {
         if (!showTechTree) {
             int player_points = factions[0].victory_points;
             int best_other_points = 0;
+            int best_other = 3;
             for (int fi = 3; fi < max_factions; fi++) // skip wild faction
-                if (factions[fi].victory_points > best_other_points)
+                if (factions[fi].victory_points > best_other_points) {
                     best_other_points = factions[fi].victory_points;
-            float offset = 5.f;
-            DrawTexturePro(
-                tex::overlay,
-                Rectangle{0,0,(float)tex::overlay.width,(float)tex::overlay.height},
-                Rectangle{0, offset, 512, 230},
-                {0,0},0, WHITE);
-            char msg[256];
-            snprintf(msg, sizeof(msg), "Utopia %d", player_points);
-            //DrawText(msg, (GetScreenWidth() - MeasureText(msg, font_size)) / 2, 10, font_size, BLACK);
-            DrawText(msg, 124, 102+offset, 42, WHITE);
-            snprintf(msg, sizeof(msg), "%d top AI", best_other_points);
-            DrawText(msg, 330, 102+offset, 42, WHITE);
-            DrawTexturePro(
-                tex::utopia,
-                Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height},
-                           Rectangle{20, offset+85, 90, 90},
-                           {0,0}, 0, WHITE);
-
-
-            // ======================================================
-            // POLLUTION BAR (GAME TIMER)
-            // ======================================================
+                    best_other = fi;
+                }
             {
                 // time_norm assumed in [0..1], where 1 = end of game
                 float pollution = time_norm;
                 if (pollution < 0.0f) pollution = 0.0f;
                 if (pollution > 1.0f) pollution = 1.0f;
-
-                Rectangle bar_bg = { 12, offset+18, 490, 52 };
+                
+                float miniSize = 330.0f;   // onscreen size
+                Rectangle bar_bg = {32,(float)GetScreenHeight() - miniSize - 20.f-52,miniSize,52};
                 Rectangle bar_fg = bar_bg;
+                // Rectangle bar_bg = { 12, offset+18, 490, 52 };
+                // Rectangle bar_fg = bar_bg;
                 bar_fg.width *= pollution;
 
                 Color bg = Color{ 40, 120, 200, 128 };
@@ -2411,35 +2543,49 @@ int main() {
                 if(polution_speedup<-0.2f)
                     DrawText("Pollution slowed down", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
                 else if(polution_speedup>0.2f)
-                    DrawText("Pollution sped up from industry", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
+                    DrawText("Pollution sped up", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
                 else
                     DrawText("World pollution", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
-                DrawRectangleLinesEx(bar_bg, 8.0f, BLACK);
+                DrawRectangleLinesEx(bar_bg, 1.0f, LIGHTGRAY);
             }
 
-            offset += 30;
+            float offset = -160.f;
+            static char msg[256];
+
             {
                 int fi = 0;
-                DrawTexturePro(tex::banner,Rectangle{0,0,(float)tex::banner.width,(float)tex::banner.height}, Rectangle{-20, 170+offset, 470, 48}, {0,0},0, factions[fi].color);
+                DrawTexturePro(tex::banner,Rectangle{0,0,(float)tex::banner.width,(float)tex::banner.height}, Rectangle{-20, 170+offset, 700, 48}, {0,0},0, factions[fi].color);
+                snprintf(msg, sizeof(msg), "Your utopia %d", (int)player_points);
+                DrawText(msg, 50, 175+offset, 32, WHITE);
+                DrawTexturePro(tex::utopia, Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height}, Rectangle{30, 180+offset+14, 32, 32}, {16,16}, 0, WHITE);
+                float x_offset = 240;
                 if((int)factions[fi].count_members<factions[fi].industry)
-                    snprintf(msg, sizeof(msg), "%d/%d industry (spawning)", (int)factions[fi].count_members, factions[fi].industry);
+                    snprintf(msg, sizeof(msg), "Industry %d/%d (spawning)", (int)factions[fi].count_members, (int)factions[fi].industry);
                 else if((int)factions[fi].count_members==factions[fi].industry)
-                    snprintf(msg, sizeof(msg), "%d/%d industry (cap)", (int)factions[fi].count_members, factions[fi].industry);
+                    snprintf(msg, sizeof(msg), "Industry %d/%d (capped)", (int)factions[fi].count_members, (int)factions[fi].industry);
                 else
-                    snprintf(msg, sizeof(msg), "%d/%d industry (over cap)", (int)factions[fi].count_members, factions[fi].industry);
-                DrawText(msg, 80, 182+offset, 24, WHITE);
-                DrawTexturePro(tex::gear, Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height}, Rectangle{30, 180+offset+14, 32, 32}, {16,16}, game_time*6.f*factions[fi].industry, WHITE);
-                DrawTexturePro(tex::gear, Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height}, Rectangle{30+24, 180+offset+14, 32, 32}, {16,16}, -game_time*6.f*factions[fi].industry-30, WHITE);
+                    snprintf(msg, sizeof(msg), "Industry %d/%d (over cap)", (int)factions[fi].count_members, (int)factions[fi].industry);
+                DrawText(msg, x_offset+80, 182+offset, 24, WHITE);
+                DrawTexturePro(tex::gear, Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height}, Rectangle{x_offset+30, 180+offset+14, 32, 32}, {16,16}, game_time*6.f*factions[fi].industry, WHITE);
+                DrawTexturePro(tex::gear, Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height}, Rectangle{x_offset+30+24, 180+offset+14, 32, 32}, {16,16}, -game_time*6.f*factions[fi].industry-30, WHITE);
             }
-
-            for (int fi = 3; fi < max_factions; fi++) {
-                if((int)factions[fi].count_members<=factions[fi].industry) continue;
-                offset += 52;
-                DrawTexturePro(tex::banner,Rectangle{0,0,(float)tex::banner.width,(float)tex::banner.height}, Rectangle{-20, 170+offset, 470, 48}, {0,0},0, factions[fi].color);
-                snprintf(msg, sizeof(msg), "%d/%d AI industry (over cap)", (int)factions[fi].count_members, factions[fi].industry);
-                DrawText(msg, 80, 182+offset, 24, WHITE);
-                DrawTexturePro(tex::gear, Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height}, Rectangle{30, 180+offset+14, 32, 32}, {16,16}, game_time*6.f*factions[fi].industry, WHITE);
-                DrawTexturePro(tex::gear, Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height}, Rectangle{30+24, 180+offset+14, 32, 32}, {16,16}, -game_time*6.f*factions[fi].industry-30, WHITE);
+            {
+                offset += 52.f;
+                int fi = best_other;
+                DrawTexturePro(tex::banner,Rectangle{0,0,(float)tex::banner.width,(float)tex::banner.height}, Rectangle{-20, 170+offset, 700, 48}, {0,0},0, factions[fi].color);
+                snprintf(msg, sizeof(msg), "Top utopia %d", (int)best_other_points);
+                DrawText(msg, 50, 175+offset, 32, WHITE);
+                DrawTexturePro(tex::utopia, Rectangle{0,0,(float)tex::utopia.width,(float)tex::utopia.height}, Rectangle{30, 180+offset+14, 32, 32}, {16,16}, 0, WHITE);
+                float x_offset = 240;
+                if((int)factions[fi].count_members<factions[fi].industry)
+                    snprintf(msg, sizeof(msg), "Industry %d/%d (spawning)", (int)factions[fi].count_members, (int)factions[fi].industry);
+                else if((int)factions[fi].count_members==factions[fi].industry)
+                    snprintf(msg, sizeof(msg), "Industry %d/%d (capped)", (int)factions[fi].count_members, (int)factions[fi].industry);
+                else
+                    snprintf(msg, sizeof(msg), "Industry %d/%d (over cap)", (int)factions[fi].count_members, (int)factions[fi].industry);
+                DrawText(msg, x_offset+80, 182+offset, 24, WHITE);
+                DrawTexturePro(tex::gear, Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height}, Rectangle{x_offset+30, 180+offset+14, 32, 32}, {16,16}, game_time*6.f*factions[fi].industry, WHITE);
+                DrawTexturePro(tex::gear, Rectangle{0,0,(float)tex::gear.width,(float)tex::gear.height}, Rectangle{x_offset+30+24, 180+offset+14, 32, 32}, {16,16}, -game_time*6.f*factions[fi].industry-30, WHITE);
             }
 
         }
@@ -2455,10 +2601,10 @@ int main() {
             else hovered = lasthovered;
         }
         else hoverdelay = 0.f;
-        if(!showTechTree && !hovered && hoveredTerrain && has_any_selected) {
+        if(!showTechTree && !hovered && hoveredTerrain && has_any_selected && !mouseCapturedByUI) {
             #include "src/inline/draw_terrain_tooltip.cpp"
         }
-        if(!showTechTree && hovered) {
+        if(!showTechTree && hovered && !mouseCapturedByUI) {
             #include "src/inline/draw_tooltip.cpp"
         }
         EndDrawing();

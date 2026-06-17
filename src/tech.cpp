@@ -60,7 +60,8 @@
 #define TECHNOLOGY_VROOM     36028797018963968ULL // double engine effect
 #define TECHNOLOGY_REVUP     72057594037927936ULL // x1.5 speed and instruct cost by mechas
 #define TECHNOLOGY_SCAVENGE 144115188075855872ULL // can dismantle tanks and vans to engines
-#define TECHNOLOGY_COMMAND  288230376151711744ULL // fixed spawn speed, formations
+#define TECHNOLOGY_COMMAND  288230376151711744ULL // fixed spawn speed
+//#define TECHNOLOGY_INFORMATION  576460752303423488LL // see other faction industry and 
 
 #define PREFERENCE_RAILGUN     0
 #define PREFERENCE_TANK        1
@@ -348,7 +349,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     
     // TRACK
     DrawConnector(track.x+actual_cell_width, track.y+actual_cell_height, sniping.x, sniping.y+actual_cell_height, tech & TECHNOLOGY_TRACK);
-    DrawConnector(scavenge.x+actual_cell_width, scavenge.y+actual_cell_height, trenches.x, trenches.y+actual_cell_height, tech & TECHNOLOGY_TRENCHES);
+    DrawConnector(scavenge.x+actual_cell_width, scavenge.y+actual_cell_height, trenches.x, trenches.y+actual_cell_height, tech & TECHNOLOGY_SCAVENGE);
     DrawConnector(trenches.x+actual_cell_width, trenches.y+actual_cell_height, sniping.x, sniping.y+actual_cell_height, tech & TECHNOLOGY_TRENCHES);
     DrawConnector(track.x+actual_cell_width, track.y+actual_cell_height, sniffing.x, sniffing.y+actual_cell_height, tech & TECHNOLOGY_TRACK);
     DrawConnector(sniping.x+actual_cell_width, sniping.y+actual_cell_height, turtling.x, turtling.y+actual_cell_height, tech & TECHNOLOGY_SNIPING);
@@ -539,7 +540,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTextureEx(tex::gear, {industry.x + ICON_DX, industry.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_VROOM | TECHNOLOGY_HIJACK)) {
-        DrawTechNode(hijack.x, hijack.y, "HIJACK", "Often capture mechas", tech, TECHNOLOGY_HIJACK, !showing_preview);
+        DrawTechNode(hijack.x, hijack.y, "HIJACK", "50% capture mechas", tech, TECHNOLOGY_HIJACK, !showing_preview);
         DrawTextureEx(tex::hijack, {hijack.x + ICON_DX, hijack.y + ICON_DY}, 0, ICON_SIZE / tex::hijack.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_MOBILE_FORTRESS)) {

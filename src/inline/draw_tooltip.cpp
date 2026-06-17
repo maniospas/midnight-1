@@ -11,7 +11,7 @@ DrawTexturePro(tex::info, src, dst, origin, 0.0f, fc);
 auto WHITECOL = Fade(WHITE,1.f);
 float textY = py - 26;
 px -= 55;
-if (hovered && hovered->health) {
+if (hovered && hovered->health && !mouseCapturedByUI) {
     DrawText(hovered->name, px + 80, textY + 80, 42, WHITECOL);
     {
         Texture2D* t = hovered->texture;
