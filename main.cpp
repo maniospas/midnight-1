@@ -328,6 +328,71 @@ int main() {
     GenerateHillsAndDesert(terrainGrid);
     GenerateRivers(terrainGrid);
     GenerateSeas(terrainGrid);
+    int num_decorators = 0;   // track trees
+    {
+        int numPaths = 20;
+        for (int p = 0; p < numPaths; p++) {
+            int cx = GetRandomValue(4, GRID_SIZE - 5);
+            int cy = GetRandomValue(4, GRID_SIZE - 5);
+            float angle = (float)GetRandomValue(0, 6283) / 1000.0f;
+            int pathLen = GetRandomValue(GRID_SIZE/2, GRID_SIZE/4);
+            for (int step = 0; step < pathLen; step++) {
+                angle += ((float)GetRandomValue(-1000, 1000) / 1000.0f) * 0.45f;
+                cx += (int)roundf(cosf(angle));
+                cy += (int)roundf(sinf(angle));
+                if (cx < 2 || cx >= GRID_SIZE-2 || cy < 2 || cy >= GRID_SIZE-2) break;
+                int px = (int)roundf(cosf(angle + 1.5708f)); // +90°
+                int py = (int)roundf(sinf(angle + 1.5708f));
+                int nx = cx + px;
+                int ny = cy + py;
+                for (int i = 0; i < 2; i++) {
+                    int tx = (i == 0) ? cx : nx;
+                    int ty = (i == 0) ? cy : ny;
+                    Terrain &T = terrainGrid[ty][tx];
+                    bool grass = (T.texture == &tex::grass  ||
+                                T.texture == &tex::grass2 ||
+                                T.texture == &tex::grass3 ||
+                                T.texture == &tex::grass4);
+                    if (!grass) continue;
+                    if (T.extra_sight < 0) {
+                        T.extra_sight = 0.0f;
+                        T.speed       = 1.0f;
+                    }
+                    T.texture = &tex::tree;
+                }
+            }
+        }
+    }
+    for (int y = 1; y < GRID_SIZE-1; y++)
+    for (int x = 1; x < GRID_SIZE-1; x++) {
+        Terrain &T = terrainGrid[y][x];
+        bool grass = (T.texture == &tex::grass  ||
+        T.texture == &tex::grass2 ||
+        T.texture == &tex::grass3 ||
+        T.texture == &tex::grass4);
+        bool hill = IsHill(T.texture);
+        bool mountain = IsMountain(T.texture);
+        if (!grass && !hill && !mountain) continue;
+        if (hill && (float)GetRandomValue(0, 1000000) / 1000000.0f < 0.2f) continue;
+        if (mountain && (float)GetRandomValue(0, 1000000) / 1000000.0f < 0.95f) continue;
+        float f = ForestNoise(x, y);
+        //if((float)GetRandomValue(0, 1000000) / 1000000.0f<f*0.1f) continue;
+        if (f > 0.62f && num_decorators<MAX_DECORATORS-1) {
+            float ox = ((float)GetRandomValue(-5000, 5000) / 5000.0f) * 0.25f;
+            float oy = ((float)GetRandomValue(-5000, 5000) / 5000.0f) * 0.25f;
+            decorators[num_decorators++] = {&tex::tree,(float)x+ox-0.5f,(float)y+oy-0.5f,1.0f};
+            T.extra_sight -= 0.7f;
+            if(T.extra_sight<-0.7f) T.extra_sight = -0.7f;
+            T.speed = 0.4f;
+        }
+    }
+    for (int y = 1; y < GRID_SIZE-1; y++)
+    for (int x = 1; x < GRID_SIZE-1; x++) {
+        Terrain &T = terrainGrid[y][x];
+        if (T.texture == &tex::tree) {
+            T.texture = &tex::grass; // or whichever grass variant you want for paths
+        }
+    }
 
     // minimap (used only for new game)
     static const int MINIMAP_SCALE = 2;
@@ -336,7 +401,7 @@ int main() {
     ClearBackground(BLACK);
     for (int y = 0; y < GRID_SIZE; y++)
         for (int x = 0; x < GRID_SIZE; x++)
-            DrawRectangle(x * MINIMAP_SCALE, y * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE, ColorForTile(terrainGrid[y][x].texture));
+            DrawRectangle(x * MINIMAP_SCALE, y * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE, ColorForTile(terrainGrid[y][x]));
     EndTextureMode(); // minimap
 
     while (true) {
@@ -797,33 +862,6 @@ int main() {
                 DrawRectangle(x * MINIMAP_SCALE, y * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE, Color{ 20,20,20,255 });
         EndTextureMode(); // minimap
     }
-
-    int num_decorators = 0;   // track trees
-    for (int y = 1; y < GRID_SIZE-1; y++)
-        for (int x = 1; x < GRID_SIZE-1; x++) {
-            Terrain &T = terrainGrid[y][x];
-            bool grass =
-                (T.texture == &tex::grass  ||
-                T.texture == &tex::grass2 ||
-                T.texture == &tex::grass3 ||
-                T.texture == &tex::grass4);
-            bool hill = IsHill(T.texture);
-            bool mountain = IsMountain(T.texture);
-            if (!grass && !hill && !mountain) continue;
-            // if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.02f) continue;
-            if (hill && (float)GetRandomValue(0, 1000000) / 1000000.0f < 0.2f) continue;
-            if (mountain && (float)GetRandomValue(0, 1000000) / 1000000.0f < 0.95f) continue;
-            float f = ForestNoise(x, y);
-            if((float)GetRandomValue(0, 1000000) / 1000000.0f<f*0.1f) continue;
-            if (f > 0.62f && num_decorators<MAX_DECORATORS-1) {
-                float ox = ((float)GetRandomValue(-5000, 5000) / 5000.0f) * 0.25f;  // ±0.25 tile
-                float oy = ((float)GetRandomValue(-5000, 5000) / 5000.0f) * 0.25f;  // ±0.25 tile
-                decorators[num_decorators++] = {&tex::tree,(float)x+ox-0.5f,(float)y+oy-0.5f,1.0f};
-                T.extra_sight -= 0.7f;
-                if(T.extra_sight<-0.7f) T.extra_sight = -0.7f;
-                T.speed = 0.4f;
-            }
-        }
 
 
     // declare camera
@@ -1676,7 +1714,7 @@ int main() {
                     if (dx*dx + dy*dy <= VISION_RADIUS * VISION_RADIUS) {
                         if(SHOW_MINIMAP && !explored[vy][vx]) {
                             BeginTextureMode(minimap);
-                            Color c = ColorForTile(terrainGrid[vy][vx].texture);
+                            Color c = ColorForTile(terrainGrid[vy][vx]);
                             DrawRectangle(vx * MINIMAP_SCALE, vy * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE, c);
                             EndTextureMode();
                         }
