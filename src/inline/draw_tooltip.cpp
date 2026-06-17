@@ -37,6 +37,11 @@ if (hovered && hovered->health) {
         DrawText("+10% research", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
         //DrawTextSmall("capturable", px + 255, textY+125, DESC_FONT_SIZE, inv);
     }
+    else if(hovered->texture==&tex::engine) {
+        DrawText("+3 industry", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText("Excessive pollution", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+        //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+    }
     else if(hovered->texture==&tex::field) {
         DrawText("+4 industry (bloom)", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
         DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
@@ -122,17 +127,12 @@ if (hovered && hovered->health) {
         //if(!hovered->faction) DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
     else if(hovered->damage) {
-        if(hovered->range<3.f) {
-            if(hovered->texture==&tex::snowman) DrawText("Animal, fast on hills", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
-            else if(hovered->texture==&tex::rat) DrawText("Animal, proliferates", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
-            else if(hovered->texture==&tex::wolf) DrawText("Animal, 50% taming", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
-            else DrawText("Animal, drops hide", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
-            DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
-        }
-        else {
-            DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5+0.5)), px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
-            DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
-        }
+        if(hovered->texture==&tex::snowman) DrawText("Animal, fast on hills", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+        else if(hovered->texture==&tex::rat) DrawText("Animal, proliferates", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+        else if(hovered->texture==&tex::wolf) DrawText("Animal, 50% taming", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+        else if(hovered->texture==&tex::bison) DrawText("Animal, drops hide", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+        else DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5+0.5)), px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
     }
     else {
         DrawText("Far sight", px + 80, textY, DESC_FONT_SIZE, WHITECOL);

@@ -156,12 +156,14 @@ int main() {
     Rectangle fortBtn = {GetScreenWidth() - 260.0f, GetScreenHeight() - 95.0f-65.f-95.f, 240.0f, 90.0f};
     Rectangle trenchBtn = {GetScreenWidth() - 260.0f, GetScreenHeight() - 95.0f-65.f-95.f-65.f, 240.0f, 60.0f};
     Rectangle turtleBtn = {GetScreenWidth() - 260.0f, GetScreenHeight() - 95.0f-65.f-95.f-65.f-65.f, 240.0f, 60.0f};
+    Rectangle dismantleBtn = {GetScreenWidth() - 260.0f, GetScreenHeight() - 95.0f-65.f-95.f-65.f-65.f-65.f, 240.0f, 60.0f};
     Rectangle optionsButton = {GetScreenWidth() - 260.0f, 10.f, 240.0f, 60.0f};
 
     static float fort_creation_px = 0;
     static float fort_creation_py = 0;
     static int fort_creation_num = 0;
     static int trench_creation_num = 0;
+    static int engine_creation_num = 0;
     static int turtle_creation_num = 0;
     static float fort_creation_total_health = 0;
     static bool fort_creation_has_nearby = false;
@@ -305,6 +307,22 @@ int main() {
     NEW_GAME:
     max_factions = GetRandomValue(6,11); // at least 3 enemies
     NOISE_SEED = GetRandomValue(1, 1'000'000);
+
+    int selected_techs = 0; // set to 4 for debug
+    while(selected_techs<3 || selected_techs>5) {
+        selected_techs = 0;
+        global_available_starting_techs = 0;
+        if(GetRandomValue(0,100)<60) {global_available_starting_techs = global_available_starting_techs|TECHNOLOGY_SCAVENGE;selected_techs++;}
+        if(GetRandomValue(0,100)<60) {global_available_starting_techs = global_available_starting_techs|TECHNOLOGY_COMMAND;selected_techs++;}
+        if(GetRandomValue(0,100)<60) {global_available_starting_techs = global_available_starting_techs|TECHNOLOGY_NERDS;selected_techs++;}
+        if(GetRandomValue(0,100)<60) {global_available_starting_techs = global_available_starting_techs|TECHNOLOGY_HUNTING;selected_techs++;}
+        if(GetRandomValue(0,100)<60) {global_available_starting_techs = global_available_starting_techs|TECHNOLOGY_TAMING;selected_techs++;}
+        if(GetRandomValue(0,100)<60) {global_available_starting_techs = global_available_starting_techs|TECHNOLOGY_HARDCORE;selected_techs++;}
+        if(GetRandomValue(0,100)<60) {global_available_starting_techs = global_available_starting_techs|TECHNOLOGY_EXPLORE;selected_techs++;}
+    }
+
+
+
     GenerateGrass(terrainGrid);
     GenerateHillsAndDesert(terrainGrid);
     GenerateRivers(terrainGrid);
@@ -510,7 +528,7 @@ int main() {
         auto player_techs = factions[0].technology;
         if (player_techs & TECHNOLOGY_BIOWEAPON) {badTechTextures[badTechCount]=&tex::bioweapon;badTechNames[badTechCount++] = "BIOWEAPON";}
         if (player_techs & TECHNOLOGY_PROPAGANDA) {badTechTextures[badTechCount]=&tex::propaganda;badTechNames[badTechCount++] = "PROPAGANDA";}
-        if (player_techs & TECHNOLOGY_SUPERIORITY) {badTechTextures[badTechCount]=&tex::utopia;badTechNames[badTechCount++] = "SUPERIORITY";}
+        if (player_techs & TECHNOLOGY_SUPERIORITY) {badTechTextures[badTechCount]=&tex::superiority;badTechNames[badTechCount++] = "SUPERIORITY";}
         if (player_techs & TECHNOLOGY_ARTIFICIAL) {badTechTextures[badTechCount]=&tex::mind;badTechNames[badTechCount++] = "HIVEMENIND";}
         if (player_techs & TECHNOLOGY_AIFARM) {badTechTextures[badTechCount]=&tex::lab;badTechNames[badTechCount++] = "AI FARMS";}
         int unlocking_perk = 0; // zero = railgun = always unlocked = used to signify that we unlocked nothing
@@ -875,11 +893,13 @@ int main() {
         for (int i=0; i<8+(player_preferred_start[0]==PREFERENCE_HUMAN?8:0)+(player_preferred_start[1]==PREFERENCE_HUMAN?8:0); i++) {
             float sx = bx + (GetRandomValue(-5000, 5000) * 0.0002f);
             float sy = by + (GetRandomValue(-5000, 5000) * 0.0002f);
-            CREATE_HUMAN(&factions[0], sx, sy);
+            if(player_preferred_start[0]==PREFERENCE_SPEED && i%2==0) {CREATE_CAT(&factions[0], sx, sy);}
+            else if(player_preferred_start[1]==PREFERENCE_SPEED && i%2==1) { CREATE_CAT(&factions[0], sx, sy);}
+            else { CREATE_HUMAN(&factions[0], sx, sy);}
             if(player_preferred_start[0]==PREFERENCE_EXPERIENCE) units[num_units-1].experience += 8.f;
             if(player_preferred_start[1]==PREFERENCE_EXPERIENCE) units[num_units-1].experience += 8.f;
-            if(player_preferred_start[0]==PREFERENCE_SPEED) units[num_units-1].speed *= 1.2f;
-            if(player_preferred_start[1]==PREFERENCE_SPEED) units[num_units-1].speed *= 1.2f;
+            // if(player_preferred_start[0]==PREFERENCE_SPEED) units[num_units-1].speed *= 1.2f;
+            // if(player_preferred_start[1]==PREFERENCE_SPEED) units[num_units-1].speed *= 1.2f;
         }
 
         camera.target = {
@@ -1251,6 +1271,7 @@ int main() {
         fort_creation_py = 0;
         fort_creation_num = 0;
         trench_creation_num = 0;
+        engine_creation_num = 0;
         turtle_creation_num = 0;
         fort_creation_total_health = 0;
         fort_creation_has_nearby = false;
@@ -1260,14 +1281,16 @@ int main() {
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
                 if(u.selected && u.speed) has_any_selected = true;
-                if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) {
+                if (u.selected && u.health && u.speed && (u.texture==&tex::cat || u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) {
                     fort_creation_total_health += u.max_health;
                     fort_creation_px += u.x;
                     fort_creation_py += u.y;
                     fort_creation_num++;
                 }
-                if(u.selected && (u.texture==&tex::tank || u.texture==&tex::van)) 
+                if(u.selected && (u.texture==&tex::tank || u.texture==&tex::van))  {
                     trench_creation_num++;
+                    if(u.health>=u.max_health-0.5f) engine_creation_num++;
+                }
                 if(u.selected && u.health>3.1f && u.speed && !is_mecha(u))
                     turtle_creation_num++;
             }
@@ -1295,6 +1318,24 @@ int main() {
                 showHelp = !showHelp;
                 PlaySound(sound::select2);
             }
+        }
+
+
+        if(!showTechTree && (factions->technology&TECHNOLOGY_DISMANTLE) && !mouseCapturedByUI && (CheckCollisionPointRec(GetMousePosition(), dismantleBtn) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) && engine_creation_num) {
+            mouseCapturedByUI = true;
+            for (int i = 0; i < num_units; i++) {
+                Unit &u = units[i];
+                if (u.selected && u.health && (u.texture==&tex::tank || u.texture==&tex::van) && u.health>=u.max_health-0.5f) {
+                    u.texture = &tex::ghost; // prevent explosion
+                    CREATE_ENGINE(factions, u.x, u.y);
+                    units[num_units-1].health = units[num_units-1].max_health*u.health/u.max_health;
+                    units[num_units-1].popup = "dismantle";
+                    units[num_units-1].capturing = nullptr;
+                    u.health = 0;
+                }
+            }
+            PlaySound(sound::select2);
+            engine_creation_num = 0;
         }
         
         if(!showTechTree && (factions->technology&TECHNOLOGY_TRENCHES) && !mouseCapturedByUI && (CheckCollisionPointRec(GetMousePosition(), trenchBtn) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) && trench_creation_num) {
@@ -1325,8 +1366,8 @@ int main() {
                         float x = u.x + cos(u.angle*DEG2RAD)*u.size;
                         float y = u.y + sin(u.angle*DEG2RAD)*u.size;
                         CREATE_ROCK(u.faction, x, y);
-                        units[num_units-1].popup = "turtling";
-                        units[num_units-1].capturing = nullptr;
+                        // units[num_units-1].popup = "turtling";
+                        // units[num_units-1].capturing = nullptr;
                     }
                     else {
                         u.popup = "harmed";
@@ -1351,7 +1392,7 @@ int main() {
             else {
                 for (int i = 0; i < num_units; i++) {
                     Unit &u = units[i];
-                    if (u.selected && u.health && u.speed && (u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) {
+                    if (u.selected && u.health && u.speed && (u.texture==&tex::cat || u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) {
                         u.health = 0;
                         u.texture = &tex::ghost;
                     }
@@ -2198,13 +2239,17 @@ int main() {
             //     DrawTextSmall("del",fortBtn.x+fortBtn.width-65+5,fortBtn.y+15,24,BLACK);
             // }
         }
+        if(!showTechTree && engine_creation_num && (factions->technology&TECHNOLOGY_DISMANTLE)) {
+            bool techHover = CheckCollisionPointRec(GetMousePosition(), dismantleBtn);
+            DrawRectangleRounded(dismantleBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
+            DrawText("Dismantle",dismantleBtn.x + 50,dismantleBtn.y + 14,32,WHITE);
+            DrawTextureEx(tex::engine, {dismantleBtn.x + 20, dismantleBtn.y + 14}, 0, 20.f / tex::engine.width, WHITE);
+        }
         if(!showTechTree && trench_creation_num && (factions->technology&TECHNOLOGY_TRENCHES)) {
-            float prog = fort_creation_total_health/100.0;
-            if(prog>=2) prog = 1;
             bool techHover = CheckCollisionPointRec(GetMousePosition(), trenchBtn);
             DrawRectangleRounded(trenchBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
             DrawText("Entrench",trenchBtn.x + 50,trenchBtn.y + 14,32,WHITE);
-            DrawTextureEx(tex::trenches, {trenchBtn.x + 20, trenchBtn.y + 14}, 0, 20 / tex::trenches.width, WHITE);
+            DrawTextureEx(tex::railgun, {trenchBtn.x + 20, trenchBtn.y + 14}, 0, 20.f / tex::railgun.width, WHITE);
         }
         if(!showTechTree && turtle_creation_num && (factions->technology&TECHNOLOGY_TURTLING)) {
             float prog = fort_creation_total_health/100.0;
@@ -2212,7 +2257,7 @@ int main() {
             bool techHover = CheckCollisionPointRec(GetMousePosition(), turtleBtn);
             DrawRectangleRounded(turtleBtn,0.2f, 8,techHover ? Fade(DARKBLUE, 0.6f) : Fade(BLACK, 0.6f));
             DrawText(TextFormat("Stack %d rocks", turtle_creation_num),turtleBtn.x + 50,turtleBtn.y + 14,32,WHITE);
-            DrawTextureEx(tex::rock, {turtleBtn.x + 20, turtleBtn.y + 14}, 0, 20 / tex::rock.width, WHITE);
+            DrawTextureEx(tex::rock, {turtleBtn.x + 20, turtleBtn.y + 14}, 0, 20.f / tex::rock.width, WHITE);
         }
 
         // --------------------------------------------------

@@ -119,7 +119,7 @@ for (int i = 0; i < num_units; i++) {
                 int uy = (int)u.y;
                 int range = (int)u.size + 1;
                 if (ux >= xMin-range && ux < xMax+range && uy >= yMin-range && uy < yMax+range) {
-                    if(u.texture==&tex::human) sound::dead.Play(camera.zoom*1.0f);
+                    if(u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero) sound::dead.Play(camera.zoom*1.0f);
                     else sound::damage.Play(camera.zoom*0.2f);
                 }
             }
@@ -261,8 +261,13 @@ for (int i = 0; i < num_units; i++) {
                     if(u.faction&&(u.faction->technology&TECHNOLOGY_EVOLUTION)&&GetRandomValue(0, 100)<10) {
                         CREATE_SNOWMAN(u.faction, sx, sy);
                     }
+                    if(u.faction&&(u.faction->technology&TECHNOLOGY_CATS)) {
+                        CREATE_CAT(u.faction, sx, sy);
+                        if(u.faction->technology&TECHNOLOGY_COMMAND) units[num_units-1].speed = 8.f;
+                    }
                     else {
                         CREATE_HUMAN(u.faction, sx, sy);
+                        if(u.faction->technology&TECHNOLOGY_COMMAND) units[num_units-1].speed = 5.f;
                     }
                     // superiority has 25% chance of spawning something hostile
                     /*if(u.faction&&(u.faction->technology&TECHNOLOGY_SUPERIORITY)&&GetRandomValue(0, 100)<25)
@@ -331,6 +336,7 @@ for (int i = 0; i < num_units; i++) {
     if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_AGILE)) u_speed = (1.f+u_speed)*0.5f;
     if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_SEAFARERING) && terrainGrid[uy][ux].texture==&tex::water) u_speed = 1.5f;
     u_speed *= u.speed;
+    if(u.faction && (u.faction->technology & TECHNOLOGY_REVUP) && is_mecha(u)) u_speed *= 1.5f;
     float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
     if((u.texture==&tex::railgun || u.texture==&tex::radio || u.texture==&tex::lighthouse) && extra_sight<0.f) extra_sight = 0.f;
     float u_base_range = u.range*(1+extra_sight);
@@ -434,7 +440,7 @@ for (int i = 0; i < num_units; i++) {
         // if not facing target, rotate toward it
         if (fabs(diff) > AIM_THRESHOLD) {
             float rot = TURN_RATE * dt * (u_speed?u_speed:1.f);
-            if(u.texture==&tex::human) rot *= 3.f; // humans turn very fast
+            if(u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::cat) rot *= 3.f; // humans turn very fast
             if(is_mecha(u) && (u.faction->technology&TECHNOLOGY_DRIVER)) rot *= 2.f;
             if(u.faction && (u.faction->technology&TECHNOLOGY_SPEEDY)) rot *= 3.f; // even faster turning for speedy
             if (diff > 0) {
@@ -495,7 +501,7 @@ for (int i = 0; i < num_units; i++) {
     float dist = sqrtf(dist2);
     float desiredAngle = atan2f(dy, dx) * RAD2DEG;
 
-    if(u.texture==&tex::human && !u.stunned) {
+    if((u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::cat) && !u.stunned) {
         desiredAngle += cos(t*10+u.speed*3.14159)*20;
     }
 
@@ -508,7 +514,7 @@ for (int i = 0; i < num_units; i++) {
     if (fabs(diff) > AIM_THRESHOLD) {
         float out_of_threshold = fabs(diff) > 20;
         float rot = TURN_RATE * dt * u_speed * 2;
-        if(u.texture==&tex::human) rot *= 3.f; // humans turn very fast
+        if(u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::cat) rot *= 3.f; // humans turn very fast
         if(is_mecha(u) && (u.faction->technology&TECHNOLOGY_DRIVER)) rot *= 2.f;
         if(u.faction && (u.faction->technology&TECHNOLOGY_SPEEDY)) rot *= 3.f; // even faster turning for speedy
         if (diff>0) {

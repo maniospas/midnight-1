@@ -97,6 +97,12 @@ namespace tex {
     static Texture2D victory;
     static Texture2D defeat;
     static Texture2D hovercraft;
+    static Texture2D engine;
+    static Texture2D superiority;
+    static Texture2D vroom;
+    static Texture2D revup;
+    static Texture2D cat;
+    static Texture2D command;
 }
 
 
@@ -197,6 +203,12 @@ void load() {
     tex::victory = LoadTexture("data/victory.png");
     tex::defeat = LoadTexture("data/defeat.png");
     tex::hovercraft = LoadTexture("data/hovercraft.png");
+    tex::engine = LoadTexture("data/engine.png");
+    tex::superiority = LoadTexture("data/superiority.png");
+    tex::vroom = LoadTexture("data/vroom.png");
+    tex::revup = LoadTexture("data/revup.png");
+    tex::cat = LoadTexture("data/cat.png");
+    tex::command = LoadTexture("data/command.png");
 
     sound::gun.Load("data/gun.ogg", 24);
     sound::boom.Load("data/boom.ogg", 5);
@@ -268,6 +280,11 @@ void unload() {
     UnloadTexture(tex::crater);
     UnloadTexture(tex::radio);
     UnloadTexture(tex::lighthouse);
+    UnloadTexture(tex::vroom);
+    UnloadTexture(tex::revup);
+    UnloadTexture(tex::cat);
+    UnloadTexture(tex::command);
+
     UnloadTexture(tex::oil);
     UnloadTexture(tex::datacenter);
     UnloadTexture(tex::info);
@@ -307,6 +324,11 @@ void unload() {
     UnloadTexture(tex::victory);
     UnloadTexture(tex::defeat);
     UnloadTexture(tex::hovercraft);
+    UnloadTexture(tex::engine);
+    UnloadTexture(tex::superiority);
+    UnloadTexture(tex::vroom);
+    UnloadTexture(tex::revup);
+    UnloadTexture(tex::cat);
 
     sound::boom.Unload();
     sound::explosion.Unload();

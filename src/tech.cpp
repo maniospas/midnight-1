@@ -55,7 +55,12 @@
 #define TECHNOLOGY_CENTRAL   1125899906842624ULL // fields grow around forts and radios
 #define TECHNOLOGY_TURTLING  2251799813685248ULL // humans can lose 3 health to create rocks
 #define TECHNOLOGY_TRENCHES  4503599627370496ULL // can turn tanks and vans to railguns
-#define TECHNOLOGY_IMPERIAL  9007199254740992ULL // get victory points from camps
+#define TECHNOLOGY_DISMANTLE 9007199254740992ULL // can dismantle tanks and vans to engines
+#define TECHNOLOGY_CATS      18014398509481984ULL // can dismantle tanks and vans to engines
+#define TECHNOLOGY_VROOM     36028797018963968ULL // double engine effect
+#define TECHNOLOGY_REVUP     72057594037927936ULL // x1.5 speed and instruct cost by mechas
+#define TECHNOLOGY_SCAVENGE 144115188075855872ULL // can dismantle tanks and vans to engines
+#define TECHNOLOGY_COMMAND  288230376151711744ULL // fixed spawn speed, formations
 
 #define PREFERENCE_RAILGUN     0
 #define PREFERENCE_TANK        1
@@ -79,9 +84,9 @@ const char* preference_desc[PREFERENCE_COUNT] = {
     "near old tech",
     "near storage",
     "+camp spacing",
-    "+starting vets",
-    "+starting speed",
-    "+8 humans",
+    "starting vets",
+    "starting cats",
+    "+8 start spawn",
     "near roombas",
     "+tech, near animals",
     "near esper",
@@ -95,8 +100,8 @@ Texture* preference_icon[PREFERENCE_COUNT] = {
     &tex::lab,
     &tex::warehouse,
     &tex::camp,
-    &tex::track,
-    &tex::human,
+    &tex::scout,
+    &tex::cat,
     &tex::human,
     &tex::roomba,
     &tex::bison,
@@ -104,6 +109,7 @@ Texture* preference_icon[PREFERENCE_COUNT] = {
     &tex::curio
 };
 
+unsigned long long global_available_starting_techs = TECHNOLOGY_SCAVENGE|TECHNOLOGY_COMMAND|TECHNOLOGY_NERDS|TECHNOLOGY_HUNTING|TECHNOLOGY_TAMING|TECHNOLOGY_HARDCORE|TECHNOLOGY_EXPLORE;
 typedef unsigned long long PrefMask;
 #define PREF_BIT(p) (1ULL << (p))
 
@@ -190,13 +196,16 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     float cx = GetScreenWidth() * 0.5f-DX+20.f;
 
     // ROOTS
-    Vector2 trenches  = { cx - 2*DX, top };
+    Vector2 scavenge  = { cx - 2*DX, top };
     Vector2 explore   = { cx - 2*DX, top+2*DY };
     Vector2 hunting   = { cx - 2*DX, top+8*DY };
     Vector2 nerds     = { cx - 2*DX, top+11*DY };
     Vector2 taming    = { cx - 2*DX, top+4*DY };
+    Vector2 command   = { cx - 2*DX, top+13*DY };
+    Vector2 dismantle = { cx - DX, top+13*DY };
 
     // SECOND TIER
+    Vector2 trenches  = { scavenge.x+DX, scavenge.y };
     Vector2 track     = { explore.x+DX, explore.y - DY };
     Vector2 agile     = { explore.x+DX, explore.y + DY};
     Vector2 driver    = { explore.x+DX, explore.y };
@@ -206,6 +215,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     Vector2 research  = { nerds.x + DX, nerds.y-DY };
     Vector2 homunculi = { nerds.x + DX, nerds.y };
     Vector2 mecha     = { nerds.x + DX, nerds.y+DY };
+    Vector2 vroom    =  { dismantle.x+DX, dismantle.y };
 
     // THIRD TIER
     Vector2 heroics    = { fight.x+DX,      fight.y-DY };
@@ -238,6 +248,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
 
     Vector2 autorepair  = { mecha.x + DX, mecha.y };
     Vector2 mobile      = { autorepair.x + DX, autorepair.y };
+    Vector2 revup       = { mobile.x + DX, mobile.y };
     Vector2 hijack      = { autorepair.x + DX, autorepair.y + DY };
     Vector2 industry    = { driver.x + DX, driver.y };
     Vector2 gigajoule   = { industry.x + DX, industry.y };
@@ -248,6 +259,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     Vector2 reactor     = { nuclear.x + DX, nuclear.y};
     Vector2 hypermagnet = { reactor.x + DX, reactor.y};
     Vector2 evolution   = { bioweapon.x + DX, bioweapon.y-DY*3};
+    Vector2 cats        = { evolution.x + DX, evolution.y};
     Vector2 artificial  = { bioweapon.x + DX, bioweapon.y};
     Vector2 atmosphere  = { terraforming.x+DX, terraforming.y};
     if(showing_preview) tech = -1;
@@ -281,7 +293,8 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     DrawConnector(grit.x+actual_cell_width, grit.y+actual_cell_height, antimech.x, antimech.y+actual_cell_height, tech & TECHNOLOGY_GRIT);
     DrawConnector(tough.x+actual_cell_width, tough.y+actual_cell_height, antimech.x, antimech.y+actual_cell_height, tech & TECHNOLOGY_TOUGH);
     DrawConnector(antimech.x+actual_cell_width, antimech.y+actual_cell_height, flanking.x, flanking.y+actual_cell_height, tech & TECHNOLOGY_ANTIMECHA);
-
+    DrawConnector(scavenge.x+actual_cell_width, scavenge.y+actual_cell_height, grit.x, grit.y+actual_cell_height, tech & TECHNOLOGY_SCAVENGE);
+    
     // AGILE
     DrawConnector(agile.x+actual_cell_width, agile.y+actual_cell_height, seafaring.x, seafaring.y+actual_cell_height, tech & TECHNOLOGY_AGILE);
     DrawConnector(seafaring.x+actual_cell_width, seafaring.y+actual_cell_height, discourse.x, discourse.y+actual_cell_height, tech & TECHNOLOGY_SEAFARERING);
@@ -316,9 +329,11 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     DrawConnector(bioweapon.x+actual_cell_width, bioweapon.y+actual_cell_height, artificial.x, artificial.y+actual_cell_height, tech & TECHNOLOGY_BIOWEAPON);
     DrawConnector(grit.x+actual_cell_width, grit.y+actual_cell_height, evolution.x, evolution.y+actual_cell_height, tech & TECHNOLOGY_GRIT);
     DrawConnector(reactor.x+actual_cell_width, reactor.y+actual_cell_height, hypermagnet.x, hypermagnet.y+actual_cell_height, tech & TECHNOLOGY_REACTOR);
-
+    DrawConnector(evolution.x+actual_cell_width, evolution.y+actual_cell_height, cats.x, cats.y+actual_cell_height, tech & TECHNOLOGY_EVOLUTION);
+    
 
     // MOBILE FORTRESS
+    DrawConnector(nerds.x+actual_cell_width, nerds.y+actual_cell_height, dismantle.x, dismantle.y+actual_cell_height, tech & TECHNOLOGY_NERDS);
     DrawConnector(driver.x+actual_cell_width, driver.y+actual_cell_height, industry.x, industry.y+actual_cell_height, tech & TECHNOLOGY_DRIVER);
     DrawConnector(mecha.x+actual_cell_width, mecha.y+actual_cell_height, autorepair.x, autorepair.y+actual_cell_height, tech & TECHNOLOGY_MECHA);
     DrawConnector(autorepair.x+actual_cell_width, autorepair.y+actual_cell_height, mobile.x, mobile.y+actual_cell_height, tech & TECHNOLOGY_AUTOREPAIRS);
@@ -326,35 +341,65 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     DrawConnector(industry.x+actual_cell_width, industry.y+actual_cell_height, gigajoule.x, gigajoule.y+actual_cell_height, tech & TECHNOLOGY_INDUSTRY);
     DrawConnector(heroics.x+actual_cell_width, heroics.y+actual_cell_height, propaganda.x, propaganda.y+actual_cell_height, tech & TECHNOLOGY_HEROICS);
     DrawConnector(propaganda.x+actual_cell_width, propaganda.y+actual_cell_height, superiority.x, superiority.y+actual_cell_height, tech & TECHNOLOGY_PROPAGANDA);
+    DrawConnector(vroom.x+actual_cell_width, vroom.y+actual_cell_height, hijack.x, hijack.y+actual_cell_height, tech & TECHNOLOGY_VROOM);
+    DrawConnector(hijack.x+actual_cell_width, hijack.y+actual_cell_height, antimech.x, antimech.y+actual_cell_height, tech & TECHNOLOGY_HIJACK);
+    DrawConnector(dismantle.x+actual_cell_width, dismantle.y+actual_cell_height, vroom.x, vroom.y+actual_cell_height, tech & TECHNOLOGY_DISMANTLE);
+    DrawConnector(mobile.x+actual_cell_width, mobile.y+actual_cell_height, revup.x, revup.y+actual_cell_height, tech & TECHNOLOGY_MOBILE_FORTRESS);
+    
     // TRACK
     DrawConnector(track.x+actual_cell_width, track.y+actual_cell_height, sniping.x, sniping.y+actual_cell_height, tech & TECHNOLOGY_TRACK);
+    DrawConnector(scavenge.x+actual_cell_width, scavenge.y+actual_cell_height, trenches.x, trenches.y+actual_cell_height, tech & TECHNOLOGY_TRENCHES);
     DrawConnector(trenches.x+actual_cell_width, trenches.y+actual_cell_height, sniping.x, sniping.y+actual_cell_height, tech & TECHNOLOGY_TRENCHES);
     DrawConnector(track.x+actual_cell_width, track.y+actual_cell_height, sniffing.x, sniffing.y+actual_cell_height, tech & TECHNOLOGY_TRACK);
     DrawConnector(sniping.x+actual_cell_width, sniping.y+actual_cell_height, turtling.x, turtling.y+actual_cell_height, tech & TECHNOLOGY_SNIPING);
     DrawConnector(turtling.x+actual_cell_width, turtling.y+actual_cell_height, terraforming.x, terraforming.y+actual_cell_height, tech & TECHNOLOGY_TURTLING);
+
+    // COMMAND
+    DrawConnector(scavenge.x+actual_cell_width, scavenge.y+actual_cell_height, trenches.x, trenches.y+actual_cell_height, tech & TECHNOLOGY_SCAVENGE);
+    DrawConnector(command.x+actual_cell_width, command.y+actual_cell_height, trenches.x, trenches.y+actual_cell_height, tech & TECHNOLOGY_COMMAND);
+    DrawConnector(command.x+actual_cell_width, command.y+actual_cell_height, fort.x, fort.y+actual_cell_height, tech & TECHNOLOGY_COMMAND);
+    DrawConnector(command.x+actual_cell_width, command.y+actual_cell_height, dismantle.x, dismantle.y+actual_cell_height, tech & TECHNOLOGY_COMMAND);
+    
 
     if(showing_preview) {
         tech = F.technology;
         prev_tech = -1;
     }
 
-    DrawTechNode(trenches.x, trenches.y, "ENTRENCH", "Vans & tanks to railguns", tech, TECHNOLOGY_TRENCHES, !showing_preview);
-    DrawTextureEx(tex::trenches, {trenches.x + ICON_DX, trenches.y + ICON_DY}, 0, ICON_SIZE / tex::trenches.width, WHITE);
+    if(global_available_starting_techs&TECHNOLOGY_COMMAND) {
+        DrawTechNode(command.x, command.y, "COMMAND", "Fixed speed of spawns", tech, TECHNOLOGY_COMMAND, !showing_preview);
+        DrawTextureEx(tex::command, {command.x + ICON_DX, command.y + ICON_DY}, 0, ICON_SIZE / tex::command.width, WHITE);
+    }
 
-    DrawTechNode(explore.x, explore.y, "CHARTED", "Wide camp & storage sight", tech, TECHNOLOGY_EXPLORE, !showing_preview);
-    DrawTextureEx(tex::chart, {explore.x + ICON_DX, explore.y + ICON_DY}, 0, ICON_SIZE / tex::chart.width, WHITE);
+    if(global_available_starting_techs&TECHNOLOGY_SCAVENGE) {
+        DrawTechNode(scavenge.x, scavenge.y, "SCAVENGE", "Fast unclaimed capture", tech, TECHNOLOGY_SCAVENGE, !showing_preview);
+        DrawTextureEx(tex::warehouse, {scavenge.x + ICON_DX, scavenge.y + ICON_DY}, 0, ICON_SIZE / tex::warehouse.width, WHITE);
+    }
 
-    DrawTechNode(hunting.x, hunting.y, "CIVILIZED", "+3 camp & hide industry", tech, TECHNOLOGY_HUNTING, !showing_preview);
-    DrawTextureEx(tex::hide, {hunting.x + ICON_DX, hunting.y + ICON_DY}, 0, ICON_SIZE / tex::hide.width, WHITE);
+    if(global_available_starting_techs&TECHNOLOGY_EXPLORE) {
+        DrawTechNode(explore.x, explore.y, "CHARTED", "Wide camp & storage sight", tech, TECHNOLOGY_EXPLORE, !showing_preview);
+        DrawTextureEx(tex::chart, {explore.x + ICON_DX, explore.y + ICON_DY}, 0, ICON_SIZE / tex::chart.width, WHITE);
+    }
 
-    DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "+30% research, -1 spawn HP", tech, TECHNOLOGY_NERDS, !showing_preview);
-    DrawTextureEx(tex::nerds, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::nerds.width, WHITE);
+    if(global_available_starting_techs&TECHNOLOGY_HUNTING) {
+        DrawTechNode(hunting.x, hunting.y, "CIVILIZED", "+3 camp & hide industry", tech, TECHNOLOGY_HUNTING, !showing_preview);
+        DrawTextureEx(tex::hide, {hunting.x + ICON_DX, hunting.y + ICON_DY}, 0, ICON_SIZE / tex::hide.width, WHITE);
+    }
 
-    DrawTechNode(taming.x, taming.y, "TAMER", "-50% research, 50% taming", tech, TECHNOLOGY_TAMING, !showing_preview);
-    DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
+    if(global_available_starting_techs&TECHNOLOGY_NERDS) {
+        DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "+30% research, -1 spawn HP", tech, TECHNOLOGY_NERDS, !showing_preview);
+        DrawTextureEx(tex::nerds, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::nerds.width, WHITE);
+    }
 
-    DrawTechNode(hardcore.x, hardcore.y, "HARDCORE", "-7 camp industry, 2x spawn", tech, TECHNOLOGY_HARDCORE, !showing_preview);
-    DrawTextureEx(tex::blood, {hardcore.x + ICON_DX, hardcore.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
+    if(global_available_starting_techs&TECHNOLOGY_TAMING) {
+        DrawTechNode(taming.x, taming.y, "TAMER", "-50% research, 50% taming", tech, TECHNOLOGY_TAMING, !showing_preview);
+        DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
+    }
+
+    if(global_available_starting_techs&TECHNOLOGY_HARDCORE) {
+        DrawTechNode(hardcore.x, hardcore.y, "HARDCORE", "-7 camp industry, 2x spawn", tech, TECHNOLOGY_HARDCORE, !showing_preview);
+        DrawTextureEx(tex::blood, {hardcore.x + ICON_DX, hardcore.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
+    }
 
     if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_AGILE)) {
         DrawTechNode(agile.x, agile.y, "AGILE", "Terrain slows less", tech, TECHNOLOGY_AGILE, !showing_preview);
@@ -367,6 +412,25 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     if(prev_tech & (TECHNOLOGY_EXPLORE | TECHNOLOGY_TRACK)) {
         DrawTechNode(track.x, track.y, "TRACKER", "+70% unit sight", tech, TECHNOLOGY_TRACK, !showing_preview);
         DrawTextureEx(tex::track, {track.x + ICON_DX, track.y + ICON_DY}, 0, ICON_SIZE / tex::track.width, WHITE);
+    }
+    if(prev_tech & (TECHNOLOGY_SCAVENGE | TECHNOLOGY_COMMAND | TECHNOLOGY_TRENCHES)) {
+        DrawTechNode(trenches.x, trenches.y, "ENTRENCH", "Vans & tanks to railguns", tech, TECHNOLOGY_TRENCHES, !showing_preview);
+        DrawTextureEx(tex::railgun, {trenches.x + ICON_DX, trenches.y + ICON_DY}, 0, ICON_SIZE / tex::railgun.width, WHITE);
+    }
+
+    if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_COMMAND | TECHNOLOGY_DISMANTLE)) {
+        DrawTechNode(dismantle.x,   dismantle.y,   "DIMANTLERS",   "Vans & tanks to engines", tech, TECHNOLOGY_DISMANTLE, !showing_preview);
+        DrawTextureEx(tex::engine, {dismantle.x + ICON_DX, dismantle.y + ICON_DY}, 0, ICON_SIZE / tex::engine.width, WHITE);
+    }
+
+    if(prev_tech & (TECHNOLOGY_MOBILE_FORTRESS | TECHNOLOGY_REVUP)) {
+        DrawTechNode(revup.x, revup.y, "REVUP", "x1.5 mecha speed & industry", tech, TECHNOLOGY_REVUP, !showing_preview);
+        DrawTextureEx(tex::revup, {revup.x + ICON_DX, revup.y + ICON_DY}, 0, ICON_SIZE / tex::revup.width, WHITE);
+    }
+
+    if(prev_tech & (TECHNOLOGY_DISMANTLE | TECHNOLOGY_VROOM)) {
+        DrawTechNode(vroom.x, vroom.y, "VROOOM", "Double engine effects", tech, TECHNOLOGY_VROOM, !showing_preview);
+        DrawTextureEx(tex::vroom, {vroom.x + ICON_DX, vroom.y + ICON_DY}, 0, ICON_SIZE / tex::vroom.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_MECHA)) {
         DrawTechNode(mecha.x, mecha.y, "HULL", "+50% mecha dodge", tech, TECHNOLOGY_MECHA, !showing_preview);
@@ -384,15 +448,11 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTechNode(farming.x, farming.y, "FARMING", "Fields stay long in bloom", tech, TECHNOLOGY_FARMING, !showing_preview);
         DrawTextureEx(tex::field, {farming.x + ICON_DX, farming.y + ICON_DY}, 0, ICON_SIZE / tex::field.width, WHITE);
     }
-    if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_FORT)) {
-        DrawTechNode(fort.x, fort.y, "FORT", "Can build forts", tech, TECHNOLOGY_FORT, !showing_preview);
+    if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_COMMAND | TECHNOLOGY_FORT)) {
+        DrawTechNode(fort.x, fort.y, "FORT", "Humans to forts", tech, TECHNOLOGY_FORT, !showing_preview);
         DrawTextureEx(tex::fort, {fort.x + ICON_DX, fort.y + ICON_DY}, 0, ICON_SIZE / tex::fort.width, WHITE);
     }
-    if(prev_tech & (TECHNOLOGY_ANTIMECHA | TECHNOLOGY_FLANKING)) {
-        DrawTechNode(flanking.x, flanking.y, "FLANKING", "x2 damage from behind", tech, TECHNOLOGY_FLANKING, !showing_preview);
-        DrawTextureEx(tex::flank, {flanking.x + ICON_DX, flanking.y + ICON_DY}, 0, ICON_SIZE / tex::flank.width, WHITE);
-    }
-    if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_GRIT)) {
+    if(prev_tech & (TECHNOLOGY_HUNTING | TECHNOLOGY_SCAVENGE | TECHNOLOGY_GRIT)) {
         DrawTechNode(grit.x, grit.y, "GRIT", "+50% dodge vs lethal", tech, TECHNOLOGY_GRIT, !showing_preview);
         DrawTextureEx(tex::grit, {grit.x + ICON_DX, grit.y + ICON_DY}, 0, ICON_SIZE / tex::grit.width, WHITE);
     }
@@ -434,17 +494,13 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTechNode(evolution.x, evolution.y, "EVOLUTION", "Some spawn are snowmen", tech, TECHNOLOGY_EVOLUTION, !showing_preview);
         DrawTextureEx(tex::snowman, {evolution.x + ICON_DX, evolution.y + ICON_DY}, 0, ICON_SIZE / tex::snowman.width, WHITE);
     }
-    if(prev_tech & (TECHNOLOGY_ANTIMECHA | TECHNOLOGY_GRIT | TECHNOLOGY_TOUGH)) {
+    if(prev_tech & (TECHNOLOGY_ANTIMECHA | TECHNOLOGY_GRIT | TECHNOLOGY_HIJACK | TECHNOLOGY_TOUGH)) {
         DrawTechNode(antimech.x, antimech.y, "SABOTAGE", "x2 damage vs fort & mecha", tech, TECHNOLOGY_ANTIMECHA, !showing_preview);
         DrawTextureEx(tex::human, {antimech.x + ICON_DX, antimech.y + ICON_DY}, 0, ICON_SIZE / tex::human.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_HEROICS | TECHNOLOGY_HELLBRINGER)) {
         DrawTechNode(hellbringer.x, hellbringer.y, "HELLBRINGER", "Rapid vet & hero fire", tech, TECHNOLOGY_HELLBRINGER, !showing_preview);
         DrawTextureEx(tex::hero, {hellbringer.x + ICON_DX, hellbringer.y + ICON_DY}, 0, ICON_SIZE / tex::hero.width, WHITE);
-    }
-    if(prev_tech & (TECHNOLOGY_HELLBRINGER | TECHNOLOGY_SPEEDY)) {
-        DrawTechNode(speedy.x, speedy.y, "360 ANGLE", "Rotate faster", tech, TECHNOLOGY_SPEEDY, !showing_preview);
-        DrawTextureEx(tex::rotate, {speedy.x + ICON_DX, speedy.y + ICON_DY}, 0, ICON_SIZE / tex::rotate.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_AGILE | TECHNOLOGY_SEAFARERING)) {
         DrawTechNode(seafaring.x, seafaring.y, "SEAFARING", "Water increases speed", tech, TECHNOLOGY_SEAFARERING, !showing_preview);
@@ -462,11 +518,27 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTechNode(technocracy.x, technocracy.y, "TECHNOCRACY", "+1 utopia per 100 industry", tech, TECHNOLOGY_TECHNOCRACY, !showing_preview);
         DrawTextureEx(tex::utopia, {technocracy.x + ICON_DX, technocracy.y + ICON_DY}, 0, ICON_SIZE / tex::utopia.width, WHITE);
     }
+    if(prev_tech & (TECHNOLOGY_EVOLUTION | TECHNOLOGY_CATS)) {
+        DrawTechNode(cats.x, cats.y, "APEX", "Spawned humans are cats", tech, TECHNOLOGY_CATS, !showing_preview);
+        DrawTextureEx(tex::cat, {cats.x + ICON_DX, cats.y + ICON_DY}, 0, ICON_SIZE / tex::cat.width, WHITE);
+    }
+    if(prev_tech & (TECHNOLOGY_ANTIMECHA | TECHNOLOGY_FLANKING)) {
+        DrawTechNode(flanking.x, flanking.y, "FLANKING", "x2 damage from behind", tech, TECHNOLOGY_FLANKING, !showing_preview);
+        DrawTextureEx(tex::flank, {flanking.x + ICON_DX, flanking.y + ICON_DY}, 0, ICON_SIZE / tex::flank.width, WHITE);
+    }
+    if(prev_tech & (TECHNOLOGY_HELLBRINGER | TECHNOLOGY_SPEEDY)) {
+        DrawTechNode(speedy.x, speedy.y, "360 ANGLE", "Rotate faster", tech, TECHNOLOGY_SPEEDY, !showing_preview);
+        DrawTextureEx(tex::rotate, {speedy.x + ICON_DX, speedy.y + ICON_DY}, 0, ICON_SIZE / tex::rotate.width, WHITE);
+    }
+    if(prev_tech & (TECHNOLOGY_PROPAGANDA | TECHNOLOGY_SUPERIORITY)) {
+        DrawTechNode(superiority.x, superiority.y, "SUPERIORITY", "+1 utopia", tech, TECHNOLOGY_SUPERIORITY, !showing_preview);
+        DrawTextureEx(tex::superiority, {superiority.x + ICON_DX, superiority.y + ICON_DY}, 0, ICON_SIZE / tex::superiority.width, WHITE);
+    }
     if(prev_tech & (TECHNOLOGY_DRIVER | TECHNOLOGY_INDUSTRY)) {
         DrawTechNode(industry.x, industry.y, "LOST .INC", "Mechas gain experience", tech, TECHNOLOGY_INDUSTRY, !showing_preview);
         DrawTextureEx(tex::gear, {industry.x + ICON_DX, industry.y + ICON_DY}, 0, ICON_SIZE / tex::gear.width, WHITE);
     }
-    if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_HIJACK)) {
+    if(prev_tech & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_VROOM | TECHNOLOGY_HIJACK)) {
         DrawTechNode(hijack.x, hijack.y, "HIJACK", "Often capture mechas", tech, TECHNOLOGY_HIJACK, !showing_preview);
         DrawTextureEx(tex::hijack, {hijack.x + ICON_DX, hijack.y + ICON_DY}, 0, ICON_SIZE / tex::hijack.width, WHITE);
     }
@@ -523,10 +595,6 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTechNode(terraforming.x, terraforming.y, "TERRAFORM", "Double field expansion", tech, TECHNOLOGY_TERRAFORIMING, !showing_preview);
         DrawTextureEx(tex::field, {terraforming.x + ICON_DX, terraforming.y + ICON_DY}, 0, ICON_SIZE / tex::field.width, WHITE);
     }
-    if(prev_tech & (TECHNOLOGY_PROPAGANDA | TECHNOLOGY_SUPERIORITY)) {
-        DrawTechNode(superiority.x, superiority.y, "SUPERIORITY", "+1 utopia", tech, TECHNOLOGY_SUPERIORITY, !showing_preview);
-        DrawTextureEx(tex::utopia, {superiority.x + ICON_DX, superiority.y + ICON_DY}, 0, ICON_SIZE / tex::utopia.width, WHITE);
-    }
     if(prev_tech & (TECHNOLOGY_INDUSTRY | TECHNOLOGY_GIGAJOULE)) {
         DrawTechNode(gigajoule.x, gigajoule.y, "GIGAJOULE", "No mecha industry cost", tech, TECHNOLOGY_GIGAJOULE, !showing_preview);
         DrawTextureEx(tex::gigajoule, {gigajoule.x + ICON_DX, gigajoule.y + ICON_DY}, 0, ICON_SIZE / tex::gigajoule.width, WHITE);
@@ -537,7 +605,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     }
 
     if(prev_tech & (TECHNOLOGY_SNIPING | TECHNOLOGY_TURTLING)) {
-        DrawTechNode(turtling.x, turtling.y, "TURTLING", "Can take -3 max health to stack rocks", tech, TECHNOLOGY_TURTLING, !showing_preview);
+        DrawTechNode(turtling.x, turtling.y, "TURTLING", "-3 max health to stack rocks", tech, TECHNOLOGY_TURTLING, !showing_preview);
         DrawTextureEx(tex::rock, {turtling.x + ICON_DX, turtling.y + ICON_DY}, 0, ICON_SIZE / tex::rock.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_NUCLEAR | TECHNOLOGY_REACTOR)) {

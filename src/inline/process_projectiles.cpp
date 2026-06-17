@@ -60,7 +60,10 @@ for (int i = 0; i < num_units; i++) {
 
                 if ((float)GetRandomValue(0, 1000000) / 1000000.0f >= skipChance) {
                     if(o.capturing && o.faction == u.faction) o.health += 1;
-                    else if(o.capturing && o.capturing==factions+1) o.health -= CAPTURE_RATE*u_damage;
+                    else if(o.capturing && o.capturing==factions+1) {
+                        if(u.faction && o.speed==0 && (u.faction->technology&TECHNOLOGY_SCAVENGE)) o.health -= CAPTURE_RATE*2.5*u_damage;
+                        else o.health -= CAPTURE_RATE*u_damage;
+                    }
                     else if(o.capturing) o.health -= CAPTURE_RATE*u_damage*0.5f;
                     else {
                         if(is_mecha(o)) {
@@ -203,7 +206,7 @@ for (int i = 0; i < num_units; i++) {
                     o.popup = "tamed";
                     o.popup_texture = nullptr;
                 }
-                else if(o.health<=0 && o.faction && (o.faction->technology & TECHNOLOGY_UNSTABLE) && (o.texture==&tex::rat || o.texture==&tex::human || o.texture==&tex::scout || o.texture==&tex::hero)) {
+                else if(o.health<=0 && o.faction && (o.faction->technology & TECHNOLOGY_UNSTABLE) && (o.texture==&tex::rat || o.texture==&tex::human || o.texture==&tex::scout || o.texture==&tex::hero || o.texture==&tex::cat)) {
                     units[j] = { \
                         &tex::ghost,  /* texture */
                         "Bloo",       /* name */

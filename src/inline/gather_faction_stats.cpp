@@ -68,7 +68,7 @@ for (int i = 0; i < num_units; i++) {
         else if((float)GetRandomValue(0, 1000000) / 1000000.0f * 300.f < dt) {
             bool applied = false;
             for (int j = 0; j < num_units; j++)
-                if (units[j].faction==u.faction && units[j].texture==&tex::human && units[j].health<units[j].max_health) {
+                if (units[j].faction==u.faction && units[j].speed && !is_mecha(units[j])) {
                     units[j].health += 2;
                     units[j].max_health += 2;
                     units[j].popup = "healthcare";
@@ -76,7 +76,7 @@ for (int i = 0; i < num_units; i++) {
                     applied = true;
                 }
             if(u.faction==factions && applied) {
-                last_message = "Databank: found healthcare products and increased HP of your humans.";
+                last_message = "Databank: found healthcare products and increased HP of your non-mechas.";
                 last_message_counter = 0.f;
             }
         }
@@ -133,7 +133,7 @@ for (int i = 0; i < num_units; i++) {
         }
         if(allowed) { CREATE_FIELD(&factions[1], px, py); }
     }
-    if(u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty || u.texture==&tex::mine || u.texture==&tex::hide) {
+    if(u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty || u.texture==&tex::mine || u.texture==&tex::hide || u.texture==&tex::engine) {
         if((u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty) && u.faction && (u.faction->technology & TECHNOLOGY_ATMOSPHERE)) {
             game_time -= dt*0.02f;
             polution_speedup -= 0.02f;
@@ -142,12 +142,23 @@ for (int i = 0; i < num_units; i++) {
         if(u.texture==&tex::field_little) u.faction->industry += 2.f;
         if(u.texture==&tex::hide) u.faction->industry += 4.f;
         if(u.texture==&tex::mine) u.faction->industry += 12.f;
+        if(u.texture==&tex::engine) {
+            u.faction->industry += 3.f;
+            game_time -= dt*0.01f;
+            polution_speedup += 0.01f;
+            if(u.faction && (u.faction->technology & TECHNOLOGY_VROOM)) {
+                u.faction->industry += 3.f;
+                game_time -= dt*0.01f;
+                polution_speedup += 0.01f;
+            }
+        }
         if(u.texture==&tex::hide && u.faction && (u.faction->technology & TECHNOLOGY_HUNTING)) u.faction->industry += 3.f;
         continue;
     }
     if(is_mecha(u) && u.faction) {
         if(u.faction->technology & TECHNOLOGY_MECHANISED) u.faction->industry += u.health/10.f;
         if(u.faction->technology & TECHNOLOGY_GIGAJOULE) continue;
+        if(u.faction->technology & TECHNOLOGY_REVUP) u.faction->count_members += u.max_health/10.f;
     }
     if(u.texture==&tex::fort) {
         u.faction->count_members += u.max_health/5.f;

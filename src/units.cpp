@@ -49,6 +49,25 @@ struct Unit {
             (faction)     /* faction */ \
         };
 
+#define CREATE_CAT(faction, x, y) \
+    if (num_units < MAX_UNITS) \
+        units[num_units++] = { \
+            &tex::cat,  /* texture */ \
+            "Cat",      /* name */ \
+            GetRandomValue(50,150)*0.05f+3.f,         /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            GetRandomValue(50,150)*0.015f,          /* attack_rate */ \
+            GetRandomValue(50,150)*0.04f,          /* range */ \
+            GetRandomValue(50,150)*0.01f,          /* damage */ \
+            0.0,          /* experience */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
+            0.3,          /* size */ \
+            5.0,          /* health */ \
+            5.0,          /* max_health */ \
+            (faction)     /* faction */ \
+        };
+
 #define CREATE_ESPER(faction, x, y) \
     if (num_units < MAX_UNITS) \
         units[num_units++] = { \
@@ -379,6 +398,31 @@ struct Unit {
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
     }
+
+
+#define CREATE_ENGINE(faction, x, y) \
+        if (num_units < MAX_UNITS) { \
+            float bbx = x; \
+            float bby = y; \
+            units[num_units++] = { \
+                &tex::engine,   /* texture */ \
+                "Engine",       /* name */ \
+                0.0,          /* speed */ \
+                (float)(bbx),   /* x */ \
+                (float)(bby),   /* y */ \
+                0.0,          /* attack_rate */ \
+                4.0,          /* range */ \
+                0.0,          /* damage */ \
+                0.0,          /* experience */ \
+                0.0,          /* angle */ \
+                0.7,          /* size */ \
+                10.0,         /* health */ \
+                10.0,         /* max_health */ \
+                (faction),    /* faction */ \
+                (faction),    /* can only be captured */ \
+                -0.1f \
+            }; \
+        }
 
 
 #define CREATE_MINE(faction, x, y) \

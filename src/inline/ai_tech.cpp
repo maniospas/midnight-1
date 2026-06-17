@@ -4,7 +4,7 @@ for(int i=3;i<max_factions;++i) {
     if(F.technology_progress < 1.f) continue;
     unsigned long long prev = F.technology;
     unsigned long long chosen = 0;
-    int k = GetRandomValue(0, 62);
+    int k = GetRandomValue(0, 63);
     unsigned long long candidate = 1ULL << k;
     if(prev & candidate) continue;
 
@@ -14,7 +14,11 @@ for(int i=3;i<max_factions;++i) {
     else if (candidate == TECHNOLOGY_NERDS) chosen = candidate;
     else if (candidate == TECHNOLOGY_TAMING) chosen = candidate;
     else if (candidate == TECHNOLOGY_HARDCORE) chosen = candidate;
-    else if (candidate == TECHNOLOGY_TRENCHES) chosen = candidate;
+    else if (candidate == TECHNOLOGY_SCAVENGE) chosen = candidate;
+    else if (candidate == TECHNOLOGY_COMMAND) chosen = candidate;
+    else if (candidate == TECHNOLOGY_TRENCHES && (prev & TECHNOLOGY_SCAVENGE)) chosen = candidate;
+    else if (candidate == TECHNOLOGY_DISMANTLE && (prev & TECHNOLOGY_NERDS)) chosen = candidate;
+    else if (candidate == TECHNOLOGY_VROOM && (prev & TECHNOLOGY_DISMANTLE)) chosen = candidate;
     else if (candidate == TECHNOLOGY_TRACK && (prev & TECHNOLOGY_EXPLORE)) chosen = candidate;
     else if (candidate == TECHNOLOGY_AGILE && (prev & TECHNOLOGY_EXPLORE)) chosen = candidate;
     else if (candidate == TECHNOLOGY_DRIVER && (prev & TECHNOLOGY_EXPLORE)) chosen = candidate;
@@ -29,11 +33,11 @@ for(int i=3;i<max_factions;++i) {
     else if (candidate == TECHNOLOGY_SPEEDY && (prev & TECHNOLOGY_HELLBRINGER)) chosen = candidate;
     else if (candidate == TECHNOLOGY_AUTOREPAIRS && (prev & TECHNOLOGY_MECHA)) chosen = candidate;
     else if (candidate == TECHNOLOGY_MOBILE_FORTRESS && (prev & TECHNOLOGY_AUTOREPAIRS)) chosen = candidate;
-    else if (candidate == TECHNOLOGY_HIJACK && (prev & TECHNOLOGY_AUTOREPAIRS)) chosen = candidate;
+    else if (candidate == TECHNOLOGY_REVUP && (prev & TECHNOLOGY_MOBILE_FORTRESS)) chosen = candidate;
+    else if (candidate == TECHNOLOGY_HIJACK && (prev & (TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_VROOM))) chosen = candidate;
     else if (candidate == TECHNOLOGY_HEROICS && (prev & (TECHNOLOGY_FIGHT | TECHNOLOGY_TAMING))) chosen = candidate;
-    else if (candidate == TECHNOLOGY_GRIT && (prev & (TECHNOLOGY_HUNTING))) chosen = candidate;
-    else if (candidate == TECHNOLOGY_ANTIMECHA && (prev & (TECHNOLOGY_GRIT))) chosen = candidate;
-    else if (candidate == TECHNOLOGY_ANTIMECHA && (prev & (TECHNOLOGY_TOUGH))) chosen = candidate;
+    else if (candidate == TECHNOLOGY_GRIT && (prev & (TECHNOLOGY_HUNTING | TECHNOLOGY_SCAVENGE))) chosen = candidate;
+    else if (candidate == TECHNOLOGY_ANTIMECHA && (prev & (TECHNOLOGY_GRIT | TECHNOLOGY_TOUGH | TECHNOLOGY_HIJACK))) chosen = candidate;
     else if (candidate == TECHNOLOGY_FLANKING && (prev & (TECHNOLOGY_ANTIMECHA))) chosen = candidate;
     else if (candidate == TECHNOLOGY_TOUGH && (prev & TECHNOLOGY_FIGHT)) chosen = candidate;
     else if (candidate == TECHNOLOGY_HELLBRINGER && (prev & TECHNOLOGY_HEROICS)) chosen = candidate;
@@ -66,19 +70,21 @@ for(int i=3;i<max_factions;++i) {
         int accept_roll = GetRandomValue(0, 99);
         bool rejected = false;
         if (chosen & (TECHNOLOGY_EXPLORE | TECHNOLOGY_HUNTING | TECHNOLOGY_NERDS |
-                      TECHNOLOGY_TAMING | TECHNOLOGY_HARDCORE | TECHNOLOGY_TRENCHES)) {
+                      TECHNOLOGY_TAMING | TECHNOLOGY_HARDCORE | TECHNOLOGY_SCAVENGE | TECHNOLOGY_COMMAND)) {
             if (accept_roll >= 12) rejected = true;
+            if(!(chosen&global_available_starting_techs)) rejected = true;
         }
         else if (chosen & (TECHNOLOGY_TRACK | TECHNOLOGY_AGILE | TECHNOLOGY_DRIVER |
                            TECHNOLOGY_FIGHT | TECHNOLOGY_FARMING | TECHNOLOGY_FORT |
                            TECHNOLOGY_GRIT | TECHNOLOGY_RESEARCH | TECHNOLOGY_HOMUNCULI |
-                           TECHNOLOGY_MECHA)) {
+                           TECHNOLOGY_MECHA | TECHNOLOGY_DISMANTLE | TECHNOLOGY_TRENCHES)) {
             if (accept_roll >= 25) rejected = true;
         }
         else if (chosen & (TECHNOLOGY_WONDER | TECHNOLOGY_HEROICS | TECHNOLOGY_TOUGH |
                            TECHNOLOGY_CENTRAL | TECHNOLOGY_AUTOREPAIRS | TECHNOLOGY_UNSTABLE |
                            TECHNOLOGY_NUCLEAR | TECHNOLOGY_INDUSTRY | TECHNOLOGY_SNIPING |
-                           TECHNOLOGY_SNIFFING | TECHNOLOGY_SEAFARERING | TECHNOLOGY_INFRASTRUCTURE | TECHNOLOGY_TURTLING)) {
+                           TECHNOLOGY_SNIFFING | TECHNOLOGY_SEAFARERING | TECHNOLOGY_INFRASTRUCTURE | 
+                           TECHNOLOGY_TURTLING | TECHNOLOGY_VROOM)) {
             if (accept_roll >= 50) rejected = true;
         }
         else if (accept_roll >= 75) rejected = true;
