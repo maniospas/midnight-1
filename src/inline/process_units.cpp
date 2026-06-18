@@ -56,6 +56,12 @@ for (int i = 0; i < num_units; i++) {
         if(!u.speed || !u.faction) {
             u.health = u.max_health;
         }
+        else if(u.texture==&tex::kraken){
+            std::cout << "kraken died\n";
+            num_units--;
+            u = units[num_units];
+            i--;
+        }
         if(terrainGrid[(int)u.y][(int)u.x].texture==&tex::water){
             num_units--;
             u = units[num_units];
@@ -331,14 +337,24 @@ for (int i = 0; i < num_units; i++) {
     int ux = (int)(u.x+0.5f);
     int uy = (int)(u.y+0.5f);
     float u_speed = terrainGrid[uy][ux].speed;
-    if(u.texture==&tex::hovercraft && terrainGrid[uy][ux].texture==&tex::water) u_speed = 1.5f;
+    float u_water_speed_x = 0.f;
+    float u_water_speed_y = 0.f;
+    if(terrainGrid[uy][ux].texture==&tex::water) {
+        if(u.texture==&tex::hovercraft) u_speed = 1.5f;
+        if(u.texture==&tex::kraken) u_speed = 1.f;
+        u_water_speed_x = cosf(water_angle+3.14159/4);
+        u_water_speed_y = sinf(water_angle+3.14159/4);
+    }
+    else {
+        //if(u.texture==&tex::kraken) u_speed *= 0.2f;
+    }
     if(u_speed<1.f && u.texture==&tex::snowman && (terrainGrid[uy][ux].texture==&tex::mountain || terrainGrid[uy][ux].texture==&tex::hill)) u_speed = 2.f;
     if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_AGILE)) u_speed = (1.f+u_speed)*0.5f;
     if(u_speed<1.f && u.faction && (u.faction->technology & TECHNOLOGY_SEAFARERING) && terrainGrid[uy][ux].texture==&tex::water) u_speed = 1.5f;
     u_speed *= u.speed;
     if(u.faction && (u.faction->technology & TECHNOLOGY_REVUP) && is_mecha(u)) u_speed *= 1.5f;
     float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
-    if((u.texture==&tex::railgun || u.texture==&tex::radio || u.texture==&tex::lighthouse) && extra_sight<0.f) extra_sight = 0.f;
+    if((u.texture==&tex::railgun || u.texture==&tex::radio || u.texture==&tex::lighthouse || u.texture==&tex::kraken) && extra_sight<0.f) extra_sight = 0.f;
     float u_base_range = u.range*(1+extra_sight);
     if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
     float u_range = u.range*(1+extra_sight);
@@ -386,7 +402,7 @@ for (int i = 0; i < num_units; i++) {
                     }
                     u.faction->visible_knowledge.set(j);
                 }
-                if(is_roomba && o.texture!=&tex::ghost && o.texture!=&tex::wolf && o.texture!=&tex::rat && o.texture!=&tex::bison) continue;
+                if(is_roomba && o.texture!=&tex::ghost && o.texture!=&tex::wolf && o.texture!=&tex::rat && o.texture!=&tex::bison && o.texture!=&tex::kraken && o.texture!=&tex::cat) continue;
                 if(o.faction == u.faction) continue;
                 if (u.faction==ANIMAL_FACTION && (o.faction==factions+1 || o.faction==factions+2)) continue;
                 if(in_range) {
@@ -536,10 +552,15 @@ for (int i = 0; i < num_units; i++) {
         if(u.faction!=factions) continue; // non-player factions stay and fight
     }
 
+    float cosine_similarity = (u_water_speed_x||u_water_speed_y)?(dx*u_water_speed_x+dy*u_water_speed_y)/sqrtf((dx*dx+dy*dy)):0;
+    if(cosine_similarity<0) cosine_similarity = 0;
+    if(u.faction && (u.faction->technology & TECHNOLOGY_HYPERMAGNET)) u_speed *= 2;
+    u_speed += cosine_similarity*5;
     float step = u_speed * dt * movement_speed_multiplier;
-    if(u.faction && (u.faction->technology & TECHNOLOGY_HYPERMAGNET)) step *= 2;
-    u.x += (dx / dist) * step;
-    u.y += (dy / dist) * step;
+    float actual_dx = (dx / dist) * step;
+    float actual_dy = (dy / dist) * step;
+    u.x += actual_dx;
+    u.y += actual_dy;
 }
 
 //

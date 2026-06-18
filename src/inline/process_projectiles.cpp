@@ -45,10 +45,11 @@ for (int i = 0; i < num_units; i++) {
                     }
                 }
                 if (oxi >= 0 && oyi >= 0 && oxi < GRID_SIZE && oyi < GRID_SIZE) skipChance -= terrainGrid[oyi][oxi].extra_sight/2.f;
+                if(u.texture==&tex::kraken) skipChance = 0.f;
                 if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && is_mecha(o)) skipChance += 0.5f;
                 if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==hero_name) skipChance += 0.3f;
                 if(o.faction && (o.faction->technology&TECHNOLOGY_HEROICS) && o.name==veteran_name) skipChance += 0.3f;
-                if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat || u.texture==&tex::snowman)) skipChance += 0.5f;
+                if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::kraken || u.texture==&tex::ghost || u.texture==&tex::kraken || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat || u.texture==&tex::snowman)) skipChance += 0.5f;
                 if(u_damage>=o.health && o.faction && (o.faction->technology & TECHNOLOGY_GRIT)) skipChance += 0.5f;
                 float has_used_sniping = 0;
                 if(u.faction && (u.faction->technology&TECHNOLOGY_SNIPING)) {
@@ -61,11 +62,15 @@ for (int i = 0; i < num_units; i++) {
                 if ((float)GetRandomValue(0, 1000000) / 1000000.0f >= skipChance) {
                     if(o.capturing && o.faction == u.faction) o.health += 1;
                     else if(o.capturing && o.capturing==factions+1) {
-                        if(u.faction && o.speed==0 && (u.faction->technology&TECHNOLOGY_SCAVENGE)) o.health -= CAPTURE_RATE*2.5*u_damage;
-                        else o.health -= CAPTURE_RATE*u_damage;
+                        if(u.faction && o.speed==0 && (u.faction->technology&TECHNOLOGY_SCAVENGE)) o.health -= CAPTURE_RATE*2*u_damage;
+                        else o.health -= CAPTURE_RATE*u_damage*0.5f;
                     }
                     else if(o.capturing) o.health -= CAPTURE_RATE*u_damage*0.5f;
                     else {
+                        if(o.texture==&tex::kraken) {
+                            u_damage *= 0.1f;
+                            //if(is_mecha(o)) u_damage *= 0.2f;
+                        }
                         if(is_mecha(o)) {
                             u_damage *= 0.33f;
                             if(u.faction && (u.faction->technology&TECHNOLOGY_ANTIMECHA) && GetRandomValue(0, 100)>=25) {
@@ -119,7 +124,7 @@ for (int i = 0; i < num_units; i++) {
                     o.popup = "hull";
                     o.popup_texture = &tex::shield;
                 }
-                else if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat || u.texture==&tex::snowman)) {
+                else if(o.faction && (o.faction->technology&TECHNOLOGY_LUXURY) && (u.texture==&tex::cat || u.texture==&tex::kraken || u.texture==&tex::ghost || u.texture==&tex::bison || u.texture==&tex::wolf || u.texture==&tex::rat || u.texture==&tex::snowman)) {
                     o.popup = "pristine";
                     o.popup_texture = &tex::pristine;
                 }
@@ -200,7 +205,7 @@ for (int i = 0; i < num_units; i++) {
                     o.popup = o.faction==ANIMAL_FACTION?"wild":"tamed";
                     o.popup_texture = nullptr;
                 }
-                else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_TAMING) && (o.texture==&tex::bison || o.texture==&tex::rat || o.texture==&tex::snowman) && GetRandomValue(0, 99) < 50) {
+                else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_TAMING) && (o.texture==&tex::cat || o.texture==&tex::kraken || o.texture==&tex::bison || o.texture==&tex::rat || o.texture==&tex::snowman) && GetRandomValue(0, 99) < 50) {
                     o.faction = u.faction;
                     o.health = o.max_health;
                     o.popup = "tamed";

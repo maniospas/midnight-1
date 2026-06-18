@@ -146,6 +146,7 @@ int main() {
     int factionColorLoc = GetShaderLocation(unitShader, "factionColor");
     Shader waterShader = LoadShader(0, "data/water.fs");
     int waterTimeLoc = GetShaderLocation(waterShader, "time");
+    int waterDirectionLoc = GetShaderLocation(waterShader, "flowAngle");
 
     // prepare buttons
     MovementMode currentMovementMode = MovementMode::Tight;
@@ -207,6 +208,7 @@ int main() {
     float new_game_progress = 0;
     float game_over_progress = 0;
     float reward_progress = 0;
+    float water_angle = (GetRandomValue(0, 7) * PI / 4.0f);
 
     MAIN_MENU:
     while (true) {
@@ -326,7 +328,6 @@ int main() {
 
     GenerateGrass(terrainGrid);
     GenerateHillsAndDesert(terrainGrid);
-    GenerateRivers(terrainGrid);
     GenerateSeas(terrainGrid);
     int num_decorators = 0;   // track trees
     {
@@ -363,6 +364,24 @@ int main() {
             }
         }
     }
+    GenerateRivers(terrainGrid);
+    for (int y = 1; y < GRID_SIZE - 1; y++) {
+        for (int x = 1; x < GRID_SIZE - 1; x++) {
+            Terrain& T = terrainGrid[y][x];
+            if (T.texture == &tex::water) continue;
+            bool surrounded =
+                (terrainGrid[y - 1][x].texture == &tex::water &&
+                terrainGrid[y + 1][x].texture == &tex::water ) || (
+                terrainGrid[y][x - 1].texture == &tex::water &&
+                terrainGrid[y][x + 1].texture == &tex::water);
+            if (surrounded) {
+                T.texture     = &tex::water;
+                T.speed       = 0.15f;
+                T.extra_sight = -0.8f;
+            }
+        }
+    }
+    
     for (int y = 1; y < GRID_SIZE-1; y++)
     for (int x = 1; x < GRID_SIZE-1; x++) {
         Terrain &T = terrainGrid[y][x];
@@ -393,6 +412,7 @@ int main() {
             T.texture = &tex::grass; // or whichever grass variant you want for paths
         }
     }
+    water_angle = (GetRandomValue(0, 3) * PI / 2.0f);
 
     // minimap (used only for new game)
     static const int MINIMAP_SCALE = 2;
@@ -1243,6 +1263,7 @@ int main() {
         if(GetRandomValue(0,99)<60) {CREATE_TANK(&factions[1], x, y+0.3f);}
     }
 
+    int created_krakens = 0;
     for (int i = 0; i < NUM_WILD_ANIMALS; i++) {
         float x, y;
         x = GetRandomValue(20, GRID_SIZE - 20);
@@ -1271,6 +1292,17 @@ int main() {
             CREATE_SNOWMAN(ANIMAL_FACTION, x-1, y+1);
             CREATE_SNOWMAN(ANIMAL_FACTION, x+1, y-1);
             CREATE_SNOWMAN(ANIMAL_FACTION, x+1, y+1);
+        }
+
+        if(T.texture == &tex::water && created_krakens<3) {
+            if(terrainGrid[(int)y-3][(int)x-3].texture==&tex::water 
+                && terrainGrid[(int)y-3][(int)x+3].texture==&tex::water
+                && terrainGrid[(int)y+3][(int)x-3].texture==&tex::water
+                && terrainGrid[(int)y+3][(int)x+3].texture==&tex::water) {
+                created_krakens++;
+                CREATE_KRAKEN(ANIMAL_FACTION, x, y);
+                std::cout << "created kraken\n";
+            }
         }
     }
 
@@ -1700,7 +1732,7 @@ int main() {
             int ux = (int)u.x;
             int uy = (int)u.y;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
-            if((u.texture==&tex::railgun || u.texture==&tex::radio || u.texture==&tex::lighthouse) && extra_sight<0.f) extra_sight = 0.f;
+            if((u.texture==&tex::railgun || u.texture==&tex::radio || u.texture==&tex::lighthouse || u.texture==&tex::kraken || u.texture==&tex::kraken) && extra_sight<0.f) extra_sight = 0.f;
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.5f;
             float u_range = u.range*(1+extra_sight);
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
@@ -1745,6 +1777,7 @@ int main() {
         BeginShaderMode(waterShader);
         float tsec = GetTime()*2.f;
         SetShaderValue(waterShader, waterTimeLoc, &tsec, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(waterShader, waterDirectionLoc, &water_angle, SHADER_UNIFORM_FLOAT);
         for (int y = yMin; y < yMax; y++)
             for (int x = xMin; x < xMax; x++) {
                 int px = x * TILE_SIZE - TILE_SIZE/2;
@@ -2083,9 +2116,9 @@ int main() {
             Vector2 world = { u.x * TILE_SIZE, u.y * TILE_SIZE };
             Vector2 screen = GetWorldToScreen2D(world, camera);
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
-            if((u.texture==&tex::railgun || u.texture==&tex::radio || u.texture==&tex::lighthouse) && extra_sight<0.f) extra_sight = 0.f;
+            if((u.texture==&tex::railgun || u.texture==&tex::radio || u.texture==&tex::lighthouse || u.texture==&tex::kraken) && extra_sight<0.f) extra_sight = 0.f;
             if(u.faction->technology&TECHNOLOGY_TRACK) extra_sight += 0.7f;
-            float u_range = u.range*(1+extra_sight);
+            float u_range = u.range*(1+extra_sight);;
             // important that here we extend the sight range only for stuff controlled by the player
             if((u.texture==&tex::camp || u.texture==&tex::warehouse) && (u.faction->technology & TECHNOLOGY_EXPLORE) && u.faction==factions) u_range = 25.f;
             if(u.faction && (u.faction->technology & TECHNOLOGY_INFRASTRUCTURE) && (u.texture==&tex::radio || u.texture==&tex::fort)) u_range *= 2.0f;

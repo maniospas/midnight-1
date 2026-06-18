@@ -216,6 +216,26 @@ struct Unit {
             0.3           /* extra scale*/\
         };
 
+#define CREATE_KRAKEN(faction, x, y) \
+    if (num_units < MAX_UNITS) \
+        units[num_units++] = { \
+            &tex::kraken,   /* texture */ \
+            "Kraken",       /* name */ \
+            3.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            5.0,          /* attack_rate */ \
+            2.0,          /* range */ \
+            2.0,          /* damage */ \
+            0.0,          /* experience */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
+            1.5f,          /* size */ \
+            100.0,         /* health */ \
+            100.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            nullptr,      /* faction */ \
+            1.5f          /* extra scale*/\
+        };
 
 #define CREATE_RAT(faction, x, y) \
     if (num_units < MAX_UNITS) \

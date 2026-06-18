@@ -104,6 +104,7 @@ namespace tex {
     static Texture2D cat;
     static Texture2D command;
     static Texture2D homunculi;
+    static Texture2D kraken;
 }
 
 
@@ -211,6 +212,7 @@ void load() {
     tex::cat = LoadTexture("data/cat.png");
     tex::command = LoadTexture("data/command.png");
     tex::homunculi= LoadTexture("data/homunculi.png");
+    tex::kraken= LoadTexture("data/kraken.png");
 
     sound::gun.Load("data/gun.ogg", 24);
     sound::boom.Load("data/boom.ogg", 5);
@@ -287,6 +289,7 @@ void unload() {
     UnloadTexture(tex::cat);
     UnloadTexture(tex::command);
     UnloadTexture(tex::homunculi);
+    UnloadTexture(tex::kraken);
 
     UnloadTexture(tex::oil);
     UnloadTexture(tex::datacenter);

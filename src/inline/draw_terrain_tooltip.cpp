@@ -15,7 +15,33 @@ if(hoveredTerrain->texture==&tex::hill || hoveredTerrain->texture==&tex::hill2 |
     DrawText("Hill", px + 80, textY + 80, 42, WHITE);
 if(hoveredTerrain->texture==&tex::mountain) DrawText("Moutain", px + 80, textY + 80, 42, WHITE);
 if(hoveredTerrain->texture==&tex::desert) DrawText("Desert", px + 80, textY + 80, 42, WHITE);
-if(hoveredTerrain->texture==&tex::water) DrawText("Water", px + 80, textY + 80, 42, WHITE);
+if(hoveredTerrain->texture==&tex::water) {
+    DrawText("Water", px + 80, textY + 80, 42, WHITE);
+    float arrowAngle = water_angle + PI / 4.0f;
+    Vector2 arrowCenter = { px + 300, textY + 80 + 21 }; // centered on the "Water" text
+    float arrowLen = 28.0f;
+    Vector2 arrowTip = {
+        arrowCenter.x + cosf(arrowAngle) * arrowLen,
+        arrowCenter.y + sinf(arrowAngle) * arrowLen
+    };
+    Vector2 arrowTail = {
+        arrowCenter.x - cosf(arrowAngle) * arrowLen,
+        arrowCenter.y - sinf(arrowAngle) * arrowLen
+    };
+    DrawLineEx(arrowTail, arrowTip, 3.0f, SKYBLUE);
+    float headLen = 10.0f;
+    float headAngle = 2.5f; // ~143 degrees spread
+    Vector2 head1 = {
+        arrowTip.x + cosf(arrowAngle + headAngle) * headLen,
+        arrowTip.y + sinf(arrowAngle + headAngle) * headLen
+    };
+    Vector2 head2 = {
+        arrowTip.x + cosf(arrowAngle - headAngle) * headLen,
+        arrowTip.y + sinf(arrowAngle - headAngle) * headLen
+    };
+    DrawLineEx(arrowTip, head1, 3.0f, SKYBLUE);
+    DrawLineEx(arrowTip, head2, 3.0f, SKYBLUE);
+}
 textY += 140;
 DrawText("Right click to move", px + 80, textY, DESC_FONT_SIZE, WHITE);
 if(hoveredTerrain->speed!=1.f)

@@ -167,7 +167,7 @@ for (int i = 0; i < num_units; i++) {
     if(!u.faction) continue;
     if(u.capturing) continue;
     if(!u.speed) continue;
-    if(u.texture!=&tex::bison && u.texture!=&tex::wolf && u.texture!=&tex::rat && u.texture!=&tex::snowman && u.texture!=&tex::roomba) { // don't count animals or roombas for industry needs'
+    if(u.texture!=&tex::kraken && u.texture!=&tex::bison && u.texture!=&tex::wolf && u.texture!=&tex::rat && u.texture!=&tex::snowman && u.texture!=&tex::roomba) { // don't count animals or roombas for industry needs'
         u.faction->count_members += u.max_health/5.f;
         if(u.faction->technology & TECHNOLOGY_HYPERMAGNET) u.faction->count_members += u.max_health/5.f;
     }

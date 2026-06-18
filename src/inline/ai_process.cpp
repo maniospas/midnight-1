@@ -57,7 +57,12 @@ for (int i = 0; i < num_units; i++) {
             if(u.target_y<1) u.target_y = 1;
             if(u.target_x>=GRID_SIZE-2) u.target_x = GRID_SIZE-2;
             if(u.target_y>=GRID_SIZE-2) u.target_y = GRID_SIZE-2;
-            if(terrainGrid[(int)u.target_y][(int)u.target_x].texture==&tex::water) {
+            bool target_water = terrainGrid[(int)u.target_y][(int)u.target_x].texture==&tex::water;
+            if(target_water&&u.texture!=&tex::kraken) {
+                u.target_x = u.x;
+                u.target_y = u.y;
+            }
+            if(!target_water&&u.texture==&tex::kraken) {
                 u.target_x = u.x;
                 u.target_y = u.y;
             }

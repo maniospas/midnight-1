@@ -7,6 +7,7 @@
 
 static const int GRID_SIZE = 196;
 int NOISE_SEED = 0;
+#define WATER_SPEED 0.2f
 
 // Draw dashed line between two world-space points
 static void DrawDashedLine(float x1, float y1, float x2, float y2, Color c) {
@@ -86,90 +87,114 @@ static void GenerateGrass(Terrain** terrainGrid) {
         }
     }
 }
-
 static void GenerateRivers(Terrain** terrainGrid) {
-    int NUM_ROADS = 80 * GRID_SIZE * GRID_SIZE / 512 / 512;
-    if(GetRandomValue(0,2)) NUM_ROADS /= 2;
-    if(GetRandomValue(0,2)) NUM_ROADS /= 2;
-    int MAX_LEN   = 600;
+    int NUM_ROADS = 40 * GRID_SIZE * GRID_SIZE / 512 / 512;
+    if (GetRandomValue(0,2)) NUM_ROADS /= 2;
+    if (GetRandomValue(0,2)) NUM_ROADS /= 2;
+    int MAX_LEN = 600;
 
-    int dirX[4] = { 1, -1, 0, 0 };
-    int dirY[4] = { 0, 0, 1, -1 };
+    // 8 directions in clockwise order: 0=E, 1=SE, 2=S, 3=SW, 4=W, 5=NW, 6=N, 7=NE
+    int dirX[8] = {  1,  1,  0, -1, -1, -1,  0,  1 };
+    int dirY[8] = {  0,  1,  1,  1,  0, -1, -1, -1 };
+
+    auto PaintWater = [&](int wx, int wy, float spd) {
+        if (wx <= 2 || wy <= 2 || wx >= GRID_SIZE-3 || wy >= GRID_SIZE-3) return;
+        Terrain &T = terrainGrid[wy][wx];
+        if (!IsDesert(T.texture) && T.texture != &tex::tree) {
+            T.texture     = &tex::water;
+            T.speed       = spd;
+            T.extra_sight = -0.7f;
+        }
+    };
+
+    // Paint a 3-tile-wide strip centred on (x,y) moving in direction dir.
+    // For diagonals we widen perpendicular to the direction of travel.
+    auto PaintStrip = [&](int x, int y, int dir, float spd) {
+        PaintWater(x, y, spd);
+        int dx = dirX[dir], dy = dirY[dir];
+        if (dy == 0) {
+            // Pure horizontal (E/W) — widen vertically
+            PaintWater(x, y - 1, spd);
+            PaintWater(x, y + 1, spd);
+        } else if (dx == 0) {
+            // Pure vertical (N/S) — widen horizontally
+            PaintWater(x - 1, y, spd);
+            PaintWater(x + 1, y, spd);
+        } else {
+            // Diagonal — widen along both perpendicular axes
+            // Perpendicular to (dx,dy) is (-dy, dx) and (dy, -dx)
+            PaintWater(x - dy, y + dx, spd);
+            PaintWater(x + dy, y - dx, spd);
+        }
+    };
 
     for (int r = 0; r < NUM_ROADS; r++) {
         int x = 0, y = 0, dir = 0;
-        switch (GetRandomValue(0,3)) {
-            case 0: x = GetRandomValue(0, GRID_SIZE-1); y = 3;             dir = 2; break;
-            case 1: x = GetRandomValue(0, GRID_SIZE-1); y = GRID_SIZE-4;   dir = 3; break;
-            case 2: y = GetRandomValue(0, GRID_SIZE-1); x = 3;             dir = 0; break;
-            case 3: y = GetRandomValue(0, GRID_SIZE-1); x = GRID_SIZE-4;   dir = 1; break;
+        switch (GetRandomValue(0, 7)) {
+            case 0: x = GetRandomValue(0, GRID_SIZE-1); y = 3;           dir = 2; break; // top    → S
+            case 1: x = GetRandomValue(0, GRID_SIZE-1); y = GRID_SIZE-4; dir = 6; break; // bottom → N
+            case 2: y = GetRandomValue(0, GRID_SIZE-1); x = 3;           dir = 0; break; // left   → E
+            case 3: y = GetRandomValue(0, GRID_SIZE-1); x = GRID_SIZE-4; dir = 4; break; // right  → W
+            case 4: x = 3;           y = 3;           dir = 1; break; // TL → SE
+            case 5: x = GRID_SIZE-4; y = 3;           dir = 3; break; // TR → SW
+            case 6: x = 3;           y = GRID_SIZE-4; dir = 7; break; // BL → NE
+            case 7: x = GRID_SIZE-4; y = GRID_SIZE-4; dir = 5; break; // BR → NW
         }
 
+        float drift      = 0.0f;
+        float driftSpeed = (GetRandomValue(0,100) / 100.0f) * 0.06f + 0.02f;
+        int   driftDir   = GetRandomValue(0,1) ? 1 : -1;
+
         for (int i = 0; i < MAX_LEN; i++) {
-            if (x <= 2 || y <= 2 || x >= GRID_SIZE-3 || y >= GRID_SIZE-3)
-                break;
+            if (x <= 2 || y <= 2 || x >= GRID_SIZE-3 || y >= GRID_SIZE-3) break;
 
-            // --- MAIN TILE ---
-            Terrain &T = terrainGrid[y][x];
-            if (!IsDesert(T.texture)) {
-                T.texture = &tex::water;
-                T.speed = 0.2f;
-                T.extra_sight = -0.7f;
-            }
+            PaintStrip(x, y, dir, WATER_SPEED);
 
-            // --- SECOND TILE (perpendicular, width = 2) ---
-            int px = 0, py = 0;
-            if (dirX[dir] != 0) py = 1;  // horizontal → widen vertically
-            else  px = 1;  // vertical → widen horizontally
-
-            int wx = x + px;
-            int wy = y + py;
-
-            if (wx > 2 && wy > 2 && wx < GRID_SIZE-3 && wy < GRID_SIZE-3) {
-                Terrain &W = terrainGrid[wy][wx];
-                if (!IsDesert(W.texture)) {
-                    W.texture = &tex::water;
-                    W.speed = 0.2f;
-                    W.extra_sight = -0.7f;
+            // Meander drift — perpendicular to direction of travel
+            drift += driftSpeed * driftDir;
+            if (drift > 1.0f || drift < -1.0f) {
+                int sdx = 0, sdy = 0;
+                int dx = dirX[dir], dy = dirY[dir];
+                if (dy == 0) {
+                    // Horizontal: drift N/S
+                    sdy = (drift > 0) ? 1 : -1;
+                } else if (dx == 0) {
+                    // Vertical: drift E/W
+                    sdx = (drift > 0) ? 1 : -1;
+                } else {
+                    // Diagonal: drift along perpendicular (-dy, dx) or (dy, -dx)
+                    if (drift > 0) { sdx = -dy; sdy =  dx; }
+                    else           { sdx =  dy; sdy = -dx; }
                 }
+                x += sdx;
+                y += sdy;
+                drift -= (drift > 0) ? 1.0f : -1.0f;
+                if (GetRandomValue(0,100) < 25) driftDir = -driftDir;
             }
 
-            // --- RARE TURN ---
-            if (GetRandomValue(0,100) < 6) {
-                if (dir<2) dir = GetRandomValue(0,1)?2:3;
-                else dir = GetRandomValue(0,1)?0:1;
+            // Rare hard turn — pick any of the 8 directions except current
+            if (GetRandomValue(0,100) < 4) {
+                int turn = GetRandomValue(0,1) ? 1 : -1;
+                dir = (dir + turn + 8) % 8;
+                driftDir = GetRandomValue(0,1) ? 1 : -1;
+                drift    = 0.0f;
             }
 
-            // --- RARE CROSSROAD (also 2 tiles wide) ---
+            // Rare oxbow widening
             if (GetRandomValue(0,100) < 2) {
-                int cd = GetRandomValue(0,3);
-                int cx = x + dirX[cd];
-                int cy = y + dirY[cd];
-
-                if (cx > 2 && cy > 2 && cx < GRID_SIZE-3 && cy < GRID_SIZE-3) {
-                    Terrain &C = terrainGrid[cy][cx];
-                    if (!IsDesert(C.texture)) {
-                        C.texture = &tex::water;
-                        C.speed = 0.3f;
-                        C.extra_sight = -0.7f;
-                    }
-                    int bpx = 0, bpy = 0;
-                    if(dirX[cd] != 0) bpy = 1;
-                    else bpx = 1;
-                    if (GetRandomValue(0,1)) { bpx = -bpx; bpy = -bpy; }
-                    int bx = cx + bpx;
-                    int by = cy + bpy;
-
-                    if (bx > 2 && by > 2 && bx < GRID_SIZE-3 && by < GRID_SIZE-3) {
-                        Terrain &B = terrainGrid[by][bx];
-                        if (!IsDesert(B.texture)) {
-                            B.texture = &tex::water;
-                            B.speed = 0.3f;
-                            B.extra_sight = -0.7f;
-                        }
-                    }
+                int dx = dirX[dir], dy = dirY[dir];
+                if (dy == 0) {
+                    PaintWater(x, y - 2, WATER_SPEED);
+                    PaintWater(x, y + 2, WATER_SPEED);
+                } else if (dx == 0) {
+                    PaintWater(x - 2, y, WATER_SPEED);
+                    PaintWater(x + 2, y, WATER_SPEED);
+                } else {
+                    PaintWater(x - 2*dy, y + 2*dx, WATER_SPEED);
+                    PaintWater(x + 2*dy, y - 2*dx, WATER_SPEED);
                 }
             }
+
             x += dirX[dir];
             y += dirY[dir];
         }
@@ -207,7 +232,7 @@ static void GenerateSeas(Terrain** terrainGrid) {
             if (IsHill(T.texture)) continue;
             if (IsDesert(T.texture))      continue;
             T.texture     = &tex::water;
-            T.speed       = 0.15f;
+            T.speed       = WATER_SPEED;
             T.extra_sight = -0.8f;
             filled++;
             // Add neighbours with a distance-based probability so the
@@ -261,23 +286,6 @@ static void GenerateSeas(Terrain** terrainGrid) {
                     if(terrainGrid[gy][gx].texture!=&tex::water) continue;
                     terrainGrid[gy][gx] = { &tex::grass, 1.0 };
                 }
-            }
-        }
-    }
-
-    for (int y = 1; y < GRID_SIZE - 1; y++) {
-        for (int x = 1; x < GRID_SIZE - 1; x++) {
-            Terrain& T = terrainGrid[y][x];
-            if (T.texture == &tex::water) continue;
-            bool surrounded =
-                (terrainGrid[y - 1][x].texture == &tex::water &&
-                terrainGrid[y + 1][x].texture == &tex::water ) || (
-                terrainGrid[y][x - 1].texture == &tex::water &&
-                terrainGrid[y][x + 1].texture == &tex::water);
-            if (surrounded) {
-                T.texture     = &tex::water;
-                T.speed       = 0.15f;
-                T.extra_sight = -0.8f;
             }
         }
     }
