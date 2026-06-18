@@ -25,7 +25,7 @@ static const float DESC_FONT_SIZE = 28;
 // difficulty controls
 static const float CURIO_RAT_RATE = 3.f;
 static float BLOO_RATE = 0.5F;
-static float RAT_RATE = 0.5F; // duplicate rats per 30*RAT_RATE seconds
+static float RAT_RATE = 0.1F; // duplicate rats per 30/RAT_RATE seconds
 static float ANIMAL_SPAWN_RATE = 0.1f; // expected spawns per second
 static const float CAMP_SPAWN_RATE = 2.f; //
 static const float CAPTURE_RATE = 1.0f; // also heals espers and partial captures

@@ -30,5 +30,15 @@ if (GetRandomValue(0, 1000000) < (int)(ANIMAL_SPAWN_RATE * dt * 1000000.0f)) {
         else if(T.texture == &tex::mountain) {
             CREATE_SNOWMAN(ANIMAL_FACTION, x, y);
         }
+        // else if(T.texture == &tex::water && created_krakens<3) {
+        //     if(terrainGrid[(int)y-3][(int)x-3].texture==&tex::water 
+        //         && terrainGrid[(int)y-3][(int)x+3].texture==&tex::water
+        //         && terrainGrid[(int)y+3][(int)x-3].texture==&tex::water
+        //         && terrainGrid[(int)y+3][(int)x+3].texture==&tex::water) {
+        //         created_krakens++;
+        //         CREATE_KRAKEN(ANIMAL_FACTION, x, y);
+        //         std::cout << "created kraken\n";
+        //     }
+        // }
     }
 }

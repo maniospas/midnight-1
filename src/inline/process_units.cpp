@@ -218,7 +218,7 @@ for (int i = 0; i < num_units; i++) {
         continue;
     if (u.texture == &tex::rat) {
         if((float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f<dt*u.attack_rate*RAT_RATE) {
-            int canMake = (int)u.faction->industry-(int)u.faction->count_members;
+            int canMake = 1;// (int)u.faction->industry-(int)u.faction->count_members;
             float sx = u.x + (GetRandomValue(-5000, 5000) * 0.0002f);
             float sy = u.y + (GetRandomValue(-5000, 5000) * 0.0002f);
             if(canMake>0) {

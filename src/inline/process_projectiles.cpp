@@ -68,7 +68,7 @@ for (int i = 0; i < num_units; i++) {
                     else if(o.capturing) o.health -= CAPTURE_RATE*u_damage*0.5f;
                     else {
                         if(o.texture==&tex::kraken) {
-                            u_damage *= 0.1f;
+                            u_damage *= 0.2f;
                             //if(is_mecha(o)) u_damage *= 0.2f;
                         }
                         if(is_mecha(o)) {
@@ -89,7 +89,7 @@ for (int i = 0; i < num_units; i++) {
                             }
                         }
                         o.health -= u_damage;
-                        if(o.speed) {
+                        if(o.speed || o.texture==&tex::rock) {
                             float dx = o.x-u.x;
                             float dy = o.y-u.y;
                             float r2 = dx*dx+dy*dy;
