@@ -367,37 +367,37 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         prev_tech = -1;
     }
 
-    if(global_available_starting_techs&TECHNOLOGY_COMMAND) {
+    if((global_available_starting_techs&TECHNOLOGY_COMMAND) || (prev_tech&TECHNOLOGY_COMMAND)) {
         DrawTechNode(command.x, command.y, "COMMAND", "Fixed speed of spawns", tech, TECHNOLOGY_COMMAND, !showing_preview);
         DrawTextureEx(tex::command, {command.x + ICON_DX, command.y + ICON_DY}, 0, ICON_SIZE / tex::command.width, WHITE);
     }
 
-    if(global_available_starting_techs&TECHNOLOGY_SCAVENGE) {
+    if((global_available_starting_techs&TECHNOLOGY_SCAVENGE) || (prev_tech&TECHNOLOGY_SCAVENGE)) {
         DrawTechNode(scavenge.x, scavenge.y, "SCAVENGE", "Fast unclaimed capture", tech, TECHNOLOGY_SCAVENGE, !showing_preview);
         DrawTextureEx(tex::warehouse, {scavenge.x + ICON_DX, scavenge.y + ICON_DY}, 0, ICON_SIZE / tex::warehouse.width, WHITE);
     }
 
-    if(global_available_starting_techs&TECHNOLOGY_EXPLORE) {
+    if((global_available_starting_techs&TECHNOLOGY_EXPLORE) || (prev_tech&TECHNOLOGY_EXPLORE)) {
         DrawTechNode(explore.x, explore.y, "CHARTED", "Wide camp & storage sight", tech, TECHNOLOGY_EXPLORE, !showing_preview);
         DrawTextureEx(tex::chart, {explore.x + ICON_DX, explore.y + ICON_DY}, 0, ICON_SIZE / tex::chart.width, WHITE);
     }
 
-    if(global_available_starting_techs&TECHNOLOGY_HUNTING) {
+    if((global_available_starting_techs&TECHNOLOGY_HUNTING) || (prev_tech&TECHNOLOGY_HUNTING)) {
         DrawTechNode(hunting.x, hunting.y, "CIVILIZED", "+3 camp & hide industry", tech, TECHNOLOGY_HUNTING, !showing_preview);
         DrawTextureEx(tex::hide, {hunting.x + ICON_DX, hunting.y + ICON_DY}, 0, ICON_SIZE / tex::hide.width, WHITE);
     }
 
-    if(global_available_starting_techs&TECHNOLOGY_NERDS) {
+    if((global_available_starting_techs&TECHNOLOGY_NERDS) || (prev_tech&TECHNOLOGY_NERDS)) {
         DrawTechNode(nerds.x,   nerds.y,   "NERDS",   "+30% research, -1 spawn HP", tech, TECHNOLOGY_NERDS, !showing_preview);
         DrawTextureEx(tex::nerds, {nerds.x + ICON_DX, nerds.y + ICON_DY}, 0, ICON_SIZE / tex::nerds.width, WHITE);
     }
 
-    if(global_available_starting_techs&TECHNOLOGY_TAMING) {
+    if((global_available_starting_techs&TECHNOLOGY_TAMING) || (prev_tech&TECHNOLOGY_TAMING)) {
         DrawTechNode(taming.x, taming.y, "TAMER", "-50% research, 50% taming", tech, TECHNOLOGY_TAMING, !showing_preview);
         DrawTextureEx(tex::bison, {taming.x + ICON_DX, taming.y + ICON_DY}, 0, ICON_SIZE / tex::bison.width, WHITE);
     }
 
-    if(global_available_starting_techs&TECHNOLOGY_HARDCORE) {
+    if((global_available_starting_techs&TECHNOLOGY_HARDCORE) || (prev_tech&TECHNOLOGY_HARDCORE)) {
         DrawTechNode(hardcore.x, hardcore.y, "HARDCORE", "-7 camp industry, 2x spawn", tech, TECHNOLOGY_HARDCORE, !showing_preview);
         DrawTextureEx(tex::blood, {hardcore.x + ICON_DX, hardcore.y + ICON_DY}, 0, ICON_SIZE / tex::blood.width, WHITE);
     }
