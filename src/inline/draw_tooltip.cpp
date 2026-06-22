@@ -131,8 +131,9 @@ if (hovered && hovered->health && !mouseCapturedByUI) {
         else if(hovered->texture==&tex::rat) DrawText("Animal, proliferates", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
         else if(hovered->texture==&tex::wolf) DrawText("Animal, 50% taming", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
         else if(hovered->texture==&tex::bison) DrawText("Animal, drops hide", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
-        else if(hovered->texture==&tex::cat) DrawText("Animal", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
-        else if(hovered->texture==&tex::kraken) DrawText("Animal", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+        else if(hovered->texture==&tex::hog) DrawText("Animal, drops hide", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+        else if(hovered->texture==&tex::cat) DrawText("Animal, intelligent", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
+        else if(hovered->texture==&tex::kraken) DrawText("Animal, tough", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
         else DrawText(TextFormat("%d industry cost", (int)(hovered->max_health/5+0.5)), px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
         DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
     }

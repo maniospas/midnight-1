@@ -67,7 +67,7 @@ for (int i = 0; i < num_units; i++) {
             u = units[num_units];
             i--;
         }
-        else if(u.texture==&tex::bison){// || u.texture==&tex::wolf) {
+        else if(u.texture==&tex::bison || u.texture==&tex::hog){// || u.texture==&tex::wolf) {
             terrainGrid[(int)u.y][(int)u.x].speed /= 2; // terrain becomes uneven
             u = { \
                 &tex::hide,  /* texture */
@@ -402,7 +402,7 @@ for (int i = 0; i < num_units; i++) {
                     }
                     u.faction->visible_knowledge.set(j);
                 }
-                if(is_roomba && o.texture!=&tex::ghost && o.texture!=&tex::wolf && o.texture!=&tex::rat && o.texture!=&tex::bison && o.texture!=&tex::kraken && o.texture!=&tex::cat) continue;
+                if(is_roomba && o.texture!=&tex::ghost && o.texture!=&tex::wolf && o.texture!=&tex::rat && o.texture!=&tex::bison && o.texture!=&tex::hog && o.texture!=&tex::kraken && o.texture!=&tex::cat) continue;
                 if(o.faction == u.faction) continue;
                 if (u.faction==ANIMAL_FACTION && (o.faction==factions+1 || o.faction==factions+2)) continue;
                 if(in_range) {

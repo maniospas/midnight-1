@@ -1272,8 +1272,15 @@ int main() {
         Terrain &T = terrainGrid[(int)y][(int)x];
         if(T.texture==&tex::grass) {
             if(GetRandomValue(0, 99) < 50) {
-                CREATE_BISON(ANIMAL_FACTION, x, y);
-                CREATE_BISON(ANIMAL_FACTION, x+1, y+1);
+                if(T.extra_sight<0) {
+                    CREATE_HOG(ANIMAL_FACTION, x, y);
+                    CREATE_HOG(ANIMAL_FACTION, x+1, y-1);
+                    CREATE_HOG(ANIMAL_FACTION, x+1, y+1);
+                } 
+                else {
+                    CREATE_BISON(ANIMAL_FACTION, x, y);
+                    CREATE_BISON(ANIMAL_FACTION, x+1, y+1);
+                }
             }
             /*else {
                 CREATE_WOLF(ANIMAL_FACTION, x, y);

@@ -200,7 +200,7 @@ struct Unit {
         units[num_units++] = { \
             &tex::bison,   /* texture */ \
             "Bison",       /* name */ \
-            5.0,          /* speed */ \
+            4.3,          /* speed */ \
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
             2.0,          /* attack_rate */ \
@@ -211,6 +211,27 @@ struct Unit {
             0.6,          /* size */ \
             15.0,         /* health */ \
             15.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            nullptr,      /* faction */ \
+            0.3           /* extra scale*/\
+        };
+
+#define CREATE_HOG(faction, x, y) \
+    if (num_units < MAX_UNITS) \
+        units[num_units++] = { \
+            &tex::hog,   /* texture */ \
+            "Hog",       /* name */ \
+            8.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            2.0,          /* attack_rate */ \
+            1.0,          /* range */ \
+            3.0,          /* damage */ \
+            0.0,          /* experience */ \
+            (float)GetRandomValue(0,360),          /* angle */ \
+            0.6,          /* size */ \
+            7.0,         /* health */ \
+            7.0,         /* max_health */ \
             (faction),    /* faction */ \
             nullptr,      /* faction */ \
             0.3           /* extra scale*/\
@@ -530,16 +551,16 @@ struct Unit {
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
             0.0,          /* attack_rate */ \
-            4.5,          /* range */ \
+            6.0,          /* range */ \
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            1.8,          /* size */ \
+            2.3,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),    /* can only be captured */ \
-            0.2           /* extra scale*/\
+            0.5           /* extra scale*/\
         };\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \

@@ -34,6 +34,7 @@ namespace tex {
     static Texture2D fort;
     static Texture2D fight;
     static Texture2D bison;
+    static Texture2D hog;
     static Texture2D wolf;
     static Texture2D hide;
     static Texture2D heal;
@@ -176,6 +177,7 @@ void load() {
     tex::rat = LoadTexture("data/rat.png");
     tex::roomba = LoadTexture("data/roomba.png");
     tex::bison = LoadTexture("data/bison.png");
+    tex::hog = LoadTexture("data/hog.png");
     tex::wolf = LoadTexture("data/wolf.png");
     tex::heal = LoadTexture("data/heal.png");
     tex::field = LoadTexture("data/field.png");
@@ -274,6 +276,7 @@ void unload() {
     UnloadTexture(tex::fight);
     UnloadTexture(tex::blood);
     UnloadTexture(tex::bison);
+    UnloadTexture(tex::hog);
     UnloadTexture(tex::rat);
     UnloadTexture(tex::roomba);
     UnloadTexture(tex::wolf);

@@ -14,7 +14,8 @@ if (GetRandomValue(0, 1000000) < (int)(ANIMAL_SPAWN_RATE * dt * 1000000.0f)) {
         }
         else if(T.texture == &tex::grass) {
             if(GetRandomValue(0,100)<50) {
-                CREATE_BISON(ANIMAL_FACTION, x, y);
+                if(T.extra_sight<0) { CREATE_HOG(ANIMAL_FACTION, x, y); }
+                else { CREATE_BISON(ANIMAL_FACTION, x, y); }
             }
             else {
                 CREATE_WOLF(ANIMAL_FACTION, x, y);
