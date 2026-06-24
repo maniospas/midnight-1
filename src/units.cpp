@@ -424,16 +424,16 @@ struct Unit {
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
             0.0,          /* attack_rate (store industry state here)*/ \
-            4.0,          /* range */ \
+            6.0,          /* range */ \
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            2.0,          /* size */ \
+            2.3,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),    /* can only be captured */ \
-            -0.2f \
+            0.5f \
         }; \
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
@@ -555,12 +555,12 @@ struct Unit {
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            2.3,          /* size */ \
+            2.0,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),    /* can only be captured */ \
-            0.5           /* extra scale*/\
+            0.3           /* extra scale*/\
         };\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
