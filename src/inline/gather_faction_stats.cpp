@@ -30,11 +30,27 @@ for (int i = 0; i < num_units; i++) {
             u.faction->industry += 5.f;
         }
     }
-    if(u.texture==&tex::datacenter &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
-        if((float)GetRandomValue(0, 1000000) / 1000000.0f * 300.f < dt) {
+    if(u.texture==&tex::villa &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
+        if((float)GetRandomValue(0, 1000000) / 1000000.0f * 600.f < dt) {
             bool applied = false;
             for (int j = 0; j < num_units; j++)
-                if (units[j].faction==u.faction && units[j].texture==&tex::blood) {
+                if (units[j].faction==u.faction && units[j].speed && !is_mecha(units[j]) && units[j].health<units[j].max_health) {
+                    units[j].health = units[j].max_health;
+                    units[j].popup = "townhall";
+                    units[j].popup_texture = &tex::heal;
+                    applied = true;
+                }
+            if(u.faction==factions && applied) {
+                last_message = "Townhall: good policies let your non-mechas recover.";
+                last_message_counter = 0.f;
+            }
+        }
+    }
+    if(u.texture==&tex::datacenter &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
+        if((float)GetRandomValue(0, 1000000) / 1000000.0f * 900.f < dt) {
+            bool applied = false;
+            for (int j = 0; j < num_units; j++)
+                if (units[j].texture==&tex::blood) {
                     float dx = units[j].x - u.x;
                     float dy = units[j].y - u.y;
                     float d2 = dx*dx + dy*dy;
@@ -43,13 +59,13 @@ for (int i = 0; i < num_units; i++) {
                             &tex::ghost,  /* texture */
                             "Bloo",       /* name */
                             3.0,          /* speed */
-                            u.x,          /* x */
-                            u.y,          /* y */
+                            units[j].x,          /* x */
+                            units[j].y,          /* y */
                             2.0,          /* attack_rate */
                             7.0,          /* range */
                             0.5,          /* damage */
                             0.0,          /* experience */
-                            u.angle,      /* angle */
+                            units[j].angle,      /* angle */
                             0.4,          /* size */
                             3.0,          /* health */
                             3.0,          /* max_health */
@@ -71,12 +87,12 @@ for (int i = 0; i < num_units; i++) {
                 if (units[j].faction==u.faction && units[j].speed && !is_mecha(units[j])) {
                     units[j].health += 2;
                     units[j].max_health += 2;
-                    units[j].popup = "healthcare";
-                    units[j].popup_texture = nullptr;
+                    units[j].popup = "care";
+                    units[j].popup_texture = &tex::heal;
                     applied = true;
                 }
             if(u.faction==factions && applied) {
-                last_message = "Databank: found healthcare products and increased non-mecha HP.";
+                last_message = "Databank: found care products and increased non-mecha HP.";
                 last_message_counter = 0.f;
             }
         }
@@ -86,7 +102,7 @@ for (int i = 0; i < num_units; i++) {
                 if (units[j].faction==u.faction && is_mecha(units[j]) && units[j].health<units[j].max_health) {
                     units[j].health = units[j].max_health;
                     units[j].popup = "parts";
-                    units[j].popup_texture = nullptr;
+                    units[j].popup_texture = &tex::autorepair;
                     applied = true;
                 }
             if(u.faction==factions && applied) {
@@ -133,7 +149,7 @@ for (int i = 0; i < num_units; i++) {
         }
         if(allowed) { CREATE_FIELD(&factions[1], px, py); }
     }
-    if(u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty || u.texture==&tex::mine || u.texture==&tex::hide || u.texture==&tex::engine) {
+    if(u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty || u.texture==&tex::mine || u.texture==&tex::hide || u.texture==&tex::engine || u.texture==&tex::house || u.texture==&tex::house2) {
         if((u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty) && u.faction && (u.faction->technology & TECHNOLOGY_ATMOSPHERE)) {
             game_time -= dt*0.02f;
             polution_speedup -= 0.02f;
@@ -141,6 +157,8 @@ for (int i = 0; i < num_units; i++) {
         if(u.texture==&tex::field) u.faction->industry += 4.f;
         if(u.texture==&tex::field_little) u.faction->industry += 2.f;
         if(u.texture==&tex::hide) u.faction->industry += 4.f;
+        if(u.texture==&tex::house) u.faction->industry += 1.f;
+        if(u.texture==&tex::house2) u.faction->industry += 2.f;
         if(u.texture==&tex::mine) u.faction->industry += 12.f;
         if(u.texture==&tex::engine) {
             u.faction->industry += 3.f;

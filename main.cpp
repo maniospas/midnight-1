@@ -901,7 +901,10 @@ int main() {
             if(!u.speed) continue;
             float dx = u.x - x;
             float dy = u.y - y;
-            if (dx*dx + dy*dy < (minDist+u.size) * (minDist+u.size))
+            if(dx<0) dx = -dx;
+            if(dy<0) dy = -dy;
+            // use manhattan distance because it disadvantages radios but is tighter for city clusters
+            if (dx + dy < (minDist+u.size))
                 return true;
         }
         return false;
@@ -1102,9 +1105,9 @@ int main() {
     if(GetRandomValue(0,99)<50) NUM_NEUTRAL_TANKS *= 2;
     //if(GetRandomValue(0,99)<50) NUM_NEUTRAL_TANKS *= 2;
     int NUM_WILD_ANIMALS= GRID_SIZE*GRID_SIZE/512/8;
-    float AVOID_BASE_RADIUS = 7.0f;
 
-    auto tooCloseToAnyCamp = [&](float x, float y) {return campExistsTooClose(x, y, AVOID_BASE_RADIUS);};
+    auto tooCloseToAnyCamp = [&](float x, float y) {return campExistsTooClose(x, y, 15.0f);};
+    auto tighterTooCloseToAnyCamp = [&](float x, float y) {return campExistsTooClose(x, y, 7.0f);};
     for (int iy = 0; iy < GRID_SIZE; ++iy)
     for (int ix = 0; ix < GRID_SIZE; ++ix)
         if (terrainGrid[iy][ix].texture == &tex::treasure) {
@@ -1123,11 +1126,30 @@ int main() {
 
     int count_warehouses = 0;
     int count_curio = 0;
+    float prev_x = 0;
+    float prev_y = 0;
     for (int i = 0; i < NUM_NEUTRAL_STRUCTURES*2; i+=2) {
         float x, y;
-        x = GetRandomValue(20, GRID_SIZE - 20);
-        y = GetRandomValue(20, GRID_SIZE - 20);
-        if (tooCloseToAnyCamp(x, y)) continue;
+        int type = GetRandomValue(0, 5);
+        if( (prev_x==0 && prev_y==0) || GetRandomValue(0,1) || type==2) { // space out radios
+            x = GetRandomValue(20, GRID_SIZE - 20);
+            y = GetRandomValue(20, GRID_SIZE - 20);
+            prev_x = x;
+            prev_y = y;
+            if (tooCloseToAnyCamp(x, y)) continue;
+        }
+        else {
+            int dir = GetRandomValue(0,3);
+            if(dir==0) x -= 8;
+            if(dir==1) x += 8;
+            if(dir==2) y -= 8;
+            if(dir==3) y += 8;
+            if (tighterTooCloseToAnyCamp(x, y)) {
+                prev_x = 0;
+                prev_y = 0;
+                continue;
+            }
+        }
         Terrain &T = terrainGrid[(int)y][(int)x];
         bool isGrass  = (T.texture == &tex::grass || T.texture == &tex::grass2 || T.texture == &tex::grass3 || T.texture == &tex::grass4);
         bool isDesert = (T.texture == &tex::desert);
@@ -1140,7 +1162,29 @@ int main() {
 
         bool isNearWater = (terrainGrid[(int)y-2][(int)x].texture==&tex::water || terrainGrid[(int)y][(int)x-2].texture==&tex::water || terrainGrid[(int)y+2][(int)x].texture==&tex::water || terrainGrid[(int)y][(int)x+2].texture==&tex::water);
         if(isNearWater) i-=1;
-        int type = GetRandomValue(0, 5);
+        if(type==4 || type==3) {
+            prev_x = 0;
+            prev_y = 0;
+        }
+        if(isGrass && (type==5 || type==0 || type==4)) {
+            // create a small city district here
+            float large_offset = 4.0;
+            float small_offset = 2.7;
+            float extra_small_offset = 1.4;
+            for(int i1=-1;i1<=1;i1+=2)
+                for(int i2=-1;i2<=1;i2+=2) {
+                    if(GetRandomValue(0, 99) < 70) {CREATE_HOUSE(&factions[1], x-i1*small_offset, y-i2*small_offset);}
+                    if(GetRandomValue(0, 99) < 70) {CREATE_HOUSE(&factions[1], x-i1*small_offset, y-i2*large_offset);}
+                    if(GetRandomValue(0, 99) < 70) {CREATE_HOUSE(&factions[1], x-i1*large_offset, y-i2*small_offset);}
+                    if(GetRandomValue(0, 99) < 70) {CREATE_HOUSE(&factions[1], x-i1*large_offset, y-i2*large_offset);}
+                    if(type!=4) {
+                        if(GetRandomValue(0, 99) < 50) {CREATE_HOUSE(&factions[1], x-i1*extra_small_offset, y-i2*extra_small_offset);}
+                    }
+                        if(GetRandomValue(0, 99) < 50) {CREATE_HOUSE(&factions[1], x-i1*extra_small_offset, y-i2*large_offset);}
+                        if(GetRandomValue(0, 99) < 50) {CREATE_HOUSE(&factions[1], x-i1*large_offset, y-i2*extra_small_offset);}
+                }
+        }
+
         switch (type) {
             case 1:
                 if (T.texture == &tex::mountain) {
@@ -1161,11 +1205,13 @@ int main() {
                 if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+2*spacing, y); }
                 if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+2*spacing, y+spacing); }
                 if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-spacing, y-2*spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x, y-2*spacing); }
                 if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+spacing, y-2*spacing); }
                 if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-spacing, y+2*spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x, y+2*spacing); }
                 if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+spacing, y+2*spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-2*spacing, y-spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+2*spacing, y-spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-2*spacing, y+spacing); }
+                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+2*spacing, y+spacing); }
                 }
                 break;
             case 3:
@@ -1184,14 +1230,15 @@ int main() {
                 break;
             case 4:
                 if(GetRandomValue(0, 99) < 80 && count_warehouses) {
-                    CREATE_VAN(&factions[1], x, y);
+                    CREATE_VAN(&factions[1], x-1, y);
+                    CREATE_TOWNHALL(&factions[1], x, y);
                 }
                 else if(count_warehouses<3){
                     count_warehouses++;
-                    CREATE_RAILGUN(&factions[1], x-GetRandomValue(0, 5)-2, y-GetRandomValue(0, 5)-2);
-                    CREATE_RAILGUN(&factions[1], x-GetRandomValue(0, 5)-2, y+GetRandomValue(0, 5)+2);
-                    CREATE_RAILGUN(&factions[1], x+GetRandomValue(0, 5)+2, y-GetRandomValue(0, 5)-2);
-                    CREATE_RAILGUN(&factions[1], x+GetRandomValue(0, 5)+2, y+GetRandomValue(0, 5)-2);
+                    CREATE_RAILGUN(&factions[1], x-GetRandomValue(2, 5)-2, y-GetRandomValue(2, 5)-2);
+                    CREATE_RAILGUN(&factions[1], x-GetRandomValue(2, 5)-2, y+GetRandomValue(2, 5)+2);
+                    CREATE_RAILGUN(&factions[1], x+GetRandomValue(2, 5)+2, y-GetRandomValue(2, 5)-2);
+                    CREATE_RAILGUN(&factions[1], x+GetRandomValue(2, 5)+2, y+GetRandomValue(2, 5)-2);
                     CREATE_WAREHOUSE(&factions[1], x, y);
                     RevealUnitToAllFactions(num_units - 1);
                 }

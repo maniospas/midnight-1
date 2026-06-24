@@ -428,12 +428,12 @@ struct Unit {
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            2.3,          /* size */ \
+            1.7,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),    /* can only be captured */ \
-            0.5f \
+            0.3f \
         }; \
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
@@ -515,6 +515,31 @@ struct Unit {
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
     }
+
+
+#define CREATE_HOUSE(faction, x, y) \
+    if (num_units < MAX_UNITS && terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)].texture==&tex::grass) {\
+        units[num_units++] = { \
+            GetRandomValue(0,4)?&tex::house:&tex::house2,   /* texture */ \
+            "House",       /* name */ \
+            0.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            0.0,          /* attack_rate */ \
+            3.0,          /* range */ \
+            0.0,          /* damage */ \
+            0.0,          /* experience */ \
+            GetRandomValue(0,3)*90.f,          /* angle */ \
+            1.0,          /* size */ \
+            4.0,         /* health */ \
+            4.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            (faction),    /* can only be captured */ \
+            0.3           /* extra scale*/\
+        };\
+    }
+
+
 
 #define CREATE_LIGHTHOUSE(faction, x, y) \
     if (num_units < MAX_UNITS) {\
@@ -607,6 +632,31 @@ struct Unit {
             3.0,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            (faction)     /* can only be captured */ \
+        };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
+    }
+
+
+#define CREATE_TOWNHALL(faction, x, y) \
+    if (num_units < MAX_UNITS) {\
+        units[num_units++] = { \
+            &tex::villa,   /* texture */ \
+            "Townhall",  /* name */ \
+            0.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            0.0,          /* attack_rate */ \
+            4.5,          /* range */ \
+            0.0,          /* damage */ \
+            0.0,          /* experience */ \
+            0.0,          /* angle */ \
+            2.0,          /* size */ \
+            30.0,         /* health */ \
+            30.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction)     /* can only be captured */ \
         };\

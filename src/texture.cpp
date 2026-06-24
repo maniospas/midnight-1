@@ -45,7 +45,6 @@ namespace tex {
     static Texture2D camp;
     static Texture2D lab;
     static Texture2D warehouse;
-    static Texture2D overlay;
     static Texture2D banner;
     static Texture2D blood;
     static Texture2D ghost;
@@ -106,6 +105,9 @@ namespace tex {
     static Texture2D command;
     static Texture2D homunculi;
     static Texture2D kraken;
+    static Texture2D house;
+    static Texture2D house2;
+    static Texture2D villa;
 }
 
 
@@ -197,7 +199,6 @@ void load() {
     tex::oil = LoadTexture("data/oil.png");
     tex::datacenter = LoadTexture("data/datacenter.png");
     tex::info = LoadTexture("data/info.png");
-    tex::overlay = LoadTexture("data/overlay.png");
     tex::banner = LoadTexture("data/banner.png");
     tex::banner = LoadTexture("data/banner.png");
     tex::trenches = LoadTexture("data/trenches.png");
@@ -215,6 +216,9 @@ void load() {
     tex::command = LoadTexture("data/command.png");
     tex::homunculi= LoadTexture("data/homunculi.png");
     tex::kraken= LoadTexture("data/kraken.png");
+    tex::house= LoadTexture("data/house.png");
+    tex::house2= LoadTexture("data/house2.png");
+    tex::villa= LoadTexture("data/villa.png");
 
     sound::gun.Load("data/gun.ogg", 24);
     sound::boom.Load("data/boom.ogg", 5);
@@ -293,11 +297,13 @@ void unload() {
     UnloadTexture(tex::command);
     UnloadTexture(tex::homunculi);
     UnloadTexture(tex::kraken);
+    UnloadTexture(tex::house);
+    UnloadTexture(tex::house2);
+    UnloadTexture(tex::villa);
 
     UnloadTexture(tex::oil);
     UnloadTexture(tex::datacenter);
     UnloadTexture(tex::info);
-    UnloadTexture(tex::overlay);
     UnloadTexture(tex::railgun);
     UnloadTexture(tex::fort);
     UnloadTexture(tex::mine);
