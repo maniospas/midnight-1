@@ -292,8 +292,8 @@ struct Unit {
             0.0,          /* experience */ \
             (float)GetRandomValue(0,360),          /* angle */ \
             0.3,          /* size */ \
-            7.0,         /* health */ \
-            7.0,         /* max_health */ \
+            4.0,          /* health */ \
+            4.0,          /* max_health */ \
             (faction),    /* faction */ \
             nullptr,      /* faction */ \
             0.3           /* extra scale*/\

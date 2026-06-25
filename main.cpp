@@ -1139,7 +1139,8 @@ int main() {
     for (int i = 0; i < NUM_NEUTRAL_STRUCTURES*2; i+=2) {
         float x, y;
         int type = GetRandomValue(0, 5);
-        if( (prev_x==0 && prev_y==0) || GetRandomValue(0,1) || type==2) { // space out radios
+        int create_city = GetRandomValue(0,1);
+        if( (prev_x==0 && prev_y==0) || GetRandomValue(0,1) || type==2 || !create_city) { // space out radios
             x = GetRandomValue(20, GRID_SIZE - 20);
             y = GetRandomValue(20, GRID_SIZE - 20);
             prev_x = x;
@@ -1174,7 +1175,7 @@ int main() {
             prev_x = 0;
             prev_y = 0;
         }
-        if(isGrass && (type==5 || type==0 || type==4)) {
+        if(isGrass && (type==5 || type==0 || type==4) && create_city) {
             // create a small city district here
             float large_offset = 4.0;
             float small_offset = 2.7;
@@ -1521,10 +1522,10 @@ int main() {
                     fort_creation_py += u.y;
                     fort_creation_num++;
                 }
-                if(u.selected && (u.texture==&tex::tank || u.texture==&tex::van))  {
+                if(u.selected && (u.texture==&tex::tank || u.texture==&tex::van))
                     trench_creation_num++;
-                    if(u.health>=u.max_health-0.5f) engine_creation_num++;
-                }
+                if(u.selected && u.health && u.speed && u.health>=u.max_health-0.5f && is_mecha(u))
+                    engine_creation_num++;
                 if(u.selected && u.health>3.1f && u.speed && !is_mecha(u))
                     turtle_creation_num++;
             }
@@ -1559,7 +1560,7 @@ int main() {
             mouseCapturedByUI = true;
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
-                if (u.selected && u.health && (u.texture==&tex::tank || u.texture==&tex::van) && u.health>=u.max_health-0.5f) {
+                if (u.selected && u.health && u.speed && u.health>=u.max_health-0.5 && is_mecha(u)) {
                     u.texture = &tex::ghost; // prevent explosion
                     CREATE_ENGINE(factions, u.x, u.y);
                     units[num_units-1].health = units[num_units-1].max_health*u.health/u.max_health;
@@ -2615,7 +2616,7 @@ int main() {
             bool dismantleUnavailable = !engine_creation_num;
             const char* title = "";
             if(techHover)
-                title = dismantleUnavailable ? "Select undamaged tanks & vans" : TextFormat("Dismantle %d", engine_creation_num);
+                title = dismantleUnavailable ? "Select undamaged mecha" : TextFormat("Dismantle %d", engine_creation_num);
 
             DrawTextOutlined(title, dismantleX-MeasureText(title, 30)-70, dismantleY - 16, 32, Fade(WHITE, 1.f));
             DrawCircle(dismantleX, dismantleY, radius, dismantleUnavailable?Color{20,20,20,255}:Color{128,128,128,255});

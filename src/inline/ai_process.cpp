@@ -112,7 +112,7 @@ for (int i = 0; i < num_units; i++) {
         }
     if (!found) {
 
-        if(u.faction && (u.faction->technology & TECHNOLOGY_DISMANTLE) && (u.texture==&tex::tank || u.texture==&tex::van) && u.health>=u.max_health-0.5f && GetRandomValue(0,100)<30 && u.faction->industry<u.faction->count_members && u.faction->industry>u.faction->count_members-10) {
+        if(u.faction && (u.faction->technology & TECHNOLOGY_DISMANTLE) && u.health>=u.max_health-0.5f && u.speed && is_mecha(u) && GetRandomValue(0,100)<30 && u.faction->industry<u.faction->count_members && u.faction->industry>u.faction->count_members-10) {
             u.texture = &tex::ghost; // prevent explosion
             CREATE_ENGINE(u.faction, u.x, u.y);
             units[num_units-1].popup = "dismantled";

@@ -368,7 +368,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     }
 
     if((global_available_starting_techs&TECHNOLOGY_COMMAND) || (prev_tech&TECHNOLOGY_COMMAND)) {
-        DrawTechNode(command.x, command.y, "COMMAND", "Fixed speed of spawns", tech, TECHNOLOGY_COMMAND, !showing_preview);
+        DrawTechNode(command.x, command.y, "COMMAND", "Fixed spawn speed", tech, TECHNOLOGY_COMMAND, !showing_preview);
         DrawTextureEx(tex::command, {command.x + ICON_DX, command.y + ICON_DY}, 0, ICON_SIZE / tex::command.width, WHITE);
     }
 
@@ -420,7 +420,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     }
 
     if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_COMMAND | TECHNOLOGY_DISMANTLE)) {
-        DrawTechNode(dismantle.x,   dismantle.y,   "DIMANTLERS",   "Vans & tanks to engines", tech, TECHNOLOGY_DISMANTLE, !showing_preview);
+        DrawTechNode(dismantle.x,   dismantle.y,   "DIMANTLERS",   "Undamaged mecha to engines", tech, TECHNOLOGY_DISMANTLE, !showing_preview);
         DrawTextureEx(tex::engine, {dismantle.x + ICON_DX, dismantle.y + ICON_DY}, 0, ICON_SIZE / tex::engine.width, WHITE);
     }
 
