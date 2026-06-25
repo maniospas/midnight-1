@@ -54,7 +54,7 @@ for (int i = 0; i < num_units; i++) {
                     float dx = units[j].x - u.x;
                     float dy = units[j].y - u.y;
                     float d2 = dx*dx + dy*dy;
-                    if(d2<25.f*25.f) {
+                    if(d2<10.f*10.f) {
                         units[j] = { \
                             &tex::ghost,  /* texture */
                             "Bloo",       /* name */
@@ -76,8 +76,8 @@ for (int i = 0; i < num_units; i++) {
                         applied = true;
                     }
                 }
-            if(u.faction==factions && applied) {
-                last_message = "Databank: released radiation that turned nearby blood to bloo.";
+            if(applied) {
+                last_message = "A databank released radiation that created a mass of bloo.";
                 last_message_counter = 0.f;
             }
         }
@@ -157,8 +157,8 @@ for (int i = 0; i < num_units; i++) {
         if(u.texture==&tex::field) u.faction->industry += 4.f;
         if(u.texture==&tex::field_little) u.faction->industry += 2.f;
         if(u.texture==&tex::hide) u.faction->industry += 4.f;
-        if(u.texture==&tex::house) u.faction->industry += 1.f;
-        if(u.texture==&tex::house2) u.faction->industry += 2.f;
+        if(u.texture==&tex::house) u.faction->industry += 0.5f;
+        if(u.texture==&tex::house2) u.faction->industry += 1.f;
         if(u.texture==&tex::mine) u.faction->industry += 12.f;
         if(u.texture==&tex::engine) {
             u.faction->industry += 3.f;

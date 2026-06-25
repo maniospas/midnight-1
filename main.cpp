@@ -1128,6 +1128,8 @@ int main() {
     int count_curio = 0;
     float prev_x = 0;
     float prev_y = 0;
+    int house_prob = GetRandomValue(0, 70);
+    if(house_prob<30) house_prob = 0;
     for (int i = 0; i < NUM_NEUTRAL_STRUCTURES*2; i+=2) {
         float x, y;
         int type = GetRandomValue(0, 5);
@@ -1173,15 +1175,15 @@ int main() {
             float extra_small_offset = 1.4;
             for(int i1=-1;i1<=1;i1+=2)
                 for(int i2=-1;i2<=1;i2+=2) {
-                    if(GetRandomValue(0, 99) < 70) {CREATE_HOUSE(&factions[1], x-i1*small_offset, y-i2*small_offset);}
-                    if(GetRandomValue(0, 99) < 70) {CREATE_HOUSE(&factions[1], x-i1*small_offset, y-i2*large_offset);}
-                    if(GetRandomValue(0, 99) < 70) {CREATE_HOUSE(&factions[1], x-i1*large_offset, y-i2*small_offset);}
-                    if(GetRandomValue(0, 99) < 70) {CREATE_HOUSE(&factions[1], x-i1*large_offset, y-i2*large_offset);}
+                    if(GetRandomValue(0, 99) < house_prob) {CREATE_HOUSE(&factions[1], x-i1*small_offset, y-i2*small_offset);}
+                    if(GetRandomValue(0, 99) < house_prob) {CREATE_HOUSE(&factions[1], x-i1*small_offset, y-i2*large_offset);}
+                    if(GetRandomValue(0, 99) < house_prob) {CREATE_HOUSE(&factions[1], x-i1*large_offset, y-i2*small_offset);}
+                    if(GetRandomValue(0, 99) < house_prob) {CREATE_HOUSE(&factions[1], x-i1*large_offset, y-i2*large_offset);}
                     if(type!=4) {
-                        if(GetRandomValue(0, 99) < 50) {CREATE_HOUSE(&factions[1], x-i1*extra_small_offset, y-i2*extra_small_offset);}
+                        if(GetRandomValue(0, 99) < house_prob-20) {CREATE_HOUSE(&factions[1], x-i1*extra_small_offset, y-i2*extra_small_offset);}
                     }
-                        if(GetRandomValue(0, 99) < 50) {CREATE_HOUSE(&factions[1], x-i1*extra_small_offset, y-i2*large_offset);}
-                        if(GetRandomValue(0, 99) < 50) {CREATE_HOUSE(&factions[1], x-i1*large_offset, y-i2*extra_small_offset);}
+                        if(GetRandomValue(0, 99) < house_prob-20) {CREATE_HOUSE(&factions[1], x-i1*extra_small_offset, y-i2*large_offset);}
+                        if(GetRandomValue(0, 99) < house_prob-20) {CREATE_HOUSE(&factions[1], x-i1*large_offset, y-i2*extra_small_offset);}
                 }
         }
 
@@ -1231,7 +1233,7 @@ int main() {
             case 4:
                 if(GetRandomValue(0, 99) < 80 && count_warehouses) {
                     CREATE_VAN(&factions[1], x-1, y);
-                    CREATE_TOWNHALL(&factions[1], x, y);
+                    if(house_prob)  CREATE_TOWNHALL(&factions[1], x, y);
                 }
                 else if(count_warehouses<3){
                     count_warehouses++;
@@ -1356,6 +1358,53 @@ int main() {
                 created_krakens++;
                 CREATE_KRAKEN(ANIMAL_FACTION, x, y);
                 std::cout << "created kraken\n";
+            }
+        }
+    }
+
+
+    // Repulse everything
+    for(int repulse_step=0;repulse_step<30;repulse_step++) {
+        // repulse units (Collisions)
+        const float stiffness = 1.0f;   // tune this
+        const float radiusFactor = 0.7f;
+        for (int i = 0; i < num_units; i++) {
+            Unit &u = units[i];
+            if (!u.max_health) continue;
+            if (u.texture==&tex::field) continue;
+            if (u.texture==&tex::field_empty) continue;
+            if (u.texture==&tex::field_little) continue;
+            if (u.texture==&tex::hide) continue;
+
+            for (int j = i + 1; j < num_units; j++) {
+                Unit &o = units[j];
+                if (!o.max_health) continue;
+
+                float dx = u.x - o.x;
+                float dy = u.y - o.y;
+                float d2 = dx*dx + dy*dy;
+
+                float minDist = (u.size + o.size) * radiusFactor;
+                float minDist2 = minDist * minDist;
+
+                if (d2 < minDist2 && d2 > 0.0001f) {
+                    float d = sqrtf(d2);
+                    float overlap = minDist - d;
+                    float force = overlap * stiffness;
+                    float nx = dx / d;
+                    float ny = dy / d;
+                    float u_force = 0.5f;
+                    float o_force = 0.5f;
+                    u.x += nx * force * u_force;
+                    u.y += ny * force * u_force;
+                    // move everything other than fields
+                    if (o.texture==&tex::field) continue;
+                    if (o.texture==&tex::field_little) continue;
+                    if (o.texture==&tex::field_empty) continue;
+                    if (o.texture==&tex::hide) continue;
+                    o.x -= nx * force * o_force;
+                    o.y -= ny * force * o_force;
+                }
             }
         }
     }
@@ -2051,6 +2100,11 @@ int main() {
             if(!u.faction) continue;
             if (u.speed)
                 DrawCircle(px, py, radius, u.selected?Fade(ColorBrightness(u.faction->color, -0.35f), 0.5f):shadow_color);//u.health < u.max_health?shadow_color_damaged:shadow_color);
+            else if(u.texture!=&tex::field && u.texture!=&tex::field_little && u.texture!=&tex::field_empty && u.texture!=&tex::hide)
+                DrawCircle(px, py, radius, shadow_color);//u.health < u.max_health?shadow_color_damaged:shadow_color);
+            
+            // else if(u.texture!=&tex::field && u.texture!=&tex::field_little && u.texture!=&tex::field_empty && u.texture!=&tex::hide)
+            //     DrawRectangle(px - radius, py - radius, radius * 2, radius * 2, u.selected ? Fade(ColorBrightness(u.faction->color, -0.35f), 0.5f) : shadow_color);
             if (u.health < u.max_health) {
                 int maxHealth = (int)(u.max_health+0.01f);
                 int hp = (int)(u.health+0.01);
@@ -2105,6 +2159,63 @@ int main() {
             }
             EndShaderMode(); // unitShader
         }
+
+
+        // Draw smoke for house units
+        for (int i = 0; i < num_units; i++) {
+            Unit &u = units[i];
+            if (u.texture!=&tex::house && u.texture!=&tex::engine) continue;
+            //if (u.faction==factions+1 || u.faction==factions+2) continue;
+            int ux = (int)u.x;
+            int uy = (int)u.y;
+            int range = (int)u.size + 1;
+            if (ux < xMin-range || ux >= xMax+range) continue;
+            if (uy < yMin-range || uy >= yMax+range) continue;
+            if (!visible[uy][ux] && !factions[0].visible_knowledge[i]) continue;
+            float px = u.x * TILE_SIZE;
+            float py = u.y * TILE_SIZE;
+            unsigned int seed = (unsigned int)(i * 2654435761u);
+            auto hash = [](unsigned int x) -> float {
+                x ^= x >> 16; x *= 0x45d9f3b; x ^= x >> 16;
+                return (x & 0xFFFF) / 65535.0f;
+            };
+            float house_rad = u.angle * DEG2RAD + PI;
+            if(u.texture==&tex::engine) house_rad += PI/2;
+            float cos_h = cosf(house_rad);
+            float sin_h = sinf(house_rad);
+            auto rotate_origin = [&](float lx, float ly) -> Vector2 {return { px + lx * cos_h - ly * sin_h, py + lx * sin_h + ly * cos_h };};
+            float wind_rad = water_angle + PI/4.0f;
+            float cos_w = cosf(wind_rad);
+            float sin_w = sinf(wind_rad);
+            const int NUM_PUFFS = 5;
+            for (int p = 0; p < NUM_PUFFS; p++) {
+                float phase_offset = hash(seed + p * 3 + 0);
+                float x_drift      = 0;
+                float size_base    = hash(seed + p * 3 + 2);
+                float cycle = fmodf(t*(u.texture!=&tex::engine?0.4f:1.2f) + phase_offset, 1.0f);
+                float alpha = (cycle < 0.3f)? (cycle / 0.3f): (1.0f - (cycle - 0.3f) / 0.7f);
+                alpha *= 0.45;
+                if (alpha < 0.01f) continue;
+                float rise = cycle * TILE_SIZE * 1.2f;// + TILE_SIZE * 0.3f;
+                float sway = x_drift * TILE_SIZE * 0.5f + sinf(cycle*PI + phase_offset*2*PI) * TILE_SIZE * 0.18f;
+                sway /= 2;
+                Vector2 origin = rotate_origin(-TILE_SIZE * 0.2f, -TILE_SIZE * 0.4f);
+                Vector2 pos = {
+                    origin.x + cos_w * rise + (-sin_w) * sway,
+                    origin.y + sin_w * rise +   cos_w  * sway
+                };
+                if (pos.x < xMin * TILE_SIZE || pos.x > xMax * TILE_SIZE) continue;
+                if (pos.y < yMin * TILE_SIZE || pos.y > yMax * TILE_SIZE) continue;
+
+                float radius = (4.0f + size_base * 5.0f) * (0.5f + cycle * 0.5f);
+                radius *= 2;
+                unsigned char gray = (unsigned char)(80 + size_base * 40);
+                unsigned char a8   = (unsigned char)(alpha * 255);
+                DrawCircleV(pos, radius + 1.5f, { 0, 0, 0, 255 });
+                DrawCircleV(pos, radius, { gray, gray, gray, a8 });
+            }
+        }
+
 
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];

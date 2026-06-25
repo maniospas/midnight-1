@@ -360,7 +360,7 @@ struct Unit {
             20.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),     /* faction */ \
-            0.0           /* extra scale*/\
+            0.2           /* extra scale*/\
         };
 
 #define CREATE_CAMP(faction, x, y) \
@@ -530,12 +530,12 @@ struct Unit {
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             GetRandomValue(0,3)*90.f,          /* angle */ \
-            1.0,          /* size */ \
+            1.2,          /* size */ \
             4.0,         /* health */ \
             4.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),    /* can only be captured */ \
-            0.3           /* extra scale*/\
+            0.1           /* extra scale*/\
         };\
     }
 
@@ -629,11 +629,12 @@ struct Unit {
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            3.0,          /* size */ \
+            2.5,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
             (faction),    /* faction */ \
-            (faction)     /* can only be captured */ \
+            (faction),    /* can only be captured */ \
+            0.5\
         };\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
@@ -654,11 +655,12 @@ struct Unit {
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            2.0,          /* size */ \
+            1.7,          /* size */ \
             30.0,         /* health */ \
             30.0,         /* max_health */ \
             (faction),    /* faction */ \
-            (faction)     /* can only be captured */ \
+            (faction),    /* can only be captured */ \
+            0.3           /* extra scale*/\
         };\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
@@ -679,11 +681,12 @@ struct Unit {
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            3.0,          /* size */ \
+            2.5,          /* size */ \
             300.0,         /* health */ \
             300.0,         /* max_health */ \
             (faction),    /* faction */ \
-            (faction)     /* can only be captured */ \
+            (faction),    /* can only be captured */ \
+            0.5           /* extra scale*/\
         };\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
