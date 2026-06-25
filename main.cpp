@@ -2135,8 +2135,8 @@ int main() {
             if(!u.faction) continue;
             if (u.speed)
                 DrawCircle(px, py, radius, u.selected?Fade(ColorBrightness(u.faction->color, -0.35f), 0.5f):shadow_color);//u.health < u.max_health?shadow_color_damaged:shadow_color);
-            else if(u.texture!=&tex::field && u.texture!=&tex::field_little && u.texture!=&tex::field_empty && u.texture!=&tex::hide)
-                DrawCircle(px, py, radius, shadow_color);//u.health < u.max_health?shadow_color_damaged:shadow_color);
+            // else if(u.texture!=&tex::field && u.texture!=&tex::field_little && u.texture!=&tex::field_empty && u.texture!=&tex::hide)
+            //     DrawCircle(px, py, radius, shadow_color);//u.health < u.max_health?shadow_color_damaged:shadow_color);
             
             // else if(u.texture!=&tex::field && u.texture!=&tex::field_little && u.texture!=&tex::field_empty && u.texture!=&tex::hide)
             //     DrawRectangle(px - radius, py - radius, radius * 2, radius * 2, u.selected ? Fade(ColorBrightness(u.faction->color, -0.35f), 0.5f) : shadow_color);
@@ -2200,7 +2200,7 @@ int main() {
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];
             if (u.texture!=&tex::house && u.texture!=&tex::engine) continue;
-            //if (u.faction==factions+1 || u.faction==factions+2) continue;
+            if (u.faction==factions+1 || u.faction==factions+2) continue;
             int ux = (int)u.x;
             int uy = (int)u.y;
             int range = (int)u.size + 1;

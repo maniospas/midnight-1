@@ -519,8 +519,9 @@ struct Unit {
 
 #define CREATE_HOUSE(faction, x, y) \
     if (num_units < MAX_UNITS && terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)].texture==&tex::grass) {\
+        Texture* selected_texture = GetRandomValue(0,4)?&tex::house:&tex::house2;\
         units[num_units++] = { \
-            GetRandomValue(0,4)?&tex::house:&tex::house2,   /* texture */ \
+            selected_texture,   /* texture */ \
             "House",       /* name */ \
             0.0,          /* speed */ \
             (float)(x),   /* x */ \
@@ -530,12 +531,12 @@ struct Unit {
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             GetRandomValue(0,3)*90.f,          /* angle */ \
-            1.2,          /* size */ \
+            selected_texture==&tex::house?1.0f:1.5f,          /* size */ \
             4.0,         /* health */ \
             4.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),    /* can only be captured */ \
-            0.1           /* extra scale*/\
+            0.25           /* extra scale*/\
         };\
     }
 

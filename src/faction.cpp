@@ -7,7 +7,7 @@ struct Faction {
     Color color;
     const char* name;
     float victory_points;
-    int industry;
+    float industry;
     float count_members;
     std::bitset<MAX_UNITS> visible_knowledge;
     unsigned long long technology;
