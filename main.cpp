@@ -943,6 +943,12 @@ int main() {
         CREATE_CAMP(&factions[0], bx-(player_preferred_start[0]==PREFERENCE_SPACING?8.f:0.3f), by);
         CREATE_CAMP(&factions[0], bx+(player_preferred_start[1]==PREFERENCE_SPACING?8.f:0.3f), by);
 
+        // terrainGrid[(int)by-2][(int)bx-2].texture = &tex::hill;
+        // terrainGrid[(int)by-3][(int)bx-2].texture = &tex::hill;
+        // terrainGrid[(int)by-2][(int)bx-3].texture = &tex::hill;
+        // terrainGrid[(int)by-2][(int)bx-1].texture = &tex::hill;
+        // terrainGrid[(int)by-1][(int)bx-2].texture = &tex::hill;
+
         for(int p=0;p<2;++p) {
             float px = p==0?(bx-3):(bx+3);
             int pref = player_preferred_start[p];
@@ -1182,8 +1188,8 @@ int main() {
                     if(type!=4) {
                         if(GetRandomValue(0, 99) < house_prob-20) {CREATE_HOUSE(&factions[1], x-i1*extra_small_offset, y-i2*extra_small_offset);}
                     }
-                        if(GetRandomValue(0, 99) < house_prob-20) {CREATE_HOUSE(&factions[1], x-i1*extra_small_offset, y-i2*large_offset);}
-                        if(GetRandomValue(0, 99) < house_prob-20) {CREATE_HOUSE(&factions[1], x-i1*large_offset, y-i2*extra_small_offset);}
+                    if(GetRandomValue(0, 99) < house_prob-20) {CREATE_HOUSE(&factions[1], x-i1*extra_small_offset, y-i2*large_offset);}
+                    if(GetRandomValue(0, 99) < house_prob-20) {CREATE_HOUSE(&factions[1], x-i1*large_offset, y-i2*extra_small_offset);}
                 }
         }
 
@@ -1706,7 +1712,12 @@ int main() {
             int ux = (int)u.x;
             int uy = (int)u.y;
             if (ux < 0 || uy < 0 || ux >= GRID_SIZE || uy >= GRID_SIZE) continue;
-            if (!visible[uy][ux]) continue;
+            if(u.speed==0) {
+                if (!explored[uy][ux]) continue;
+            }
+            else {
+                if (!visible[uy][ux]) continue;
+            }
             // compute pixel center of unit
             float px = u.x * TILE_SIZE;
             float py = u.y * TILE_SIZE;
@@ -1908,8 +1919,12 @@ int main() {
                 Texture2D* s  = hasS ? terrainGrid[y+1][x].texture : tx;
                 Texture2D* w  = hasW ? terrainGrid[y][x-1].texture : tx;
                 Texture2D* e  = hasE ? terrainGrid[y][x+1].texture : tx;
+                bool tx_is_water = tx==&tex::water;
+                bool tx_is_grass = !tx_is_water && IsGrass(tx);
+                bool tx_is_mountain = !tx_is_water && !tx_is_grass && IsMountain(tx);
+                bool tx_is_hill = !tx_is_water && !tx_is_grass && !tx_is_mountain && IsHill(tx);
 
-                if (tx==&tex::water) {
+                if (tx_is_water) {
                     bool sN  = IsGrass(n);
                     bool sS  = IsGrass(s);
                     bool sW  = IsGrass(w);
@@ -1921,7 +1936,27 @@ int main() {
                     if (sS && sW && !sE && !sN) DrawRot(transition,  px, py, 270);
                     if (sS && sE && !sW && !sN) DrawRot(transition, px, py, 180);
                 }
-                if (!IsHill(tx) && !IsMountain(tx)) {
+                if(tx_is_hill) {
+                    bool sN  = IsHill(n) || IsMountain(n);
+                    bool sS  = IsHill(s) || IsMountain(s);
+                    bool sW  = IsHill(w) || IsMountain(w);
+                    bool sE  = IsHill(e) || IsMountain(e);
+                    if(!sN && !sE && x<GRID_SIZE-1 && y) DrawRot(tex::hill_wedge, px+TILE_SIZE, py-TILE_SIZE, 270);
+                    if(!sN && !sW && x && y) DrawRot(tex::hill_wedge, px-TILE_SIZE, py-TILE_SIZE, 180);
+                    if(!sS && !sE && x<GRID_SIZE-1 && y<GRID_SIZE-1) DrawRot(tex::hill_wedge, px+TILE_SIZE, py+TILE_SIZE, 0);
+                    if(!sS && !sW && x && y<GRID_SIZE-1) DrawRot(tex::hill_wedge, px-TILE_SIZE, py+TILE_SIZE, 90);
+                }
+                if(tx_is_mountain) {
+                    bool sN  = IsMountain(n);
+                    bool sS  = IsMountain(s);
+                    bool sW  = IsMountain(w);
+                    bool sE  = IsMountain(e);
+                    if(!sN && !sE && x<GRID_SIZE-1 && y) DrawRot(tex::hill_wedge, px+TILE_SIZE, py-TILE_SIZE, 270);
+                    if(!sN && !sW && x && y) DrawRot(tex::hill_wedge, px-TILE_SIZE, py-TILE_SIZE, 180);
+                    if(!sS && !sE && x<GRID_SIZE-1 && y<GRID_SIZE-1) DrawRot(tex::hill_wedge, px+TILE_SIZE, py+TILE_SIZE, 0);
+                    if(!sS && !sW && x && y<GRID_SIZE-1) DrawRot(tex::hill_wedge, px-TILE_SIZE, py+TILE_SIZE, 90);
+                }
+                if (!tx_is_hill && !tx_is_mountain) {
                     bool sN  = IsHill(n);
                     bool sS  = IsHill(s);
                     bool sW  = IsHill(w);
@@ -1968,7 +2003,7 @@ int main() {
                         if(sS) DrawRot(tex::hill_outline, px, py, 270);
                     }
                 }
-                if (!IsDesert(tx) && !IsHill(tx) && !IsMountain(tx)) {
+                if (!IsDesert(tx) && !tx_is_hill && !tx_is_mountain) {
                     bool sN  = IsDesert(n);
                     bool sS  = IsDesert(s);
                     bool sW  = IsDesert(w);
@@ -1979,7 +2014,7 @@ int main() {
                     if (sS && sW && !sE && !sN) DrawRot(transition,  px, py, 270);
                     if (sS && sE && !sW && !sN) DrawRot(transition, px, py, 180);
                 }
-                if (!IsMountain(tx)) {
+                if (!tx_is_mountain) {
                     bool sN  = IsMountain(n);
                     bool sS  = IsMountain(s);
                     bool sW  = IsMountain(w);
