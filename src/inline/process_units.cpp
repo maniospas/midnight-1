@@ -14,6 +14,7 @@ for (int i = 0; i < num_units; i++) {
     if(u.y<2) u.y = 2;
     if(u.x>=GRID_SIZE-2) u.x = GRID_SIZE-2;
     if(u.y>=GRID_SIZE-2) u.y = GRID_SIZE-2;
+    if (u.texture == &tex::rock) continue;
     if (u.texture == &tex::blood) {
         if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.005f * dt * BLOO_RATE) {
             num_units--;
@@ -269,11 +270,11 @@ for (int i = 0; i < num_units; i++) {
                     }
                     if(u.faction&&(u.faction->technology&TECHNOLOGY_CATS)) {
                         CREATE_CAT(u.faction, sx, sy);
-                        if(u.faction->technology&TECHNOLOGY_COMMAND) units[num_units-1].speed = 8.f;
+                        //if(u.faction->technology&TECHNOLOGY_COMMAND) units[num_units-1].speed = 8.f;
                     }
                     else {
                         CREATE_HUMAN(u.faction, sx, sy);
-                        if(u.faction->technology&TECHNOLOGY_COMMAND) units[num_units-1].speed = 5.f;
+                        //if(u.faction->technology&TECHNOLOGY_COMMAND) units[num_units-1].speed = 5.f;
                     }
                     // superiority has 25% chance of spawning something hostile
                     /*if(u.faction&&(u.faction->technology&TECHNOLOGY_SUPERIORITY)&&GetRandomValue(0, 100)<25)
@@ -427,6 +428,15 @@ for (int i = 0; i < num_units; i++) {
             // we re going to try to capture only if there's no enemy
             if(!best) best = bestCapture;
             if(best) {
+                if (u.health>3.1f && u.faction && (u.faction->technology & TECHNOLOGY_TURTLING) && u.speed && !is_mecha(u) && u.faction!=factions && GetRandomValue(0, 100)<20) {
+                    u.health -= 3;
+                    u.max_health -= 3;
+                    float x = u.x + cos(u.angle*DEG2RAD)*u.size;
+                    float y = u.y + sin(u.angle*DEG2RAD)*u.size;
+                    CREATE_ROCK(u.faction, x, y);
+                    units[num_units-1].popup = "turtling";
+                    units[num_units-1].capturing = nullptr;
+                }
                 u.attack_target_x = best->x;
                 u.attack_target_y = best->y;
                 if((u.attack_target_x-u.target_x)*(u.attack_target_x-u.target_x)+(u.attack_target_y-u.target_y)*(u.attack_target_y-u.target_y)<u_range*u_range/16
@@ -435,7 +445,7 @@ for (int i = 0; i < num_units; i++) {
                 }
                 else
                     u.stunned = 0;
-                if(best_found_via_tracking && (!u.popup && GetRandomValue(0, 100)<20)) {
+                if(best_found_via_tracking && !u.popup && GetRandomValue(0, 100)<20) {
                     u.popup = "tracker";
                     u.popup_texture = &tex::track;
                 }

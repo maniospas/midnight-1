@@ -123,7 +123,9 @@ for (int i = 0; i < num_units; i++) {
         if(u.faction && (u.faction->technology & TECHNOLOGY_TRENCHES) && (u.texture==&tex::tank || u.texture==&tex::van) && GetRandomValue(0,100)<50 && u.faction->industry<u.faction->count_members && u.faction->industry>u.faction->count_members-10) {
             u.texture = &tex::ghost; // prevent explosion
             CREATE_RAILGUN(u.faction, u.x, u.y);
-            units[num_units-1].health = units[num_units-1].max_health*u.health/u.max_health;
+            units[num_units-1].max_health = u.max_health;
+            units[num_units-1].health = u.health;//units[num_units-1].max_health*u.health/u.max_health;
+            units[num_units-1].size *= sqrtf(u.max_health/20.f); // to account for scaling up from buffs
             units[num_units-1].popup = "entrenched";
             units[num_units-1].capturing = nullptr;
             u.health = 0;

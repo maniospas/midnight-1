@@ -368,7 +368,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     }
 
     if((global_available_starting_techs&TECHNOLOGY_COMMAND) || (prev_tech&TECHNOLOGY_COMMAND)) {
-        DrawTechNode(command.x, command.y, "COMMAND", "Fixed spawn speed", tech, TECHNOLOGY_COMMAND, !showing_preview);
+        DrawTechNode(command.x, command.y, "COMMAND", "Humans to vans", tech, TECHNOLOGY_COMMAND, !showing_preview);
         DrawTextureEx(tex::command, {command.x + ICON_DX, command.y + ICON_DY}, 0, ICON_SIZE / tex::command.width, WHITE);
     }
 

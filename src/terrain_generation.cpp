@@ -314,7 +314,7 @@ static void GenerateHillsAndDesert(Terrain** terrainGrid) {
                 continue;
             }
 
-            if (hillValue > 0.62f) {
+            if (hillValue > 0.65f) {
                 terrainGrid[y][x] = {
                     &tex::mountain,
                     0.4f,

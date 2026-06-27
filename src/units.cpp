@@ -106,7 +106,7 @@ struct Unit {
             20.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),    /* faction */ \
-            0.3           /* extra scale*/\
+            0.4           /* extra scale*/\
         };
 
 #define CREATE_ROOMBA(faction, x, y) \
@@ -355,7 +355,7 @@ struct Unit {
             1.5,          /* damage */ \
             0.0,          /* experience */ \
             (float)GetRandomValue(0,360),          /* angle */ \
-            0.7,          /* size */ \
+            0.8,          /* size */ \
             20.0,         /* health */ \
             20.0,         /* max_health */ \
             (faction),    /* faction */ \

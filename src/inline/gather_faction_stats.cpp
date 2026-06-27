@@ -31,10 +31,10 @@ for (int i = 0; i < num_units; i++) {
         }
     }
     if(u.texture==&tex::villa &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
-        if((float)GetRandomValue(0, 1000000) / 1000000.0f * 600.f < dt) {
+        if((float)GetRandomValue(0, 1000000) / 1000000.0f * 300.f < dt) {
             bool applied = false;
             for (int j = 0; j < num_units; j++)
-                if (units[j].faction==u.faction && units[j].speed && !is_mecha(units[j]) && units[j].health<units[j].max_health) {
+                if (units[j].faction==u.faction && units[j].speed && units[j].health<units[j].max_health && !is_mecha(units[j])) {
                     units[j].health = units[j].max_health;
                     units[j].popup = "townhall";
                     units[j].popup_texture = &tex::heal;

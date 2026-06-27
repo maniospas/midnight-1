@@ -155,10 +155,6 @@ int main() {
     float icon_sizes = 90.f;
     Rectangle techBtn = {GetScreenWidth() - 320.0f, GetScreenHeight()      - 140.0f, 280.0f, icon_sizes};
     //Rectangle helpBtn = {GetScreenWidth() - 260.0f,GetScreenHeight()       - 95.0f-65.f,240.0f,60.0f};
-    Rectangle fortBtn = {GetScreenWidth() - 320.f, GetScreenHeight()       - 140.0f-(icon_sizes+28)*1, 280.0f, icon_sizes};
-    Rectangle turtleBtn = {GetScreenWidth() - 320.0f, GetScreenHeight()    - 140.0f-(icon_sizes+28)*2, 280.0f, icon_sizes};
-    Rectangle trenchBtn = {GetScreenWidth() - 320.0f, GetScreenHeight()    - 140.0f-(icon_sizes+28)*3, 280.0f, icon_sizes};
-    Rectangle dismantleBtn = {GetScreenWidth() - 320.0f, GetScreenHeight() - 140.0f-(icon_sizes+28)*4, 280.0f, icon_sizes};
     Rectangle optionsButton = {GetScreenWidth() - 280.0f, 10.f, 240.0f, 60.0f};
 
     static float fort_creation_px = 0;
@@ -1207,20 +1203,14 @@ int main() {
                 CREATE_FIELD(&factions[1], x-spacing, y+spacing);
                 CREATE_FIELD(&factions[1], x+spacing, y+spacing);
                 CREATE_FIELD(&factions[1], x+spacing, y-spacing);
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-2*spacing, y-spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-2*spacing, y); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-2*spacing, y+spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+2*spacing, y-spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+2*spacing, y); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+2*spacing, y+spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-spacing, y-2*spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+spacing, y-2*spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-spacing, y+2*spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+spacing, y+2*spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-2*spacing, y-spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+2*spacing, y-spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x-2*spacing, y+spacing); }
-                if(GetRandomValue(0, 99) < 15) { CREATE_FIELD(&factions[1], x+2*spacing, y+spacing); }
+                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x-3*spacing, y-spacing); }
+                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x-3*spacing, y+spacing); }
+                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x+3*spacing, y-spacing); }
+                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x+3*spacing, y+spacing); }
+                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x-spacing, y-3*spacing); }
+                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x+spacing, y-3*spacing); }
+                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x-spacing, y+3*spacing); }
+                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x+spacing, y+3*spacing); }
                 }
                 break;
             case 3:
@@ -1239,7 +1229,7 @@ int main() {
                 break;
             case 4:
                 if(GetRandomValue(0, 99) < 80 && count_warehouses) {
-                    CREATE_VAN(&factions[1], x-1, y);
+                    CREATE_TANK(&factions[1], x-1, y);
                     if(house_prob)  CREATE_TOWNHALL(&factions[1], x, y);
                 }
                 else if(count_warehouses<3){
@@ -1512,6 +1502,20 @@ int main() {
         fort_creation_has_nearby = false;
         bool has_any_selected = false;
 
+
+        float button_py = GetScreenHeight() - 140.0f - (icon_sizes+28);
+        float button_offset = icon_sizes+28;
+        Rectangle fortBtn = {GetScreenWidth() - 320.f, button_py, 280.0f, icon_sizes};
+        if(factions->technology&TECHNOLOGY_FORT) button_py -= button_offset;
+        Rectangle vanBtn = {GetScreenWidth() - 320.f, button_py, 280.0f, icon_sizes};
+        if(factions->technology&TECHNOLOGY_COMMAND) button_py -= button_offset;
+        Rectangle turtleBtn = {GetScreenWidth() - 320.0f, button_py, 280.0f, icon_sizes};
+        if(factions->technology&TECHNOLOGY_TURTLING) button_py -= button_offset;
+        Rectangle trenchBtn = {GetScreenWidth() - 320.0f, button_py, 280.0f, icon_sizes};
+        if(factions->technology&TECHNOLOGY_TRENCHES) button_py -= button_offset;
+        Rectangle dismantleBtn = {GetScreenWidth() - 320.0f, button_py, 280.0f, icon_sizes};
+        if(factions->technology&TECHNOLOGY_DISMANTLE) button_py -= button_offset;
+
         {
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
@@ -1556,93 +1560,7 @@ int main() {
         // }
 
 
-        if(!showTechTree && (factions->technology&TECHNOLOGY_DISMANTLE) && !mouseCapturedByUI && (CheckCollisionPointRec(GetMousePosition(), dismantleBtn) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) && engine_creation_num) {
-            mouseCapturedByUI = true;
-            for (int i = 0; i < num_units; i++) {
-                Unit &u = units[i];
-                if (u.selected && u.health && u.speed && u.health>=u.max_health-0.5 && is_mecha(u)) {
-                    u.texture = &tex::ghost; // prevent explosion
-                    CREATE_ENGINE(factions, u.x, u.y);
-                    units[num_units-1].health = units[num_units-1].max_health*u.health/u.max_health;
-                    units[num_units-1].popup = "dismantle";
-                    units[num_units-1].capturing = nullptr;
-                    u.health = 0;
-                }
-            }
-            PlaySound(sound::select2);
-            engine_creation_num = 0;
-        }
-        
-        if(!showTechTree && (factions->technology&TECHNOLOGY_TRENCHES) && !mouseCapturedByUI && (CheckCollisionPointRec(GetMousePosition(), trenchBtn) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) && trench_creation_num) {
-            mouseCapturedByUI = true;
-            for (int i = 0; i < num_units; i++) {
-                Unit &u = units[i];
-                if (u.selected && u.health && (u.texture==&tex::tank || u.texture==&tex::van)) {
-                    u.texture = &tex::ghost; // prevent explosion
-                    CREATE_RAILGUN(factions, u.x, u.y);
-                    units[num_units-1].health = units[num_units-1].max_health*u.health/u.max_health;
-                    units[num_units-1].popup = "entrenched";
-                    units[num_units-1].capturing = nullptr;
-                    u.health = 0;
-                }
-            }
-            PlaySound(sound::select2);
-            trench_creation_num = 0;
-        }
-
-        if(!showTechTree && (factions->technology&TECHNOLOGY_TURTLING) && !mouseCapturedByUI && (CheckCollisionPointRec(GetMousePosition(), turtleBtn) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) && turtle_creation_num) {
-            mouseCapturedByUI = true;
-            for (int i = 0; i < num_units; i++) {
-                Unit &u = units[i];
-                if (u.selected && u.health>3.1f && u.speed && !is_mecha(u)) {
-                    u.health -= 3;
-                    u.max_health -= 3;
-                    if(true) {
-                        float x = u.x + cos(u.angle*DEG2RAD)*u.size;
-                        float y = u.y + sin(u.angle*DEG2RAD)*u.size;
-                        CREATE_ROCK(u.faction, x, y);
-                        // units[num_units-1].popup = "turtling";
-                        // units[num_units-1].capturing = nullptr;
-                    }
-                    else {
-                        u.popup = "harmed";
-                        u.capturing = nullptr;
-                    }
-                }
-            }
-            PlaySound(sound::select2);
-            turtle_creation_num = 0;
-        }
-
-        if(!showTechTree && (factions->technology&TECHNOLOGY_FORT) && !mouseCapturedByUI && (CheckCollisionPointRec(GetMousePosition(), fortBtn) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) && fort_creation_num) {
-            mouseCapturedByUI = true;
-            if(fort_creation_has_nearby) {
-                last_message = "Cannot build fort close to other structures";
-                last_message_counter = 0.f;
-            }
-            else if(fort_creation_total_health<100) {
-                last_message = "Forts need stationed humans worth at least 20 industry";
-                last_message_counter = 0.f;
-            }
-            else {
-                for (int i = 0; i < num_units; i++) {
-                    Unit &u = units[i];
-                    if (u.selected && u.health && u.speed && (u.texture==&tex::cat || u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) {
-                        u.health = 0;
-                        u.texture = &tex::ghost;
-                    }
-                }
-                CREATE_FORT(factions, fort_creation_px, fort_creation_py);
-                fort_creation_total_health = fort_creation_total_health/5;
-                units[num_units-1].max_health = fort_creation_total_health;
-                units[num_units-1].health = fort_creation_total_health;
-                units[num_units-1].size = sqrtf(fort_creation_total_health/10);
-                PlaySound(sound::select2);
-                last_message = "Built a fort";
-                last_message_counter = 0.f;
-                fort_creation_num = 0;
-            }
-        }
+        #include "src/inline/buttons.cpp"
 
         if (showTechTree) showHelp = false;
 
@@ -2069,7 +1987,7 @@ int main() {
             //water_sound_intensity = sqrtf(water_sound_intensity);
             if(water_sound_intensity>0.3f) water_sound_intensity = 0.3f;
             if((float)GetRandomValue(0, 1000000) / 1000000.0f<dt)
-                sound::water.Play(water_sound_intensity/2*camera.zoom);
+                sound::water.Play(water_sound_intensity*camera.zoom);
         }
 
         // --- UNDER UNIT LAYER ---
@@ -2605,6 +2523,35 @@ int main() {
             }
             if(techHover) mouseCapturedByUI = true;
         }
+        if(!showTechTree && (factions->technology&TECHNOLOGY_COMMAND)) {
+            float prog = fort_creation_total_health/100.0;
+            if(prog>=2) prog = 1;
+            bool techHover = CheckCollisionPointRec(GetMousePosition(), vanBtn);
+            static float fortZoom = vanBtn.height;
+            fortZoom += ((techHover ? vanBtn.height + 20.f : vanBtn.height) - fortZoom) * 20.f * dt;
+            float fortX = vanBtn.x + vanBtn.width - vanBtn.height/2.f;
+            float fortY = vanBtn.y + vanBtn.height/2.f;
+            float radius = fortZoom/2 + 6;
+
+            bool fortUnavailable = !fort_creation_num || fort_creation_total_health < 100;
+            const char* title = "";
+            if(techHover) {
+                if(!fort_creation_num)            title = "Select humans";
+                else if(fort_creation_total_health < 100) title = "Select more humans";
+                else                              title = "Construct van";
+            }
+
+            DrawTextOutlined(title, fortX-MeasureText(title, 30)-70, fortY - 16, 32, Fade(WHITE, 1.f));
+            DrawCircle(fortX, fortY, radius, (!fort_creation_num || fort_creation_total_health < 100)?Color{20,20,20,255}:Color{128,128,128,255});
+            DrawCircleLines(fortX, fortY, radius, {80,80,80,255});
+            DrawTextureEx(tex::van, {fortX - fortZoom/2, fortY - fortZoom/2.5f}, 0, fortZoom / (float)tex::van.width, fortUnavailable ? Fade(WHITE, 0.5f) : WHITE);
+            if(fortUnavailable) {
+                float pad = radius * 0.35f;
+                DrawLineEx({fortX - pad, fortY - pad}, {fortX + pad, fortY + pad}, 5.f, RED);
+                DrawLineEx({fortX + pad, fortY - pad}, {fortX - pad, fortY + pad}, 5.f, RED);
+            }
+            if(techHover) mouseCapturedByUI = true;
+        }
         if(!showTechTree && (factions->technology&TECHNOLOGY_DISMANTLE)) {
             bool techHover = CheckCollisionPointRec(GetMousePosition(), dismantleBtn);
             static float dismantleZoom = dismantleBtn.height;
@@ -2783,7 +2730,7 @@ int main() {
 
         if (!showTechTree) {
             int player_points = factions[0].victory_points;
-            int best_other_points = 0;
+            int best_other_points = factions[3].victory_points;
             int best_other = 3;
             for (int fi = 3; fi < max_factions; fi++) // skip wild faction
                 if (factions[fi].victory_points > best_other_points) {
