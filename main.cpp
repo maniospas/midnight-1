@@ -1605,8 +1605,8 @@ int main() {
         if (wheel) target_zoom += wheel * 0.1f;
         if (camera.zoom!=target_zoom) {
             Vector2 mouseWorldBefore = GetScreenToWorld2D(GetMousePosition(), camera);
-            if (target_zoom < 0.1f) target_zoom = 0.1f;
-            if (target_zoom > 1.7f) target_zoom = 1.7f;
+            if (target_zoom < 0.25f) target_zoom = 0.25f;
+            if (target_zoom > 1.2f) target_zoom = 1.2f;
             float diff = camera.zoom-target_zoom;
             camera.zoom -= diff*dt*5*(1+camera.zoom);
             if(diff*(camera.zoom-target_zoom)<=0.00001f) {
