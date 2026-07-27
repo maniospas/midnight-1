@@ -130,7 +130,7 @@ for (int i = 0; i < num_units; i++) {
     if((u.texture==&tex::field
         || (u.texture==&tex::curio && (u.faction->technology & TECHNOLOGY_CENTRAL))
         || (u.texture==&tex::fort && (u.faction->technology & TECHNOLOGY_CENTRAL))
-    ) && (float)GetRandomValue(0, 1000000) / 1000000.0f*(u.faction && (u.faction->technology&TECHNOLOGY_TERRAFORIMING)?100.f:200.f)<dt) {
+    ) && (float)GetRandomValue(0, 1000000) / 1000000.0f*(u.faction && (u.faction->technology&TECHNOLOGY_TERRAFORIMING)?100.f:200.f)*(u.texture==&tex::fort||u.texture==&tex::curio?0.1f:1.f)<dt) {
         // stranded fields grow once every 200 seconds, but in truth it's every 400 seconds due to two sides being occupied
         float px = u.x;
         float py = u.y;

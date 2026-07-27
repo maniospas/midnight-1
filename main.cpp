@@ -104,6 +104,27 @@ const int GAME_W = 2560;
 const int GAME_H = 1600;
 
 
+float destroyHumanGroupForAI(Unit& unit, Unit* units, int num_units, float required_gathered_health, int min_radius) {
+    float fort_creation_total_health = 0.f;
+    Faction* unit_faction = unit.faction;
+    if(!unit_faction) return 0.f;
+    for (int i = 0; i < num_units; i++) {
+        Unit &u = units[i];
+        if (u.faction==unit_faction && u.health && u.speed && (u.texture==&tex::cat || u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) 
+            fort_creation_total_health += u.max_health;
+        if (u.health && !u.speed && (u.x-unit.x)*(u.x-unit.x)+(u.y-unit.y)*(u.y-unit.y)<min_radius) return 0.f;
+    }
+    if(fort_creation_total_health<required_gathered_health) return 0.f;
+    for (int i = 0; i < num_units; i++) {
+        Unit &u = units[i];
+        if (u.faction==unit_faction && u.health && u.speed && (u.texture==&tex::cat || u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero)) { 
+            u.health = 0;
+            u.texture = &tex::ghost;
+        }
+    }
+    return required_gathered_health;
+}
+
 int main() {
     ChangeDirectory(GetApplicationDirectory());
     PrefMask unlocked_preferences = 0;

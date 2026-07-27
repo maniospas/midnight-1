@@ -82,7 +82,7 @@ for (int i = 0; i < num_units; i++) {
     bool found = false;
     // if we are far from target, stop only for stuff that is close to here
     if(u.target_x && u.target_y && (u.target_x-u.x)*(u.target_x-u.x)+(u.target_y-u.y)*(u.target_y-u.y)>10) bestDist = 40.f;
-    if(GetRandomValue(0, 100) > 10)
+    if(GetRandomValue(0, 100) > 10) 
         for (int j = 0; j < num_units; j++) {
             if(!u.faction->visible_knowledge[j]) {
                 if(GetRandomValue(0, 100)<5) u.faction->visible_knowledge[j] = 1; // players can "ceat" and see where the ai is going, the ai can chat this way
@@ -112,7 +112,34 @@ for (int i = 0; i < num_units; i++) {
         }
     if (!found) {
 
-        if(u.faction && (u.faction->technology & TECHNOLOGY_DISMANTLE) && u.health>=u.max_health-0.5f && u.speed && is_mecha(u) && GetRandomValue(0,100)<30 && u.faction->industry<u.faction->count_members && u.faction->industry>u.faction->count_members-10) {
+        if(u.faction && (u.faction->technology & TECHNOLOGY_COMMAND) && GetRandomValue(0,100)<10) {
+            float fort_creation_total_health = destroyHumanGroupForAI(u, units, num_units, 100.f, 2)/100.f;
+            if(fort_creation_total_health>0) {
+                CREATE_VAN(u.faction, u.x, u.y);
+                units[num_units-1].max_health *= fort_creation_total_health;
+                units[num_units-1].health *= fort_creation_total_health;
+                units[num_units-1].size *= sqrtf(fort_creation_total_health);
+                units[num_units-1].capturing = nullptr;
+                units[num_units-1].popup = "constructed";
+                PlaySound(sound::select2);
+                continue;
+            }
+        }
+        if(u.faction && (u.faction->technology & TECHNOLOGY_FORT) && GetRandomValue(0,100)<10) {
+            float fort_creation_total_health = destroyHumanGroupForAI(u, units, num_units, 100.f, 25)/5.f;
+            if(fort_creation_total_health>0) {
+            CREATE_FORT(u.faction, u.x, u.y);
+                units[num_units-1].max_health = fort_creation_total_health;
+                units[num_units-1].health = fort_creation_total_health;
+                units[num_units-1].size = sqrtf(fort_creation_total_health/10);
+                units[num_units-1].capturing = nullptr;
+                units[num_units-1].popup = "built";
+                PlaySound(sound::select2);
+                continue;
+            }
+        }
+
+        if(u.faction && (u.faction->technology & TECHNOLOGY_DISMANTLE) && u.health>=u.max_health-0.5f && u.speed && is_mecha(u) && GetRandomValue(0,100)<30 && u.faction->industry<u.faction->count_members && u.faction->count_members<u.faction->industry+10) {
             u.texture = &tex::ghost; // prevent explosion
             CREATE_ENGINE(u.faction, u.x, u.y);
             units[num_units-1].popup = "dismantled";
@@ -120,7 +147,7 @@ for (int i = 0; i < num_units; i++) {
             u.health = 0;
             continue;
         }
-        if(u.faction && (u.faction->technology & TECHNOLOGY_TRENCHES) && (u.texture==&tex::tank || u.texture==&tex::van) && GetRandomValue(0,100)<50 && u.faction->industry<u.faction->count_members && u.faction->industry>u.faction->count_members-10) {
+        if(u.faction && (u.faction->technology & TECHNOLOGY_TRENCHES) && (u.texture==&tex::tank || u.texture==&tex::van) && GetRandomValue(0,100)<50 && u.faction->industry<u.faction->count_members && u.faction->count_members<u.faction->industry+10) {
             u.texture = &tex::ghost; // prevent explosion
             CREATE_RAILGUN(u.faction, u.x, u.y);
             units[num_units-1].max_health = u.max_health;

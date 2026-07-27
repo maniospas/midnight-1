@@ -77,9 +77,8 @@ if(!showTechTree && (factions->technology&TECHNOLOGY_COMMAND) && !mouseCapturedB
         units[num_units-1].health *= fort_creation_total_health;
         units[num_units-1].size *= sqrtf(fort_creation_total_health);
         units[num_units-1].capturing = nullptr;
+        units[num_units-1].popup = "constructed";
         PlaySound(sound::select2);
-        last_message = "Constructed a van";
-        last_message_counter = 0.f;
         fort_creation_num = 0;
     }
 }
@@ -107,9 +106,8 @@ if(!showTechTree && (factions->technology&TECHNOLOGY_FORT) && !mouseCapturedByUI
         units[num_units-1].max_health = fort_creation_total_health;
         units[num_units-1].health = fort_creation_total_health;
         units[num_units-1].size = sqrtf(fort_creation_total_health/10);
+        units[num_units-1].popup = "built";
         PlaySound(sound::select2);
-        last_message = "Built a fort";
-        last_message_counter = 0.f;
         fort_creation_num = 0;
     }
 }
