@@ -14,7 +14,13 @@ for (int i = 0; i < num_units; i++) {
     if(u.y<2) u.y = 2;
     if(u.x>=GRID_SIZE-2) u.x = GRID_SIZE-2;
     if(u.y>=GRID_SIZE-2) u.y = GRID_SIZE-2;
-    if (u.texture == &tex::rock) continue;
+    if (u.texture == &tex::rock) {
+        if(u.health<=0.0) {
+            num_units--;
+            u = units[num_units];
+        }
+        continue;
+    }
     if (u.texture == &tex::blood) {
         if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.005f * dt * BLOO_RATE) {
             num_units--;
@@ -46,6 +52,7 @@ for (int i = 0; i < num_units; i++) {
     if(!u.faction)
         continue;
     if (u.capturing && u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f < dt
+            *CAPTURE_RECOVER_RATE
             *((u.faction->technology&TECHNOLOGY_OWNERSHIP)?1.0f:0.5f)
             *(u.faction->count_members<=u.faction->industry?1.0f:OVER_CAP_REGEN_RATE)
         ) {

@@ -28,7 +28,8 @@ static float BLOO_RATE = 0.5F;
 static float RAT_RATE = 0.1F; // duplicate rats per 30/RAT_RATE seconds
 static float ANIMAL_SPAWN_RATE = 0.1f; // expected spawns per second
 static const float CAMP_SPAWN_RATE = 2.f; //
-static const float CAPTURE_RATE = 1.0f; // also heals espers and partial captures
+static const float CAPTURE_RATE = 1.0f;
+static const float CAPTURE_RECOVER_RATE = 0.5f;
 static const float OVER_CAP_REGEN_RATE = 0.3f; // 1.f is normal restoration from units being captured, this is lower if we have over-saturated industry
 
 enum class MovementMode {Tight,Scattered,Explore};
