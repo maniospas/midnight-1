@@ -35,62 +35,147 @@ static const float OVER_CAP_REGEN_RATE = 0.3f; // 1.f is normal restoration from
 enum class MovementMode {Tight,Scattered,Explore};
 
 #define is_mecha(u) (u.texture==&tex::tank || u.texture==&tex::van || u.texture==&tex::railgun || u.texture==&tex::roomba || u.texture==&tex::hovercraft)
+// void DrawUnitStatCircle(Unit* unit, int px, int py) {
+//     const float RADIUS    = 55.0f;
+//     const float INNER     = RADIUS * 0.08f;
+//     const int   FONT_SIZE = 24;
+//     const int   RINGS     = 4;
 
+//     px += 40;
+
+//     float cx = px + RADIUS;
+//     float cy = py + RADIUS;
+
+//     // float angles[4] = {
+//     //     -45.0f * DEG2RAD,
+//     //     45.0f * DEG2RAD,
+//     //     135.0f * DEG2RAD,
+//     //     225.0f * DEG2RAD,
+//     // };
+
+//     // struct { const char* label; float val; float max; } stats[4] = {
+//     //     { "speed",  unit->speed,                      15.0f  },
+//     //     { "combat", unit->damage * unit->attack_rate, 14.0f  },
+//     //     { "health", (float)unit->max_health,          50.0f  },
+//     //     { "sight",  unit->range / 2.0f,                8.0f  },
+//     // };
+
+//     float angles[3] = {
+//         (0.f-90.0f) * DEG2RAD,
+//         (0.f+30.0f) * DEG2RAD,
+//         (0.f+150.0f) * DEG2RAD,
+//     };
+
+//     struct { const char* label; float val; float max; } stats[3] = {
+//         { "utility", unit->speed * (unit->range / 2.0f), 15.0f * 8.0f },
+//         { "combat",  unit->damage * unit->attack_rate,   14.0f         },
+//         { "health",  (float)unit->max_health,             50.0f         },
+//     };
+
+//     for (int ring = 1; ring <= RINGS; ring++) {
+//         float r = RADIUS * ((float)ring / RINGS);
+
+//         for (int i = 0; i < 3; i++) {
+//             int j = (i + 1) % 3;
+
+//             Vector2 p1 = { cx + cosf(angles[i]) * r, cy + sinf(angles[i]) * r };
+//             Vector2 p2 = { cx + cosf(angles[j]) * r, cy + sinf(angles[j]) * r };
+
+//             DrawLineV(p1, p2, Fade(WHITE, ring == RINGS ? 0.30f : 0.18f));
+//         }
+//     }
+
+//     for (int i = 0; i < 3; i++) {
+//         Vector2 tip = { cx + cosf(angles[i]) * RADIUS, cy + sinf(angles[i]) * RADIUS };
+
+//         DrawLineV({ cx, cy }, tip, Fade(WHITE, 0.80f));
+//     }
+
+//     Vector2 pts[3];
+
+//     for (int i = 0; i < 3; i++) {
+//         float t = fminf(stats[i].val / stats[i].max, 1.0f);
+
+//         float r = INNER + t * (RADIUS - INNER);
+
+//         pts[i] = { cx + cosf(angles[i]) * r, cy + sinf(angles[i]) * r };
+//     }
+
+//     auto faction_color = unit->faction?unit->faction->color:LIGHTGRAY;
+
+//     faction_color = ColorBrightness(faction_color, -0.5f);
+
+//     DrawTriangle(pts[0], pts[2], pts[1], Fade(faction_color, 0.65f));
+
+//     for (int i = 0; i < 3; i++) DrawLineV(pts[i], pts[(i + 1) % 3], ColorAlpha(faction_color, 0.90f));
+
+//     for (int i = 0; i < 3; i++) DrawCircleV(pts[i], 3.0f, WHITE);
+
+//     for (int i = 0; i < 3; i++) {
+//         float lx = cx + cosf(angles[i]) * (RADIUS + 10.0f);
+//         float ly = cy + sinf(angles[i]) * (RADIUS + 10.0f);
+
+//         int tw = MeasureText(stats[i].label, FONT_SIZE);
+
+//         int drawX = (int)(lx - tw / 2.0f);
+//         int drawY = (int)(ly - FONT_SIZE / 2.0f);
+
+//         if (i == 0) {
+//             drawY -= FONT_SIZE / 2;
+//         } else if (i == 1) {
+//             drawX += tw / 2;
+//         } else {
+//             drawX -= tw / 2;
+//         }
+
+//         DrawTextSmallOutlined(stats[i].label, drawX, drawY, FONT_SIZE, Fade(WHITE, 1.f));
+//     }
+// }
 void DrawUnitStatCircle(Unit* unit, int px, int py) {
-    const float RADIUS    = 55.0f;
-    const float INNER     = RADIUS * 0.08f;
+    const float WIDTH     = 20.0f;
+    const float HEIGHT    = 55.0f;
+    const float GAP       = 20.0f;
     const int   FONT_SIZE = 24;
-    const int   RINGS     = 4;
-    px += 40;
+    const int   SEGMENTS  = 4;
+    const float RADIUS    = 55.0f;
+    py += 20;
+    px += 45;
     float cx = px + RADIUS;
-    float cy = py + RADIUS;
-    float angles[4] = {
-        -45.0f * DEG2RAD,
-        45.0f * DEG2RAD,
-        135.0f * DEG2RAD,
-        225.0f * DEG2RAD,
+    // struct { const char* label; float val; float max; } stats[4] = {
+    //     { "speed",  unit->speed,                      15.0f  },
+    //     { "combat", unit->damage * unit->attack_rate, 14.0f  },
+    //     { "health", (float)unit->max_health,          50.0f  },
+    //     { "sight",  unit->range / 2.0f,                8.0f  },
+    // };
+    struct { const char* label; float val; float max; } stats[3] = {
+        { "fight",  unit->damage * unit->attack_rate,   14.0f                  },
+        { "util",   (1.f+unit->speed) * (unit->range / 2.0f), (16.0f * 8.0f) / 2.0f },
+        { "health", (float)unit->max_health,             50.0f                  },
     };
-    struct { const char* label; float val; float max; } stats[4] = {
-        { "speed",  unit->speed,                      15.0f  },
-        { "combat", unit->damage * unit->attack_rate, 14.0f  },
-        { "health", (float)unit->max_health,          50.0f  },
-        { "sight",  unit->range / 2.0f,                8.0f  },
-    };
-    for (int ring = 1; ring <= RINGS; ring++) {
-        float r = RADIUS * ((float)ring / RINGS);
-        for (int i = 0; i < 4; i++) {
-            int j = (i + 1) % 4;
-            Vector2 p1 = { cx + cosf(angles[i]) * r, cy + sinf(angles[i]) * r };
-            Vector2 p2 = { cx + cosf(angles[j]) * r, cy + sinf(angles[j]) * r };
-            DrawLineV(p1, p2, Fade(WHITE, ring == RINGS ? 0.30f : 0.18f));
-        }
-    }
-    for (int i = 0; i < 4; i++) {
-        Vector2 tip = { cx + cosf(angles[i]) * RADIUS, cy + sinf(angles[i]) * RADIUS };
-        DrawLineV({ cx, cy }, tip, Fade(WHITE, 0.80f));
-    }
-    Vector2 pts[4];
-    for (int i = 0; i < 4; i++) {
+    float total_width = WIDTH * 3.0f + GAP * 2.0f;
+    float start_x = cx - total_width / 2.0f - 10;
+    for (int i = 0; i < 3; i++) {
+        float x = start_x + i * (WIDTH + GAP);
+        float y = py;
         float t = fminf(stats[i].val / stats[i].max, 1.0f);
-        float r = INNER + t * (RADIUS - INNER);
-        pts[i] = { cx + cosf(angles[i]) * r, cy + sinf(angles[i]) * r };
-    }
-    auto faction_color = unit->faction?unit->faction->color:LIGHTGRAY;
-    faction_color = ColorBrightness(faction_color, -0.5f);
-    DrawTriangle(pts[0], pts[3], pts[1], Fade(faction_color, 0.65f));
-    DrawTriangle(pts[1], pts[3], pts[2], Fade(faction_color, 0.65f));
-    for (int i = 0; i < 4; i++) DrawLineV(pts[i], pts[(i + 1) % 4], ColorAlpha(faction_color, 0.90f));
-    for (int i = 0; i < 4; i++) DrawCircleV(pts[i], 3.0f, WHITE);
-    for (int i = 0; i < 4; i++) {
-        float lx = cx + cosf(angles[i]) * (RADIUS + 10.0f);
-        float ly = cy + sinf(angles[i]) * (RADIUS - 8.0f);
+        float fill_height = HEIGHT * t;
+        Rectangle bar = { x, y, WIDTH, HEIGHT };
+        Rectangle fill = { x, y + HEIGHT - fill_height, WIDTH, fill_height };
+        DrawRectangleRec(bar, Fade(WHITE, 0.08f));
+        for (int segment = 1; segment < SEGMENTS; segment++) {
+            float sy = y + HEIGHT * ((float)segment / SEGMENTS);
+            DrawLine((int)x, (int)sy, (int)(x + WIDTH), (int)sy, Fade(WHITE, 0.18f));
+        }
+        DrawRectangleRec(fill, Fade(WHITE, 1.0f));
+        DrawRectangleLinesEx(fill, 2.0f, Fade(WHITE, 1.0f));
+        DrawRectangleLinesEx(bar, 1.0f, Fade(WHITE, 0.40f));
         int tw = MeasureText(stats[i].label, FONT_SIZE);
-        int drawX = (int)(lx - tw / 2.f + copysignf(tw / 2.f, cosf(angles[i])));
-        DrawTextSmallOutlined(stats[i].label, drawX, (int)(ly - 7.f), FONT_SIZE, Fade(WHITE, 1.f));
+        int tx = (int)(x + WIDTH / 2.0f - tw / 2.0f);
+        if (i == 0) tx = (int)(x + WIDTH - tw + 8.0f);
+        if (i == 2) tx = (int)x;
+        DrawTextSmallOutlined(stats[i].label, tx, (int)(y + HEIGHT + 4.0f), FONT_SIZE, Fade(WHITE, 1.0f));
     }
 }
-
-
 
 static const char* veteran_name = "Veteran";
 static const char* hero_name = "Hero";
@@ -2764,30 +2849,38 @@ int main() {
                 float pollution = time_norm;
                 if (pollution < 0.0f) pollution = 0.0f;
                 if (pollution > 1.0f) pollution = 1.0f;
-                
-                float miniSize = 330.0f;   // onscreen size
-                Rectangle bar_bg = {32,(float)GetScreenHeight() - miniSize - 20.f-52,miniSize,52};
+
+                float miniSize = 330.0f;
+                const float BAR_H = 12.0f;
+                const float ROUNDNESS = 1.0f;
+                const int ROUND_SEGMENTS = 8;
+                const float x = 32.0f;
+                const float y = (float)GetScreenHeight() - miniSize - 20.0f - 38.0f;
+
+                Rectangle bar_bg = {x, y, miniSize, BAR_H};
                 Rectangle bar_fg = bar_bg;
-                // Rectangle bar_bg = { 12, offset+18, 490, 52 };
-                // Rectangle bar_fg = bar_bg;
                 bar_fg.width *= pollution;
 
-                Color bg = Color{ 40, 120, 200, 128 };
                 Color fg =
-                (pollution < 0.7f) ? DARKGRAY :
-                (pollution < 0.9f) ? ORANGE :
-                RED;
+                    (pollution < 0.7f) ? LIGHTGRAY :
+                    (pollution < 0.9f) ? ORANGE :
+                                        RED;
 
-                DrawRectangleRec(bar_bg, bg);
-                DrawRectangleRec(bar_fg, fg);
+                // Label
+                const char* label = "POLLUTION";
+                if (polution_speedup < -0.4f) label = "POLLUTION  <<<<";
+                else if (polution_speedup < -0.2f) label = "POLLUTION  <<";
+                else if (polution_speedup > 0.4f) label = "POLLUTION  >>>>";
+                else if (polution_speedup > 0.2f) label = "POLLUTION  >>";
 
-                if(polution_speedup<-0.2f)
-                    DrawText("Pollution slowed down", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
-                else if(polution_speedup>0.2f)
-                    DrawText("Pollution sped up", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
-                else
-                    DrawText("World pollution", bar_bg.x + 20, bar_bg.y + 10, 32, WHITE);
-                DrawRectangleLinesEx(bar_bg, 1.0f, LIGHTGRAY);
+                DrawTextSmallOutlined(label, (int)x, (int)y - DESC_FONT_SIZE - 3, DESC_FONT_SIZE, Fade(WHITE, 1.0f));
+
+                DrawRectangleRounded(bar_bg, ROUNDNESS, ROUND_SEGMENTS, Fade(BLACK, 0.65f));
+
+                if (pollution > 0.0f)
+                    DrawRectangleRounded(bar_fg, ROUNDNESS, ROUND_SEGMENTS, fg);
+
+                DrawRectangleRoundedLinesEx(bar_bg, ROUNDNESS, ROUND_SEGMENTS, 1.0f, Fade(WHITE, 0.5f));
             }
 
             float offset = -160.f;

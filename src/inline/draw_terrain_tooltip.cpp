@@ -44,13 +44,40 @@ if(hoveredTerrain->texture==&tex::water) {
 }
 textY += 140;
 DrawText("Right click to move", px + 80, textY, DESC_FONT_SIZE, WHITE);
-if(hoveredTerrain->speed!=1.f)
-    DrawText(TextFormat("Speed %d%%", (int)(hoveredTerrain->speed*100.f+0.5f)), px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
-if(hoveredTerrain->extra_sight) {
-    if(hoveredTerrain->extra_sight<0) {
-        DrawText(TextFormat("Sight %d%%", (int)(100.5f+hoveredTerrain->extra_sight*100)), px + 80, textY+DESC_FONT_SIZE*2+4, DESC_FONT_SIZE, WHITE);
-        DrawText(TextFormat("Cover %d%%", (int)(-hoveredTerrain->extra_sight*100+0.5f)), px + 80, textY+DESC_FONT_SIZE*3+6, DESC_FONT_SIZE, WHITE);
+// if(hoveredTerrain->speed!=1.f)
+//     DrawText(TextFormat("Speed %d%%", (int)(hoveredTerrain->speed*100.f+0.5f)), px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
+// if(hoveredTerrain->extra_sight) {
+//     if(hoveredTerrain->extra_sight<0) {
+//         DrawText(TextFormat("Sight %d%%", (int)(100.5f+hoveredTerrain->extra_sight*100)), px + 80, textY+DESC_FONT_SIZE*2+4, DESC_FONT_SIZE, WHITE);
+//         DrawText(TextFormat("Cover %d%%", (int)(-hoveredTerrain->extra_sight*100+0.5f)), px + 80, textY+DESC_FONT_SIZE*3+6, DESC_FONT_SIZE, WHITE);
+//     }
+//     else
+//         DrawText(TextFormat("Sight %d%%", (int)(100.5f+hoveredTerrain->extra_sight*100)), px + 80, textY+DESC_FONT_SIZE*2+4, DESC_FONT_SIZE, WHITE);
+// }
+{
+    const char* moveNames[5] = {hoveredTerrain->texture==&tex::water?"swim (wind speedup)":"crawl", hoveredTerrain->texture==&tex::water?"swim (wind speedup)":"slow", "bormal", "fast", "run"};
+    const char* viewNames[5] = {"minimal sight", "shortsight", "flat", "farsight", "long view"};
+    const char* dodgeNames[3] = {"no dodge", "dodge", "high dodge"};
+
+    int moveBucket = (int)(hoveredTerrain->speed * 2.5f);
+    int viewBucket = (int)((1.0f + hoveredTerrain->extra_sight) * 2.5f);
+    int dodgeBucket = (int)(-hoveredTerrain->extra_sight * 3.0f);
+
+    moveBucket = moveBucket < 0 ? 0 : moveBucket > 4 ? 4 : moveBucket;
+    viewBucket = viewBucket < 0 ? 0 : viewBucket > 4 ? 4 : viewBucket;
+    dodgeBucket = dodgeBucket < 0 ? 0 : dodgeBucket > 2 ? 2 : dodgeBucket;
+    textY += DESC_FONT_SIZE/2;
+
+    if (moveBucket != 2) {
+        DrawText(TextFormat("%s", moveNames[moveBucket]), px + 80, textY + DESC_FONT_SIZE + 2, DESC_FONT_SIZE, WHITE);
+        textY += DESC_FONT_SIZE+2;
     }
-    else
-        DrawText(TextFormat("Sight %d%%", (int)(100.5f+hoveredTerrain->extra_sight*100)), px + 80, textY+DESC_FONT_SIZE*2+4, DESC_FONT_SIZE, WHITE);
+
+    if (viewBucket != 2) {
+        DrawText(TextFormat("%s", viewNames[viewBucket]), px + 80, textY + DESC_FONT_SIZE + 2, DESC_FONT_SIZE, WHITE);
+        textY += DESC_FONT_SIZE+2;
+    }
+
+    if (dodgeBucket != 0)
+        DrawText(TextFormat("%s", dodgeNames[dodgeBucket]), px + 80, textY + DESC_FONT_SIZE + 2, DESC_FONT_SIZE, WHITE);
 }

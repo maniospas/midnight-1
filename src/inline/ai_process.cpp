@@ -6,6 +6,16 @@ float competency = 0.3f; // 0.1f is competent but not unbeatable
 float AI_ORDER_CHANCE = player_rating/1200.f*0.5f*competency;
 float AI_ORDER_RADIUS = 10.0f;
 
+
+Faction* primary_target = factions;
+int primary_target_points = factions[0].victory_points;
+for (int fi = 3; fi < max_factions; fi++)
+    if (factions[fi].victory_points > primary_target_points) { // prefer the player on ties
+        primary_target_points = factions[fi].victory_points;
+        primary_target = &factions[fi];
+    }
+
+
 for (int i = 0; i < num_units; i++) {
     Unit &u = units[i];
     if (u.health <= 0) continue;
@@ -74,7 +84,8 @@ for (int i = 0; i < num_units; i++) {
         }
         continue;
     }
-    if ((float)GetRandomValue(0, 1000000) / 1000000.0f > AI_ORDER_CHANCE * dt) continue;
+    float industry_completion = (u.faction&&u.faction->industry)?u.faction->count_members/u.faction->industry:1.0;
+    if ((float)GetRandomValue(0, 1000000) / 1000000.0f > AI_ORDER_CHANCE * dt * industry_completion * industry_completion ) continue;
     // ---------------------------------------------------------
     // Movement
     // ---------------------------------------------------------
@@ -83,13 +94,14 @@ for (int i = 0; i < num_units; i++) {
     bool found = false;
     // if we are far from target, stop only for stuff that is close to here
     if(u.target_x && u.target_y && (u.target_x-u.x)*(u.target_x-u.x)+(u.target_y-u.y)*(u.target_y-u.y)>10) bestDist = 40.f;
-    if(GetRandomValue(0, 100) > 10) {
+    if(GetRandomValue(0, 100) > 40) {
         for (int j = 0; j < num_units; j++) {
             if(!u.faction->visible_knowledge[j]) {
-                if(GetRandomValue(0, 100)<5) u.faction->visible_knowledge[j] = 1; // players can "ceat" and see where the ai is going, the ai can chat this way
+                if(GetRandomValue(0, 100)<10) u.faction->visible_knowledge[j] = 1; // players can "cheat" and see where the ai is going, the ai can cheat this way
                 continue;
             }
             Unit &o = units[j];
+            if(!((o.faction==nullptr || o.faction==primary_target)) && GetRandomValue(0, 100)>25) continue;
             //if (!o.faction) continue;
             if (o.health <= 0) continue; // move units of same type as pack only
             bool isEnemyCapturable =
@@ -175,23 +187,24 @@ for (int i = 0; i < num_units; i++) {
     // ---------------------------------------------------------
     // Order nearby units of same faction to follow
     // ---------------------------------------------------------
-    for (int j = 0; j < num_units; j++) {
-        if (i == j) continue;
-        Unit &o = units[j];
-        if (!o.faction) continue;
-        if (o.faction != u.faction) continue;
-        if (o.health <= 0) continue;
-        if (o.speed <= 0) continue;
-        if (o.texture==&tex::esper) continue;
-        if (o.texture!=u.texture && u.faction==ANIMAL_FACTION) continue; // move same-typed stuff
-        float dx = o.x - u.x;
-        float dy = o.y - u.y;
-        // grab everything if the game has progressed enough
-        if (dx*dx + dy*dy <= AI_ORDER_RADIUS * AI_ORDER_RADIUS && (GetRandomValue(0, 100) < 10 || time_norm>0.5f) && !o.selected) {
-            // only order units not already moving
-            o.target_x = tx;
-            o.target_y = ty;
+    if(u.target_x!=tx || u.target_y!=ty)
+        for (int j = 0; j < num_units; j++) {
+            if (i == j) continue;
+            Unit &o = units[j];
+            if (!o.faction) continue;
+            if (o.faction != u.faction) continue;
+            if (o.health <= 0) continue;
+            if (o.speed <= 0) continue;
+            if (o.texture==&tex::esper) continue;
+            if (o.texture!=u.texture && u.faction==ANIMAL_FACTION) continue; // move same-typed stuff
+            float dx = o.x - u.x;
+            float dy = o.y - u.y;
+            // grab everything if the game has progressed enough
+            if (dx*dx + dy*dy <= AI_ORDER_RADIUS * AI_ORDER_RADIUS && (GetRandomValue(0, 100) < 10 || time_norm>0.5f) && !o.selected) {
+                // only order units not already moving
+                o.target_x = tx;
+                o.target_y = ty;
+            }
         }
-    }
 }
 

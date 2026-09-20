@@ -159,7 +159,7 @@ for (int i = 0; i < num_units; i++) {
         if(u.texture==&tex::hide) u.faction->industry += 4.f;
         if(u.texture==&tex::house) u.faction->industry += 0.5f;
         if(u.texture==&tex::house2) u.faction->industry += 1.f;
-        if(u.texture==&tex::mine) u.faction->industry += 12.f;
+        if(u.texture==&tex::mine) u.faction->industry += 18.f;
         if(u.texture==&tex::engine) {
             u.faction->industry += 3.f;
             game_time -= dt*0.01f;

@@ -78,7 +78,7 @@ if (hovered && hovered->health && !mouseCapturedByUI) {
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
     else if(hovered->texture==&tex::mine) {
-        DrawText("+12 industry", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText("+18 industry", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
     else if(hovered->texture==&tex::oil) {
@@ -110,7 +110,7 @@ if (hovered && hovered->health && !mouseCapturedByUI) {
     }
     else if(hovered->texture==&tex::roomba) {
         DrawText("Mecha, only attacks", px + 80.f, textY, DESC_FONT_SIZE, WHITECOL);
-        DrawText("animal, houses, & bloo", px + 80.f, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+        DrawText("animal, houses, bloo", px + 80.f, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
         DrawUnitStatCircle(hovered, px + 120.f, textY + 40.f);
     }
     else if(hovered->texture==&tex::curio) {
