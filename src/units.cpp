@@ -415,6 +415,35 @@ struct Unit {
                 for(int ppx=-2;ppx<=2;ppx++) \
                     if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(bby+0.5f)+ppy][(int)(bbx+0.5f)+ppx] = { &tex::grass, 1.0 }; \
         }
+
+
+#define CREATE_FLOWERFIELD(faction, x, y) \
+        if (num_units < MAX_UNITS) { \
+            float bbx = x; \
+            float bby = y; \
+            units[num_units++] = { \
+                &tex::flowerfield_empty,   /* texture */ \
+                "Flowerfield",       /* name */ \
+                0.0,          /* speed */ \
+                (float)(bbx),   /* x */ \
+                (float)(bby),   /* y */ \
+                0.0,          /* attack_rate (store industry state here)*/ \
+                4.0,          /* range */ \
+                0.0,          /* damage */ \
+                0.0,          /* experience */ \
+                0.0,          /* angle */ \
+                1.4,          /* size */ \
+                50.0,         /* health */ \
+                50.0,         /* max_health */ \
+                (faction),    /* faction */ \
+                (faction),    /* can only be captured */ \
+                -0.1f \
+            }; \
+            for(int ppy=-2;ppy<=2;ppy++) \
+                for(int ppx=-2;ppx<=2;ppx++) \
+                    if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(bby+0.5f)+ppy][(int)(bbx+0.5f)+ppx] = { &tex::grass, 1.0 }; \
+        }
+
 #define CREATE_DATACENTER(faction, x, y) \
     if (num_units < MAX_UNITS) {\
         units[num_units++] = { \
@@ -464,6 +493,31 @@ struct Unit {
                 0.2f \
             }; \
         }
+
+#define CREATE_SCRAPYARD(faction, x, y) \
+    if (num_units < MAX_UNITS) { \
+        units[num_units++] = { \
+            &tex::scrapyard,   /* texture */ \
+            "Scrapyard",       /* name */ \
+            0.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            12.0,         /* attack_rate (6 industry)*/ \
+            4.5,         /* range */ \
+            0.0,          /* damage */ \
+            0.0,          /* experience */ \
+            0.0,          /* angle */ \
+            2.0,          /* size */ \
+            50.0,        /* health */ \
+            50.0,        /* max_health */ \
+            (faction),    /* faction */ \
+            (faction),     /* can only be captured */ \
+            0.5           /* extra scale*/\
+        };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
+    }
 
 
 #define CREATE_MINE(faction, x, y) \
@@ -540,6 +594,28 @@ struct Unit {
         };\
     }
 
+
+#define CREATE_RETREAT(faction, x, y) \
+    if (num_units < MAX_UNITS && terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)].texture==&tex::grass) {\
+        units[num_units++] = { \
+            &tex::retreat,   /* texture */ \
+            "Retreat",       /* name */ \
+            0.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            0.0,          /* attack_rate */ \
+            3.0,          /* range */ \
+            0.0,          /* damage */ \
+            0.0,          /* experience */ \
+            GetRandomValue(0,3)*90.f,          /* angle */ \
+            1.5f,          /* size */ \
+            4.0,         /* health */ \
+            4.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            (faction),    /* can only be captured */ \
+            0.25           /* extra scale*/\
+        };\
+    }
 
 
 #define CREATE_LIGHTHOUSE(faction, x, y) \

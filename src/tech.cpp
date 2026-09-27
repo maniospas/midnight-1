@@ -123,45 +123,55 @@ static void DrawTechProgressBar(float x, float y, float w, float h, float progre
 }
 
 
-static bool DrawTechNode(
-    float x, float y,
-    const char* title,
-    const char* desc,
-    unsigned long long &tech,
-    unsigned long long bit,
-    bool enabled
-) {
-    const int W = GetScreenWidth()/6-60;
-    const int H = GetScreenHeight()/14-20;
-    Rectangle rect = { x, y, (float)W, (float)H };
-    Vector2 mouse = GetMousePosition();
-    bool hovered = CheckCollisionPointRec(mouse, rect);
-    bool owned   = (tech & bit) != 0;
-    Color bg = owned   ? Fade(GREEN, 0.15f) : hovered ? Fade(DARKGRAY, 0.75f) : Fade(GRAY, 0.55f);
-    Color edge = owned ? GREEN : hovered ? WHITE :GRAY;
-    const float title_height = W/10;
-    const float desc_height = (H-W/10)/2.2f;
-    if (hovered) {
-        rect = { x, y, (float)W, (float)(H*1.4) };
-        bg =  owned   ? ColorBrightness(GREEN, -0.65f) : hovered ? ColorBrightness(DARKGRAY, -0.25f) : ColorBrightness(GRAY, -0.45f);
-    }
-    DrawRectangleRounded(rect, 0.2f, title_height, bg);
-    DrawRectangleRoundedLines(rect, 0.2f, title_height, edge);
+static bool DrawTechNode(float x,float y,const char* title,const char* desc,
+    unsigned long long& tech,unsigned long long bit,bool enabled)
+{
+    const int W=GetScreenWidth()/6-60,H=GetScreenHeight()/14-20;
+    const float titleH=W/10.0f,descH=(H-W/10.0f)/2.2f;
+    bool owned=(tech&bit)!=0;
+    Vector2 mouse=GetMousePosition();
 
-    DrawText(title, x + W/4+20, y + H/2-W/20, title_height, WHITE);
-    //DrawTextSmall(desc,  x + 12, y + W/7, (H-W/10)/1.9f, Fade(WHITE, 0.85f));
+    Rectangle base={x,y,(float)W,(float)H};
+    bool hovered=CheckCollisionPointRec(mouse,base);
 
-    if (hovered) {
-        DrawText(
-            desc,
-            x + 12,
-            y + H,
-            desc_height,
-            Fade(WHITE, 0.85f)
-        );
+    int lines=1;
+    for(const char* p=desc;*p;p++) if(*p=='\n') lines++;
+
+    float lineGap=descH*1.15f;
+    float descTop=y+H;
+    float totalH=hovered ? H+12+lines*lineGap : H;
+
+    Rectangle rect={x,y,(float)W,totalH};
+    Color bg=owned?Fade(GREEN,.15f):hovered?Fade(DARKGRAY,.75f):Fade(GRAY,.55f);
+    Color edge=owned?GREEN:hovered?WHITE:GRAY;
+
+    if(hovered) bg=owned?ColorBrightness(GREEN,-.65f):
+                          ColorBrightness(DARKGRAY,-.25f);
+
+    DrawRectangleRounded(rect,.2f,titleH,bg);
+    DrawRectangleRoundedLines(rect,.2f,titleH,edge);
+    DrawText(title,x+W/4+20,y+H/2-W/20,titleH,WHITE);
+
+    if(hovered){
+        const char* s=desc;
+        float yy=descTop;
+
+        while(*s){
+            const char* e=strchr(s,'\n');
+            if(!e){
+                DrawText(s,x+12,yy,descH,Fade(WHITE,.85f));
+                break;
+            }
+
+            std::string line(s,e-s);
+            DrawText(line.c_str(),x+12,yy,descH,Fade(WHITE,.85f));
+            yy+=lineGap;
+            s=e+1;
+        }
     }
-    if (hovered && enabled && !owned && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        tech |= bit;
+
+    if(hovered&&enabled&&!owned&&IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+        tech|=bit;
         return true;
     }
     return false;
@@ -420,7 +430,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
     }
 
     if(prev_tech & (TECHNOLOGY_NERDS | TECHNOLOGY_COMMAND | TECHNOLOGY_DISMANTLE)) {
-        DrawTechNode(dismantle.x,   dismantle.y,   "DIMANTLERS",   "Undamaged mecha to engines", tech, TECHNOLOGY_DISMANTLE, !showing_preview);
+        DrawTechNode(dismantle.x,   dismantle.y,   "DISMANTLERS",   "Undamaged mecha to engines", tech, TECHNOLOGY_DISMANTLE, !showing_preview);
         DrawTextureEx(tex::engine, {dismantle.x + ICON_DX, dismantle.y + ICON_DY}, 0, ICON_SIZE / tex::engine.width, WHITE);
     }
 
@@ -601,7 +611,7 @@ void DrawTechs(Faction& F, bool showing_preview = false) {
         DrawTextureEx(tex::gigajoule, {gigajoule.x + ICON_DX, gigajoule.y + ICON_DY}, 0, ICON_SIZE / tex::gigajoule.width, WHITE);
     }
     if(prev_tech & (TECHNOLOGY_SEAFARERING | TECHNOLOGY_SNIFFING | TECHNOLOGY_DISCOURSE)) {
-        DrawTechNode(discourse.x, discourse.y, "DISCOURSE", "1 utopia per 10 big bro industry", tech, TECHNOLOGY_DISCOURSE, !showing_preview);
+        DrawTechNode(discourse.x, discourse.y, "DISCOURSE", "1 utopia per 10 big bro and house industry", tech, TECHNOLOGY_DISCOURSE, !showing_preview);
         DrawTextureEx(tex::discourse, {discourse.x + ICON_DX, discourse.y + ICON_DY}, 0, ICON_SIZE / tex::discourse.width, WHITE);
     }
 

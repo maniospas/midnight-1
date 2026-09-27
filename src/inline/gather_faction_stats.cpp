@@ -46,6 +46,23 @@ for (int i = 0; i < num_units; i++) {
             }
         }
     }
+    if(u.texture==&tex::flowerfield_bloom &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
+        if((float)GetRandomValue(0, 1000000) / 1000000.0f * 100.f < dt) {
+            bool applied = false;
+            for (int j = 0; j < num_units; j++)
+                if (units[j].faction==u.faction && units[j].speed && units[j].health<units[j].max_health 
+                    && (units[j].name==veteran_name || units[j].name==hero_name)) {
+                    units[j].health = units[j].max_health;
+                    units[j].popup = "flowerfield";
+                    units[j].popup_texture = &tex::heal;
+                    applied = true;
+                }
+            if(u.faction==factions && applied) {
+                last_message = "Flowerfield: healed vets and heroes.";
+                last_message_counter = 0.f;
+            }
+        }
+    }
     if(u.texture==&tex::pyramis &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
         if((float)GetRandomValue(0, 1000000) / 1000000.0f * 90.f < dt) {
             bool applied = false;
@@ -149,6 +166,7 @@ for (int i = 0; i < num_units; i++) {
     if(u.texture==&tex::camp || u.speed) u.faction->count_members += 0.00001f;
     if(u.texture==&tex::oil && u.faction && (u.faction->technology & TECHNOLOGY_REFINERY)) u.faction->industry += 25.f;
     if((u.texture==&tex::field
+        || u.texture==&tex::flowerfield_bloom
         || (u.texture==&tex::curio && (u.faction->technology & TECHNOLOGY_CENTRAL))
         || (u.texture==&tex::fort && (u.faction->technology & TECHNOLOGY_CENTRAL))
     ) && (float)GetRandomValue(0, 1000000) / 1000000.0f*(u.faction && (u.faction->technology&TECHNOLOGY_TERRAFORIMING)?100.f:200.f)*(u.texture==&tex::fort||u.texture==&tex::curio?0.1f:1.f)<dt) {
@@ -168,10 +186,30 @@ for (int i = 0; i < num_units; i++) {
                 break;
             }
         }
-        if(allowed) { CREATE_FIELD(&factions[1], px, py); }
+        if(allowed) { 
+            if(u.texture==&tex::field) { CREATE_FIELD(&factions[1], px, py); }
+            else if(u.texture==&tex::flowerfield_bloom) { CREATE_FLOWERFIELD(&factions[1], px, py); }
+            else if(GetRandomValue(0,100)<20) { CREATE_FLOWERFIELD(&factions[1], px, py); }
+            else { CREATE_FIELD(&factions[1], px, py); }
+        }
     }
-    if(u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty || u.texture==&tex::mine || u.texture==&tex::hide || u.texture==&tex::engine || u.texture==&tex::house || u.texture==&tex::house2) {
-        if((u.texture==&tex::field || u.texture==&tex::field_little || u.texture==&tex::field_empty) && u.faction && (u.faction->technology & TECHNOLOGY_ATMOSPHERE)) {
+    if(u.texture==&tex::field
+        || u.texture==&tex::field_little 
+        || u.texture==&tex::field_empty 
+        || u.texture==&tex::flowerfield_bloom 
+        || u.texture==&tex::flowerfield_empty 
+        || u.texture==&tex::scrapyard 
+        || u.texture==&tex::mine 
+        || u.texture==&tex::hide 
+        || u.texture==&tex::engine 
+        || u.texture==&tex::house 
+        || u.texture==&tex::house2) {
+        if((u.texture==&tex::field 
+            || u.texture==&tex::field_little 
+            || u.texture==&tex::field_empty
+            || u.texture==&tex::flowerfield_bloom
+            || u.texture==&tex::flowerfield_empty
+        ) && u.faction && (u.faction->technology & TECHNOLOGY_ATMOSPHERE)) {
             game_time -= dt*0.02f;
             polution_speedup -= 0.02f;
         }
@@ -181,6 +219,7 @@ for (int i = 0; i < num_units; i++) {
         if(u.texture==&tex::house) u.faction->industry += 0.5f;
         if(u.texture==&tex::house2) u.faction->industry += 1.f;
         if(u.texture==&tex::mine) u.faction->industry += 18.f;
+        if(u.texture==&tex::scrapyard) u.faction->industry -= 8.f;
         if(u.texture==&tex::engine) {
             u.faction->industry += 3.f;
             game_time -= dt*0.01f;

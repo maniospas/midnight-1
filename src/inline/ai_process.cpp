@@ -3,7 +3,7 @@
 // AI FOR FACTIONS >= 3
 // ============================================================================
 float competency = 0.3f; // 0.1f is competent but not unbeatable
-float AI_ORDER_CHANCE = player_rating/1200.f*0.5f*competency;
+float AI_ORDER_CHANCE = player_rating/1200.f*competency*0.1f;
 float AI_ORDER_RADIUS = 10.0f;
 
 
@@ -26,7 +26,7 @@ for (int i = 0; i < num_units; i++) {
     if (u.faction==factions && (u.selected || !(u.faction->technology & TECHNOLOGY_SNIFFING))) continue; // disable player AI is sniffing is disabled
     if(u.faction==factions+1) continue;
     if (u.faction == ANIMAL_FACTION) {
-        if ((float)GetRandomValue(0, 1000000) / 1000000.0f > AI_ORDER_CHANCE * 20.f * dt) continue;
+        if ((float)GetRandomValue(0, 1000000) / 1000000.0f > AI_ORDER_CHANCE * dt * 20) continue;
         //Texture2D* baseTex = terrainGrid[(int)(u.y+0.5f)][(int)(u.x+0.5f)].texture;
         float tx = 0, ty = 0;
         bool found = false;
@@ -93,17 +93,18 @@ for (int i = 0; i < num_units; i++) {
     float tx = 0, ty = 0;
     bool found = false;
     // if we are far from target, stop only for stuff that is close to here
-    if(u.target_x && u.target_y && (u.target_x-u.x)*(u.target_x-u.x)+(u.target_y-u.y)*(u.target_y-u.y)>10) bestDist = 40.f;
+    if(u.target_x && u.target_y && (u.target_x-u.x)*(u.target_x-u.x)+(u.target_y-u.y)*(u.target_y-u.y)>AI_ORDER_RADIUS*AI_ORDER_RADIUS) bestDist = 40.f;
     if(GetRandomValue(0, 100) > 40) {
         for (int j = 0; j < num_units; j++) {
-            if(!u.faction->visible_knowledge[j]) {
-                if(GetRandomValue(0, 100)<10) u.faction->visible_knowledge[j] = 1; // players can "cheat" and see where the ai is going, the ai can cheat this way
+            if(/*u->faction &&*/ !u.faction->visible_knowledge[j]) {
+                if(GetRandomValue(0, 10000)<5) u.faction->visible_knowledge[j] = 1; // players can "cheat" and see where the ai is going, the ai can cheat this way
                 continue;
             }
             Unit &o = units[j];
+            if (o.health <= 0) continue; 
+            //if(o.speed && o.texture!=&tex::esper && o.faction && o.faction!=factions+1) continue;
             if(!((o.faction==nullptr || o.faction==primary_target)) && GetRandomValue(0, 100)>25) continue;
             //if (!o.faction) continue;
-            if (o.health <= 0) continue; // move units of same type as pack only
             bool isEnemyCapturable =
                 (o.capturing != nullptr) &&
                 (o.faction != u.faction && o.faction);
@@ -112,10 +113,12 @@ for (int i = 0; i < num_units; i++) {
                 (o.speed == 0 && o.capturing) &&
                 (o.health < o.max_health*0.8f) && (o.texture!=&tex::rock && o.texture!=&tex::railgun);
             if (!isEnemyCapturable && !isOwnDamagedStructure && o.faction) continue;
-            if ((time_norm>0.8f || (time_norm>0.35f && time_norm>0.5f)) && o.texture!=&tex::oil && o.texture!=&tex::warehouse && o.texture!=&tex::pyramis && o.texture!=&tex::esper && o.texture!=&tex::lighthouse) continue; // at the last stretch attack the victory locations with all means
+            // have a brief period in the middle where we try to acquire whatever is available for utopia, in case we can hunker down
+            if ((time_norm>0.8f || (time_norm>0.45f && time_norm<0.5f)) && o.texture!=&tex::oil && o.texture!=&tex::warehouse && o.texture!=&tex::pyramis && o.texture!=&tex::esper && o.texture!=&tex::lighthouse) continue; // at the last stretch attack the victory locations with all means
             float dx = o.x - u.x;
             float dy = o.y - u.y;
             float d2 = dx*dx + dy*dy;
+            if(isOwnDamagedStructure) d2 *= 0.25; // promote defending our own sturctures
             if (d2 < bestDist && d2>=0) {
                 bestDist = d2;
                 tx = o.x;
@@ -181,30 +184,36 @@ for (int i = 0; i < num_units; i++) {
             continue;
         }
     }
-    u.target_x = tx;
-    u.target_y = ty;
 
     // ---------------------------------------------------------
     // Order nearby units of same faction to follow
     // ---------------------------------------------------------
-    if(u.target_x!=tx || u.target_y!=ty)
+    if((u.target_x!=tx || u.target_y!=ty) && (tx||ty)) {
+        int accompany_chance = 50+GetRandomValue(0, 100);
         for (int j = 0; j < num_units; j++) {
-            if (i == j) continue;
+            //if (i == j) continue; // actually faster to not have this
             Unit &o = units[j];
             if (!o.faction) continue;
             if (o.faction != u.faction) continue;
             if (o.health <= 0) continue;
             if (o.speed <= 0) continue;
             if (o.texture==&tex::esper) continue;
-            if (o.texture!=u.texture && u.faction==ANIMAL_FACTION) continue; // move same-typed stuff
+            if (o.texture!=u.texture && u.faction==ANIMAL_FACTION) continue; // move same-typed stuff only when in animal function (e.g., rats together)
             float dx = o.x - u.x;
             float dy = o.y - u.y;
+            float odx = o.target_x-o.x;
+            float ody = o.target_y-o.y;
             // grab everything if the game has progressed enough
-            if (dx*dx + dy*dy <= AI_ORDER_RADIUS * AI_ORDER_RADIUS && (GetRandomValue(0, 100) < 10 || time_norm>0.5f) && !o.selected) {
+            if (dx*dx + dy*dy <= AI_ORDER_RADIUS * AI_ORDER_RADIUS && 
+                (odx*odx + ody*ody < AI_ORDER_RADIUS * AI_ORDER_RADIUS || !(o.target_x || o.target_y)) &&
+                (GetRandomValue(0, 100) < accompany_chance || time_norm>0.8f) && !o.selected) {
                 // only order units not already moving
                 o.target_x = tx;
                 o.target_y = ty;
             }
         }
+    }
+    u.target_x = tx;
+    u.target_y = ty;
 }
 

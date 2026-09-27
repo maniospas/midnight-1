@@ -41,6 +41,9 @@ namespace tex {
     static Texture2D field;
     static Texture2D field_little;
     static Texture2D field_empty;
+    static Texture2D flowerfield_empty;
+    static Texture2D flowerfield_bloom;
+    static Texture2D scrapyard;
     static Texture2D mine;
     static Texture2D camp;
     static Texture2D lab;
@@ -107,6 +110,7 @@ namespace tex {
     static Texture2D kraken;
     static Texture2D house;
     static Texture2D house2;
+    static Texture2D retreat;
     static Texture2D villa;
     static Texture2D pyramis;
 }
@@ -186,6 +190,9 @@ void load() {
     tex::field = LoadTexture("data/field.png");
     tex::field_empty = LoadTexture("data/field_empty.png");
     tex::field_little = LoadTexture("data/field_little.png");
+    tex::flowerfield_empty = LoadTexture("data/flowerfield_empty.png");
+    tex::flowerfield_bloom= LoadTexture("data/flowerfield_bloom.png");
+    tex::scrapyard = LoadTexture("data/scrapyard.png");
     tex::mine = LoadTexture("data/mine.png");
     tex::camp = LoadTexture("data/camp.png");
     tex::lab = LoadTexture("data/lab.png");;
@@ -219,6 +226,7 @@ void load() {
     tex::kraken= LoadTexture("data/kraken.png");
     tex::house= LoadTexture("data/house.png");
     tex::house2= LoadTexture("data/house2.png");
+    tex::retreat= LoadTexture("data/retreat.png");
     tex::villa= LoadTexture("data/villa.png");
     tex::pyramis= LoadTexture("data/pyramis.png");
 
@@ -276,6 +284,8 @@ void unload() {
     UnloadTexture(tex::field);
     UnloadTexture(tex::field_little);
     UnloadTexture(tex::field_empty);
+    UnloadTexture(tex::flowerfield_empty);
+    UnloadTexture(tex::flowerfield_bloom);
     UnloadTexture(tex::heal);
     UnloadTexture(tex::camp);
     UnloadTexture(tex::lab);
@@ -301,6 +311,7 @@ void unload() {
     UnloadTexture(tex::kraken);
     UnloadTexture(tex::house);
     UnloadTexture(tex::house2);
+    UnloadTexture(tex::retreat);
     UnloadTexture(tex::villa);
     UnloadTexture(tex::pyramis);
 
@@ -310,6 +321,7 @@ void unload() {
     UnloadTexture(tex::railgun);
     UnloadTexture(tex::fort);
     UnloadTexture(tex::mine);
+    UnloadTexture(tex::scrapyard);
     UnloadTexture(tex::tree);
     UnloadTexture(tex::water);
     UnloadTexture(tex::earth);

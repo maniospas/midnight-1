@@ -178,6 +178,12 @@ for (int i = 0; i < num_units; i++) {
     if(u.texture==&tex::radio && u.faction && (u.faction->technology & TECHNOLOGY_PROPAGANDA) ) {
         u.faction->victory_points += 0.5f;
     }
+    if(u.texture==&tex::house && u.faction && u.faction->technology & TECHNOLOGY_DISCOURSE) {
+        u.faction->victory_points += 0.05f;
+    }
+    if(u.texture==&tex::house2 && u.faction && u.faction->technology & TECHNOLOGY_DISCOURSE) {
+        u.faction->victory_points += 0.1f;
+    }
     if(u.texture==&tex::lighthouse && u.faction) {
         u.faction->victory_points += 0.5f;
         if(u.faction->technology & TECHNOLOGY_DISCOURSE) {
@@ -203,6 +209,20 @@ for (int i = 0; i < num_units; i++) {
             if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.1) {u.texture = &tex::field_little;u.popup = "grows";u.popup_texture=nullptr;} // once every 10 sec
         }
         else if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.05) {u.texture = &tex::field_little;u.popup = "grows";u.popup_texture=nullptr;} // once every 20 sec
+        continue;
+    }
+    if(u.texture==&tex::flowerfield_bloom) {
+        if(u.faction->technology & TECHNOLOGY_FARMING) {
+            if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.01) {u.texture = &tex::flowerfield_empty;u.popup = "barren";u.popup_texture=nullptr;} // once every 100 sec
+        }
+        else if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.05) {u.texture = &tex::flowerfield_empty;u.popup = "barren";u.popup_texture=nullptr;} // once every 20 sec
+        continue;
+    }
+    if(u.texture==&tex::flowerfield_empty) {
+        if(u.faction->technology & TECHNOLOGY_FARMING) {
+            if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.1) {u.texture = &tex::flowerfield_bloom;u.popup = "grows";u.popup_texture=nullptr;} // once every 10 sec
+        }
+        else if((float)GetRandomValue(0, 1000000) / 1000000.0f <dt*0.05) {u.texture = &tex::flowerfield_bloom;u.popup = "grows";u.popup_texture=nullptr;} // once every 20 sec
         continue;
     }
     if(u.texture==&tex::hide) {
@@ -271,6 +291,33 @@ for (int i = 0; i < num_units; i++) {
         }
         continue;
     }
+    if (u.texture == &tex::scrapyard) {
+        if(u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f * 60.f<CAMP_SPAWN_RATE*dt*u.attack_rate*(1.1f-u.faction->count_members/(float)(1+u.faction->industry)) && u.faction!=factions+1) {
+            int canMake = (int)u.faction->industry-(int)u.faction->count_members;
+            if (canMake > 0) {
+                canMake = (u.faction->technology & TECHNOLOGY_HARDCORE)?2:1;
+                for (int k = 0; k < canMake; k++) {
+                    if (num_units >= MAX_UNITS) break;
+                    float sx = u.x + (GetRandomValue(-5000, 5000) * 0.0002f);
+                    float sy = u.y + (GetRandomValue(-5000, 5000) * 0.0002f);
+                    { CREATE_ROOMBA(u.faction, sx, sy); }
+                    if(u.faction && (u.faction->technology & TECHNOLOGY_NERDS)) {
+                        units[num_units-1].max_health -= 1;
+                        units[num_units-1].health -= 1;
+                    }
+                    if(u.faction && (u.faction->technology & TECHNOLOGY_UNSTABLE)) {
+                        units[num_units-1].max_health -= 1;
+                        units[num_units-1].health -= 1;
+                    }
+                    if(u.faction && (u.faction->technology & TECHNOLOGY_TOUGH)) {
+                        units[num_units-1].max_health += 1;
+                        units[num_units-1].health += 1;
+                    }
+                }
+            }
+        }
+        continue;
+    }
     if (u.texture == &tex::camp) {
         if(u.faction && (float)GetRandomValue(0, 1000000) / 1000000.0f * 60.f<CAMP_SPAWN_RATE*dt*u.attack_rate*(1.1f-u.faction->count_members/(float)(1+u.faction->industry)) && u.faction!=factions+1) {
             int canMake = (int)u.faction->industry-(int)u.faction->count_members;
@@ -284,31 +331,19 @@ for (int i = 0; i < num_units; i++) {
                     if(u.faction&&(u.faction->technology&TECHNOLOGY_EVOLUTION)&&GetRandomValue(0, 100)<10) {
                         CREATE_SNOWMAN(u.faction, sx, sy);
                     }
-                    if(u.faction&&(u.faction->technology&TECHNOLOGY_CATS)) {
-                        CREATE_CAT(u.faction, sx, sy);
-                        //if(u.faction->technology&TECHNOLOGY_COMMAND) units[num_units-1].speed = 8.f;
+                    if(u.faction&&(u.faction->technology&TECHNOLOGY_CATS)) { CREATE_CAT(u.faction, sx, sy); }
+                    else { CREATE_HUMAN(u.faction, sx, sy); }
+                    if(u.faction && (u.faction->technology & TECHNOLOGY_NERDS)) {
+                        units[num_units-1].max_health -= 1;
+                        units[num_units-1].health -= 1;
                     }
-                    else {
-                        CREATE_HUMAN(u.faction, sx, sy);
-                        //if(u.faction->technology&TECHNOLOGY_COMMAND) units[num_units-1].speed = 5.f;
+                    if(u.faction && (u.faction->technology & TECHNOLOGY_UNSTABLE)) {
+                        units[num_units-1].max_health -= 1;
+                        units[num_units-1].health -= 1;
                     }
-                    // superiority has 25% chance of spawning something hostile
-                    /*if(u.faction&&(u.faction->technology&TECHNOLOGY_SUPERIORITY)&&GetRandomValue(0, 100)<25)
-                        units[num_units-1].faction = factions+2;
-                    else*/
-                    {
-                        if(u.faction && (u.faction->technology & TECHNOLOGY_NERDS)) {
-                            units[num_units-1].max_health -= 1;
-                            units[num_units-1].health -= 1;
-                        }
-                        if(u.faction && (u.faction->technology & TECHNOLOGY_UNSTABLE)) {
-                            units[num_units-1].max_health -= 1;
-                            units[num_units-1].health -= 1;
-                        }
-                        if(u.faction && (u.faction->technology & TECHNOLOGY_TOUGH)) {
-                            units[num_units-1].max_health += 1;
-                            units[num_units-1].health += 1;
-                        }
+                    if(u.faction && (u.faction->technology & TECHNOLOGY_TOUGH)) {
+                        units[num_units-1].max_health += 1;
+                        units[num_units-1].health += 1;
                     }
                 }
             }
@@ -613,6 +648,8 @@ for (int i = 0; i < num_units; i++) {
     if (!u.max_health) continue;
     if (u.texture==&tex::field) continue;
     if (u.texture==&tex::field_empty) continue;
+    if (u.texture==&tex::flowerfield_bloom) continue;
+    if (u.texture==&tex::flowerfield_empty) continue;
     if (u.texture==&tex::field_little) continue;
     if (u.texture==&tex::hide) continue;
 
@@ -622,6 +659,8 @@ for (int i = 0; i < num_units; i++) {
         if (o.texture==&tex::field) continue;
         if (o.texture==&tex::field_little) continue;
         if (o.texture==&tex::field_empty) continue;
+        if (o.texture==&tex::flowerfield_bloom) continue;
+        if (o.texture==&tex::flowerfield_empty) continue;
         if (o.texture==&tex::hide) continue;
 
         float dx = u.x - o.x;

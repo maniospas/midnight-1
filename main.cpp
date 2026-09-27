@@ -1311,23 +1311,64 @@ int main() {
             case 1:
                 if (T.texture == &tex::mountain) {
                     CREATE_MINE(&factions[1], x, y);
-                    continue;
+                    break;
                 }
-                if (!isGrass) continue;
+                if (T.texture == &tex::hill || T.texture == &tex::hill2 || T.texture == &tex::hill3 || T.texture == &tex::hill4) {
+                    CREATE_RADIO(&factions[1], x, y);
+                    float spacing = 10.f;
+                    if(GetRandomValue(0, 99) < 15) { CREATE_ENGINE(&factions[1], x-spacing, y-spacing); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_ENGINE(&factions[1], x-spacing, y+spacing); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_ENGINE(&factions[1], x+spacing, y+spacing); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_ENGINE(&factions[1], x+spacing, y-spacing); }
+                    spacing = 15.f;
+                    if(GetRandomValue(0, 99) < 15) { CREATE_ENGINE(&factions[1], x-spacing, y); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_ENGINE(&factions[1], x+spacing, y); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_ENGINE(&factions[1], x, y+spacing); }
+                    if(GetRandomValue(0, 99) < 15) { CREATE_ENGINE(&factions[1], x, y-spacing); }
+                    break;
+                }
+                if (isDesert) {
+                    CREATE_RETREAT(&factions[1], x, y);
+                    break;
+                }
+                if ((isGrass && T.extra_sight!=0)) { // forest
+                    CREATE_SCRAPYARD(&factions[1], x, y);
+                    break;
+                }
+                if (!isGrass) break;
                 {
-                float spacing = 0.7f;
-                CREATE_FIELD(&factions[1], x-spacing, y-spacing);
-                CREATE_FIELD(&factions[1], x-spacing, y+spacing);
-                CREATE_FIELD(&factions[1], x+spacing, y+spacing);
-                CREATE_FIELD(&factions[1], x+spacing, y-spacing);
-                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x-3*spacing, y-spacing); }
-                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x-3*spacing, y+spacing); }
-                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x+3*spacing, y-spacing); }
-                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x+3*spacing, y+spacing); }
-                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x-spacing, y-3*spacing); }
-                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x+spacing, y-3*spacing); }
-                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x-spacing, y+3*spacing); }
-                if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x+spacing, y+3*spacing); }
+                    float spacing = 0.7f;
+                    if(GetRandomValue(0, 100) < 80) {
+
+                        CREATE_FIELD(&factions[1], x-spacing, y-spacing);
+                        CREATE_FIELD(&factions[1], x-spacing, y+spacing);
+                        CREATE_FIELD(&factions[1], x+spacing, y+spacing);
+                        CREATE_FIELD(&factions[1], x+spacing, y-spacing);
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x-3*spacing, y-spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x-3*spacing, y+spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x+3*spacing, y-spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x+3*spacing, y+spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x-spacing, y-3*spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x+spacing, y-3*spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x-spacing, y+3*spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FIELD(&factions[1], x+spacing, y+3*spacing); }
+                    }
+                    else {
+
+                        CREATE_FLOWERFIELD(&factions[1], x-spacing, y-spacing);
+                        CREATE_FLOWERFIELD(&factions[1], x-spacing, y+spacing);
+                        CREATE_FLOWERFIELD(&factions[1], x+spacing, y+spacing);
+                        CREATE_FLOWERFIELD(&factions[1], x+spacing, y-spacing);
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FLOWERFIELD(&factions[1], x-3*spacing, y-spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FLOWERFIELD(&factions[1], x-3*spacing, y+spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FLOWERFIELD(&factions[1], x+3*spacing, y-spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FLOWERFIELD(&factions[1], x+3*spacing, y+spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FLOWERFIELD(&factions[1], x-spacing, y-3*spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FLOWERFIELD(&factions[1], x+spacing, y-3*spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FLOWERFIELD(&factions[1], x-spacing, y+3*spacing); }
+                        if(GetRandomValue(0, 99) < 20) { CREATE_FLOWERFIELD(&factions[1], x+spacing, y+3*spacing); }
+
+                    }
                 }
                 break;
             case 3:
@@ -1493,6 +1534,8 @@ int main() {
             if (u.texture==&tex::field) continue;
             if (u.texture==&tex::field_empty) continue;
             if (u.texture==&tex::field_little) continue;
+            if (u.texture==&tex::flowerfield_empty) continue;
+            if (u.texture==&tex::flowerfield_bloom) continue;
             if (u.texture==&tex::hide) continue;
 
             for (int j = i + 1; j < num_units; j++) {
@@ -1520,6 +1563,8 @@ int main() {
                     if (o.texture==&tex::field) continue;
                     if (o.texture==&tex::field_little) continue;
                     if (o.texture==&tex::field_empty) continue;
+                    if (o.texture==&tex::flowerfield_empty) continue;
+                    if (o.texture==&tex::flowerfield_bloom) continue;
                     if (o.texture==&tex::hide) continue;
                     o.x -= nx * force * o_force;
                     o.y -= ny * force * o_force;
@@ -2222,7 +2267,12 @@ int main() {
             SetShaderValue(unitShader, factionColorLoc, fcf, SHADER_UNIFORM_VEC4);
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
-                if(u.texture!=&tex::field && u.texture!=&tex::field_little && u.texture!=&tex::field_empty && u.texture!=&tex::hide) continue;
+                if(u.texture!=&tex::field 
+                    && u.texture!=&tex::field_little 
+                    && u.texture!=&tex::field_empty 
+                    && u.texture!=&tex::flowerfield_bloom 
+                    && u.texture!=&tex::flowerfield_empty 
+                    && u.texture!=&tex::hide) continue;
                 if(u.faction!=factions+faction_id) continue;
                 int ux = (int)u.x;
                 int uy = (int)u.y;
@@ -2296,6 +2346,8 @@ int main() {
                 if(u.texture==&tex::field) continue;
                 if(u.texture==&tex::field_little) continue;
                 if(u.texture==&tex::field_empty) continue;
+                if(u.texture==&tex::flowerfield_empty) continue;
+                if(u.texture==&tex::flowerfield_bloom) continue;
                 if(u.texture==&tex::hide) continue;
                 if(u.faction!=factions+faction_id) continue;
                 int ux = (int)u.x;

@@ -43,7 +43,7 @@ if(hoveredTerrain->texture==&tex::water) {
     DrawLineEx(arrowTip, head2, 3.0f, SKYBLUE);
 }
 textY += 140;
-DrawText("Right click to move", px + 80, textY, DESC_FONT_SIZE, WHITE);
+DrawText("Right click to move", px + 80, textY, DESC_FONT_SIZE, ORANGE);
 // if(hoveredTerrain->speed!=1.f)
 //     DrawText(TextFormat("Speed %d%%", (int)(hoveredTerrain->speed*100.f+0.5f)), px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITE);
 // if(hoveredTerrain->extra_sight) {

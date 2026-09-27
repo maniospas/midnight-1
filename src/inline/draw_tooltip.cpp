@@ -60,6 +60,18 @@ if (hovered && hovered->health && !mouseCapturedByUI) {
         DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITECOL);
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
+    else if(hovered->texture==&tex::flowerfield_empty) {
+        DrawText("No healing (barren)", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+        DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITECOL);
+        //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+    }
+    else if(hovered->texture==&tex::flowerfield_bloom) {
+        DrawText("Heals vets & heroes", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+        DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITECOL);
+        //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+    }
     else if(hovered->texture==&tex::hide) {
         DrawText("+4 industry", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
         DrawText("May become rats", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
@@ -73,12 +85,23 @@ if (hovered && hovered->health && !mouseCapturedByUI) {
         DrawText("+1 industry", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
+    else if(hovered->texture==&tex::retreat) {
+        DrawText("Huge experience to", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText("the unit capturing it", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+        //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+    }
     else if(hovered->texture==&tex::villa) {
         DrawText("Random mass healing", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
     else if(hovered->texture==&tex::mine) {
         DrawText("+18 industry", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+        //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+    }
+    else if(hovered->texture==&tex::scrapyard) {
+        DrawText("-8 industry", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText("Spawns roombas if", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+        DrawText("below industry cap", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
     else if(hovered->texture==&tex::oil) {

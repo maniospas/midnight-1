@@ -140,6 +140,7 @@ for (int i = 0; i < num_units; i++) {
                     float experience_bonus = o.experience/2 + (float)(o.max_health)/(float)(u.max_health);
                     if(u.faction && (u.faction->technology&TECHNOLOGY_FIGHT)) experience_bonus *= 2.f;
                     if(u.texture==&tex::ghost && u.faction && (u.faction->technology&TECHNOLOGY_ARTIFICIAL)) experience_bonus *= 5.f;
+                    if(o.texture == &tex::retreat) experience_bonus += 100;
                     u.experience += experience_bonus;
                     if(u.experience>=10 && (!is_mecha(u) || (u.faction && (u.faction->technology & TECHNOLOGY_INDUSTRY)))
                         && u.name!=veteran_name && u.name!=hero_name) {
@@ -163,28 +164,30 @@ for (int i = 0; i < num_units; i++) {
                         u.popup_texture = nullptr;
                     }
                     if(u.experience>70 && u.name==hero_name) {
-                        u.experience -= 20;
                         int r = GetRandomValue(0, 100);
-                        if(r<25) {
-                            u.attack_rate *= 1.5f;
-                            u.popup = "hero: aggression";
-                            u.popup_texture = nullptr;
-                        }
-                        else if(r<50) {
-                            u.speed *= 1.2f;
-                            u.popup = "hero: faster";
-                            u.popup_texture = nullptr;
-                        }
-                        else if(r<75){
-                            u.max_health += 2.f;
-                            u.health += 2.f;
-                            u.popup = "hero: healthier";
-                            u.popup_texture = nullptr;
-                        }
-                        else {
-                            u.range *= 1.2f;
-                            u.popup = "hero: farsight";
-                            u.popup_texture = nullptr;
+                        while(u.experience>70) {
+                            u.experience -= 20;
+                            if(r<25) {
+                                u.attack_rate *= 1.5f;
+                                u.popup = "hero: aggression";
+                                u.popup_texture = nullptr;
+                            }
+                            else if(r<50) {
+                                u.speed *= 1.2f;
+                                u.popup = "hero: faster";
+                                u.popup_texture = nullptr;
+                            }
+                            else if(r<75){
+                                u.max_health += 2.f;
+                                u.health += 2.f;
+                                u.popup = "hero: healthier";
+                                u.popup_texture = nullptr;
+                            }
+                            else {
+                                u.range *= 1.2f;
+                                u.popup = "hero: farsight";
+                                u.popup_texture = nullptr;
+                            }
                         }
                     }
                 }
