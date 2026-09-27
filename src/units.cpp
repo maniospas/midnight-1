@@ -642,6 +642,30 @@ struct Unit {
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
     }
 
+#define CREATE_PYRAMIS(faction, x, y) \
+    if (num_units < MAX_UNITS) {\
+        units[num_units++] = { \
+            &tex::pyramis,   /* texture */ \
+            "Pyramis",  /* name */ \
+            0.0,          /* speed */ \
+            (float)(x),   /* x */ \
+            (float)(y),   /* y */ \
+            0.0,          /* attack_rate */ \
+            4.5,          /* range */ \
+            0.0,          /* damage */ \
+            0.0,          /* experience */ \
+            0.0,          /* angle */ \
+            2.5,          /* size */ \
+            50.0,         /* health */ \
+            50.0,         /* max_health */ \
+            (faction),    /* faction */ \
+            (faction),    /* can only be captured */ \
+            0.5\
+        };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
+    }
 
 #define CREATE_TOWNHALL(faction, x, y) \
     if (num_units < MAX_UNITS) {\

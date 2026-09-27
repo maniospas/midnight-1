@@ -46,6 +46,27 @@ for (int i = 0; i < num_units; i++) {
             }
         }
     }
+    if(u.texture==&tex::pyramis &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
+        if((float)GetRandomValue(0, 1000000) / 1000000.0f * 90.f < dt) {
+            bool applied = false;
+            for (int j = 0; j < num_units; j++)
+                if (units[j].faction==u.faction && units[j].speed && !is_mecha(units[j])) {
+                    units[j].health -= 3;
+                    units[j].max_health -= 3;
+                    if(u.max_health<1) {
+                        u.max_health = 1;
+                        units[j].health = 0;
+                    }
+                    units[j].popup = "pyramis";
+                    units[j].popup_texture = &tex::pyramis;
+                    applied = true;
+                }
+            if(u.faction==factions && applied) {
+                last_message = "Pyramis: a plague permanently hampers your non-mechas.";
+                last_message_counter = 0.f;
+            }
+        }
+    }
     if(u.texture==&tex::datacenter &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
         if((float)GetRandomValue(0, 1000000) / 1000000.0f * 900.f < dt) {
             bool applied = false;

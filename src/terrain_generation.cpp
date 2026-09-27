@@ -76,16 +76,16 @@ static float BiasCurve(float v, float bias) {
 static void GenerateGrass(Terrain** terrainGrid) {
     for (int y = 0; y < GRID_SIZE; y++)
         for (int x = 0; x < GRID_SIZE; x++)
-            if (GetRandomValue(1, 100) <= 90)
-                terrainGrid[y][x] = { &tex::grass, 1.0 };
-    else {
-        int alt = GetRandomValue(2, 4); // 2,3,4
-        switch (alt) {
-            case 2: terrainGrid[y][x] = { &tex::grass2, 1.0 }; break;
-            case 3: terrainGrid[y][x] = { &tex::grass3, 1.0 }; break;
-            case 4: terrainGrid[y][x] = { &tex::grass4, 1.0 }; break;
-        }
-    }
+            //if (GetRandomValue(1, 100) <= 90)
+            terrainGrid[y][x] = { &tex::grass, 1.0 };
+            // else {
+            //     int alt = GetRandomValue(2, 4); // 2,3,4
+            //     switch (alt) {
+            //         case 2: terrainGrid[y][x] = { &tex::grass2, 1.0 }; break;
+            //         case 3: terrainGrid[y][x] = { &tex::grass3, 1.0 }; break;
+            //         case 4: terrainGrid[y][x] = { &tex::grass4, 1.0 }; break;
+            //     }
+            // }
 }
 static void GenerateRivers(Terrain** terrainGrid) {
     int NUM_ROADS = 40 * GRID_SIZE * GRID_SIZE / 512 / 512;
@@ -324,11 +324,11 @@ static void GenerateHillsAndDesert(Terrain** terrainGrid) {
             }
 
             if (hillValue > 0.57f) {
-                int h = HashNoise2D(x, y) * 100;
+                //int h = HashNoise2D(x, y) * 100;
                 Texture2D* tex = &tex::hill;
-                if (h == 1) tex = &tex::hill2;
-                if (h == 2) tex = &tex::hill3;
-                if (h == 3) tex = &tex::hill4;
+                // if (h == 1) tex = &tex::hill2;
+                // if (h == 2) tex = &tex::hill3;
+                // if (h == 3) tex = &tex::hill4;
 
                 terrainGrid[y][x] = {
                     tex,

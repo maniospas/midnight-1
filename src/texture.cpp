@@ -108,6 +108,7 @@ namespace tex {
     static Texture2D house;
     static Texture2D house2;
     static Texture2D villa;
+    static Texture2D pyramis;
 }
 
 
@@ -219,6 +220,7 @@ void load() {
     tex::house= LoadTexture("data/house.png");
     tex::house2= LoadTexture("data/house2.png");
     tex::villa= LoadTexture("data/villa.png");
+    tex::pyramis= LoadTexture("data/pyramis.png");
 
     sound::gun.Load("data/gun.ogg", 24);
     sound::boom.Load("data/boom.ogg", 5);
@@ -300,6 +302,7 @@ void unload() {
     UnloadTexture(tex::house);
     UnloadTexture(tex::house2);
     UnloadTexture(tex::villa);
+    UnloadTexture(tex::pyramis);
 
     UnloadTexture(tex::oil);
     UnloadTexture(tex::datacenter);

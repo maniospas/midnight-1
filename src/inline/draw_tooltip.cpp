@@ -93,6 +93,11 @@ if (hovered && hovered->health && !mouseCapturedByUI) {
         DrawText("+2 utopia", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
+    else if(hovered->texture==&tex::pyramis) {
+        DrawText("+3 utopia", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText("Random plague", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+        //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+    }
     else if(hovered->texture==&tex::lighthouse) {
         DrawText("+half utopia", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
         DrawText("+5 industry", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);

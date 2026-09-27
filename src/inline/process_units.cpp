@@ -169,6 +169,8 @@ for (int i = 0; i < num_units; i++) {
         u.faction->victory_points += 2.f;
     if(u.texture==&tex::warehouse)
         u.faction->victory_points += 2.f;
+    if(u.texture==&tex::pyramis)
+        u.faction->victory_points += 3.f;
     if(u.texture==&tex::curio)
         u.faction->victory_points += 1.f;
     // if(u.texture==&tex::fort)

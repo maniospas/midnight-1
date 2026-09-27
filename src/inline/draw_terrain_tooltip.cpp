@@ -56,7 +56,7 @@ DrawText("Right click to move", px + 80, textY, DESC_FONT_SIZE, WHITE);
 // }
 {
     const char* moveNames[5] = {hoveredTerrain->texture==&tex::water?"swim (wind speedup)":"crawl", hoveredTerrain->texture==&tex::water?"swim (wind speedup)":"slow", "bormal", "fast", "run"};
-    const char* viewNames[5] = {"minimal sight", "shortsight", "flat", "farsight", "long view"};
+    const char* viewNames[5] = {"very short sight", "shortsight", "flat", "farsight", "very far sight"};
     const char* dodgeNames[3] = {"no dodge", "dodge", "high dodge"};
 
     int moveBucket = (int)(hoveredTerrain->speed * 2.5f);

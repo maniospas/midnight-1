@@ -251,9 +251,19 @@ int main() {
     float alphaThreshold = 0.5f;
     SetShaderValue(unitShader, alphaThresholdLoc, &alphaThreshold, SHADER_UNIFORM_FLOAT);
     int factionColorLoc = GetShaderLocation(unitShader, "factionColor");
-    Shader waterShader = LoadShader(0, "data/water.fs");
-    int waterTimeLoc = GetShaderLocation(waterShader, "time");
-    int waterDirectionLoc = GetShaderLocation(waterShader, "flowAngle");
+    Shader terrainShader = LoadShader(0, "data/terrain.fs");
+    int terrainTimeLoc = GetShaderLocation(terrainShader, "time");
+    int terrainCameraTargetLoc = GetShaderLocation(terrainShader, "cameraTarget");
+    int terrainCameraOffsetLoc = GetShaderLocation(terrainShader, "cameraOffset");
+    int terrainCameraZoomLoc = GetShaderLocation(terrainShader, "cameraZoom");
+    int terrainPosLoc = GetShaderLocation(terrainShader, "worldPos");
+    int waterDirectionLoc = GetShaderLocation(terrainShader, "flowAngle");
+    int terrainScreenSizeLoc = GetShaderLocation(terrainShader, "screenSize");
+    Shader projectileShader = LoadShader(0, "data/projectile.fs");
+    int projectileTimeLoc = GetShaderLocation(projectileShader, "time");
+    Image projectileImage = GenImageColor(1, 1, WHITE);
+    Texture2D projectileTexture = LoadTextureFromImage(projectileImage);
+    UnloadImage(projectileImage);
 
     // prepare buttons
     MovementMode currentMovementMode = MovementMode::Tight;
@@ -1345,7 +1355,12 @@ int main() {
                     CREATE_RAILGUN(&factions[1], x-GetRandomValue(2, 5)-2, y+GetRandomValue(2, 5)+2);
                     CREATE_RAILGUN(&factions[1], x+GetRandomValue(2, 5)+2, y-GetRandomValue(2, 5)-2);
                     CREATE_RAILGUN(&factions[1], x+GetRandomValue(2, 5)+2, y+GetRandomValue(2, 5)-2);
-                    CREATE_WAREHOUSE(&factions[1], x, y);
+                    if(isDesert) {
+                        CREATE_PYRAMIS(&factions[1], x, y);
+                    }
+                    else {
+                        CREATE_WAREHOUSE(&factions[1], x, y);
+                    }
                     RevealUnitToAllFactions(num_units - 1);
                 }
                 break;
@@ -1905,28 +1920,96 @@ int main() {
         ClearBackground(BLACK);
 
         BeginMode2D(camera);
+        float terrainTime = (float)GetTime();
+
+        Vector2 screenSize = {
+            (float)GetScreenWidth(),
+            (float)GetScreenHeight()
+        };
+
+        SetShaderValue(
+            terrainShader,
+            terrainTimeLoc,
+            &terrainTime,
+            SHADER_UNIFORM_FLOAT
+        );
+
+        SetShaderValue(
+            terrainShader,
+            terrainCameraTargetLoc,
+            &camera.target,
+            SHADER_UNIFORM_VEC2
+        );
+
+        SetShaderValue(
+            terrainShader,
+            terrainCameraOffsetLoc,
+            &camera.offset,
+            SHADER_UNIFORM_VEC2
+        );
+
+        SetShaderValue(
+            terrainShader,
+            terrainCameraZoomLoc,
+            &camera.zoom,
+            SHADER_UNIFORM_FLOAT
+        );
+
+        SetShaderValue(
+            terrainShader,
+            terrainScreenSizeLoc,
+            &screenSize,
+            SHADER_UNIFORM_VEC2
+        );
+
+        SetShaderValue(
+            terrainShader,
+            waterDirectionLoc,
+            &water_angle,
+            SHADER_UNIFORM_FLOAT
+        );
+
+        BeginShaderMode(terrainShader);
         for (int y = yMin; y < yMax; y++)
             for (int x = xMin; x < xMax; x++) {
                 int px = x * TILE_SIZE - TILE_SIZE/2;
                 int py = y * TILE_SIZE - TILE_SIZE/2;
                 if(!explored[y][x]) continue;
                 if(terrainGrid[y][x].texture==&tex::water) continue;
+                Vector2 pos = {
+                    (float)px,
+                    (float)py
+                };
+
+                SetShaderValue(
+                    terrainShader,
+                    terrainPosLoc,
+                    &pos,
+                    SHADER_UNIFORM_VEC2
+                );
+
                 DrawTexture(*terrainGrid[y][x].texture, px, py, WHITE);
             }
 
-        BeginShaderMode(waterShader);
-        float tsec = GetTime()*2.f;
-        SetShaderValue(waterShader, waterTimeLoc, &tsec, SHADER_UNIFORM_FLOAT);
-        SetShaderValue(waterShader, waterDirectionLoc, &water_angle, SHADER_UNIFORM_FLOAT);
         for (int y = yMin; y < yMax; y++)
             for (int x = xMin; x < xMax; x++) {
                 int px = x * TILE_SIZE - TILE_SIZE/2;
                 int py = y * TILE_SIZE - TILE_SIZE/2;
                 if(!explored[y][x]) continue;
                 if(terrainGrid[y][x].texture!=&tex::water) continue;
+                Vector2 pos = {
+                    (float)px,
+                    (float)py
+                };
+
+                SetShaderValue(
+                    terrainShader,
+                    terrainPosLoc,
+                    &pos,
+                    SHADER_UNIFORM_VEC2
+                );
                 DrawTexture(tex::water, px, py, WHITE);
             }
-        EndShaderMode();
 
         float water_sound_intensity = 0.0;
         for (int y = yMin; y < yMax; y++)
@@ -1935,6 +2018,17 @@ int main() {
                 Texture2D* tx = terrainGrid[y][x].texture;
                 int px = x * TILE_SIZE - TILE_SIZE/2;
                 int py = y * TILE_SIZE - TILE_SIZE/2;
+                Vector2 pos = {
+                    (float)px,
+                    (float)py
+                };
+
+                SetShaderValue(
+                    terrainShader,
+                    terrainPosLoc,
+                    &pos,
+                    SHADER_UNIFORM_VEC2
+                );
 
                 bool hasN = (y > 0);
                 bool hasS = (y < GRID_SIZE - 1);
@@ -2089,6 +2183,7 @@ int main() {
                 }
 
             }
+        EndShaderMode(); // terrain shader
         if(water_sound_intensity) {
             water_sound_intensity = water_sound_intensity/float(yMax-yMin)/float(xMax-xMin);
             //water_sound_intensity = sqrtf(water_sound_intensity);
@@ -2277,16 +2372,43 @@ int main() {
             }
         }
 
+        // draw projectiles
+        float projectileTime = (float)GetTime();
+        SetShaderValue(projectileShader, projectileTimeLoc, &projectileTime, SHADER_UNIFORM_FLOAT);
+
+        BeginShaderMode(projectileShader);
 
         for (int i = 0; i < num_units; i++) {
-            Unit &u = units[i];
-            if (u.attack_target_x == 0 && u.attack_target_y == 0) continue;
-            if (!visible[(int)(u.attack_y)][(int)(u.attack_x)]) continue;
-            float px = u.attack_x * TILE_SIZE;
-            float py = u.attack_y * TILE_SIZE;
-            DrawCircle(px, py, 4.0f*(1+sqrtf(u.damage)*0.5f), RED);
+            float projectileTime = (float)GetTime();
+            SetShaderValue(projectileShader, projectileTimeLoc, &projectileTime, SHADER_UNIFORM_FLOAT);
+
+            BeginShaderMode(projectileShader);
+
+            for (int i = 0; i < num_units; i++) {
+                Unit &u = units[i];
+                if (u.attack_target_x == 0 && u.attack_target_y == 0) continue;
+                if (!visible[(int)u.attack_y][(int)u.attack_x]) continue;
+
+                float px = u.attack_x * TILE_SIZE;
+                float py = u.attack_y * TILE_SIZE;
+                float dx = u.attack_target_x - u.attack_x;
+                float dy = u.attack_target_y - u.attack_y;
+                float angle = atan2f(dy, dx) * RAD2DEG;
+                float damageScale = 1.0f + sqrtf(u.damage) * 0.25f;
+                float length = 20.0f * damageScale*(1.0+0.5f*u.attack_rate);
+                float width = 18.0f * damageScale;
+
+                Rectangle src = {0.0f, 0.0f, 1.0f, 1.0f};
+                Rectangle dst = {px, py, length, width};
+                Vector2 origin = {length * 0.75f, width * 0.5f};
+
+                DrawTexturePro(projectileTexture, src, dst, origin, angle, WHITE);
+            }
+
+            EndShaderMode();
         }
 
+        EndShaderMode();
         Color transparent = Fade(WHITE, 0.55f);
         for (int i = 0; i < num_decorators; i++) {
             Decorator &d = decorators[i];
@@ -2947,5 +3069,7 @@ int main() {
     free(terrainBlock);
     free(terrainGrid);
     unload();
+    UnloadShader(projectileShader);
+    UnloadShader(terrainShader);
     return 0;
 }

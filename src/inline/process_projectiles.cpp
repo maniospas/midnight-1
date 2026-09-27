@@ -275,7 +275,11 @@ for (int i = 0; i < num_units; i++) {
                             last_message = "Important loss: Storage";
                             last_message_counter = 0.f;
                         }
-                        else if(o.texture==&tex::warehouse) {
+                        else if(o.texture==&tex::pyramis) {
+                            last_message = "Important loss: Pyramis";
+                            last_message_counter = 0.f;
+                        }
+                        else if(o.texture==&tex::esper) {
                             last_message = "Important loss: Esper";
                             last_message_counter = 0.f;
                         }

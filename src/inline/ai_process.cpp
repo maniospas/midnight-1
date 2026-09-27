@@ -112,7 +112,7 @@ for (int i = 0; i < num_units; i++) {
                 (o.speed == 0 && o.capturing) &&
                 (o.health < o.max_health*0.8f) && (o.texture!=&tex::rock && o.texture!=&tex::railgun);
             if (!isEnemyCapturable && !isOwnDamagedStructure && o.faction) continue;
-            if ((time_norm>0.8f || (time_norm>0.35f && time_norm>0.5f)) && o.texture!=&tex::oil && o.texture!=&tex::warehouse && o.texture!=&tex::esper && o.texture!=&tex::lighthouse) continue; // at the last stretch attack the victory locations with all means
+            if ((time_norm>0.8f || (time_norm>0.35f && time_norm>0.5f)) && o.texture!=&tex::oil && o.texture!=&tex::warehouse && o.texture!=&tex::pyramis && o.texture!=&tex::esper && o.texture!=&tex::lighthouse) continue; // at the last stretch attack the victory locations with all means
             float dx = o.x - u.x;
             float dy = o.y - u.y;
             float d2 = dx*dx + dy*dy;
