@@ -10,14 +10,12 @@ permissions:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
             platform: linux
             artifact_name: midnight-next-morn-linux
-
           - os: windows-latest
             platform: windows
             artifact_name: midnight-next-morn-windows
@@ -25,155 +23,70 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # =========================
-      # Linux dependencies
-      # =========================
       - name: Install Linux dependencies
         if: matrix.platform == 'linux'
         run: |
           sudo apt update
-          sudo apt install -y \
-            build-essential \
-            cmake \
-            git \
-            zip \
-            libasound2-dev \
-            libx11-dev \
-            libxrandr-dev \
-            libxi-dev \
-            libgl1-mesa-dev \
-            libglu1-mesa-dev \
-            libxcursor-dev \
-            libxinerama-dev \
-            libwayland-dev
-
+          sudo apt install -y build-essential cmake git zip libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev
           git clone --depth 1 https://github.com/raysan5/raylib.git
           cd raylib
-
-          mkdir build
-          cd build
-
-          cmake .. \
-            -DBUILD_SHARED_LIBS=ON \
-            -DCMAKE_BUILD_TYPE=Release
-
-          cmake --build . --config Release
-
-          sudo cmake --install .
+          cmake -S . -B build -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+          sudo cmake --install build
           sudo ldconfig
 
-      # =========================
-      # Windows dependencies
-      # =========================
       - name: Setup MSYS2
         if: matrix.platform == 'windows'
         uses: msys2/setup-msys2@v2
         with:
+          msystem: UCRT64
           update: true
           install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-raylib
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-raylib
             zip
 
-      # =========================
-      # Build Linux
-      # =========================
       - name: Build Linux
         if: matrix.platform == 'linux'
         run: |
           mkdir -p build
+          g++ main.cpp -O2 -flto -std=c++17 -o build/game -lraylib -lm -ldl -lpthread -lGL -lrt -lX11
 
-          g++ main.cpp \
-            -O2 \
-            -flto \
-            -std=c++17 \
-            -o build/game \
-            -lraylib \
-            -lm \
-            -ldl \
-            -lpthread \
-            -lGL \
-            -lrt \
-            -lX11
-
-      # =========================
-      # Build Windows
-      # =========================
       - name: Build Windows
         if: matrix.platform == 'windows'
         shell: msys2 {0}
         run: |
           mkdir -p build
+          g++ main.cpp -O2 -flto -std=c++17 -o build/game.exe -lraylib -lopengl32 -lgdi32 -lwinmm
 
-          g++ main.cpp \
-            -O2 \
-            -flto \
-            -std=c++17 \
-            -o build/game.exe \
-            -lraylib \
-            -lopengl32 \
-            -lgdi32 \
-            -lwinmm
-
-      # =========================
-      # Bundle Windows DLLs
-      # =========================
       - name: Bundle Windows DLLs
         if: matrix.platform == 'windows'
         shell: msys2 {0}
         run: |
-          ldd build/game.exe | awk '{print $3}' | grep '^/mingw64/bin/' | while read dll; do
-            cp "$dll" build/
-          done
+          ldd build/game.exe | awk '{print $3}' | grep '^/ucrt64/bin/' | while read dll; do cp "$dll" build/; done
 
-      # =========================
-      # Copy assets
-      # =========================
       - name: Copy assets
         shell: bash
-        run: |
-          cp -r data build/
+        run: cp -r data build/
 
-      # =========================
-      # Package Linux
-      # =========================
       - name: Create Linux zip
         if: matrix.platform == 'linux'
-        run: |
-          cd build
-          zip -r ../${{ matrix.artifact_name }}.zip .
+        run: cd build && zip -r ../${{ matrix.artifact_name }}.zip .
 
-      # =========================
-      # Package Windows
-      # =========================
       - name: Create Windows zip
         if: matrix.platform == 'windows'
         shell: msys2 {0}
-        run: |
-          cd build
-          zip -r ../${{ matrix.artifact_name }}.zip .
+        run: cd build && zip -r ../${{ matrix.artifact_name }}.zip .
 
-      # =========================
-      # Upload artifacts
-      # =========================
-      - name: Upload Linux artifact
-        if: matrix.platform == 'linux'
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: midnight-next-morn-linux
-          path: midnight-next-morn-linux.zip
-
-      - name: Upload Windows artifact
-        if: matrix.platform == 'windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: midnight-next-morn-windows
-          path: midnight-next-morn-windows.zip
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}.zip
 
   release:
     needs: build
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
 
@@ -182,11 +95,10 @@ jobs:
         with:
           path: artifacts
 
-      - name: Delete snapshot release (if exists)
+      - name: Delete snapshot release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release delete snapshot -y --cleanup-tag || true
+        run: gh release delete snapshot -y --cleanup-tag || true
 
       - name: Create snapshot release
         uses: softprops/action-gh-release@v2

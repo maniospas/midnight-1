@@ -16,8 +16,8 @@ for(int i=3;i<max_factions;++i) {
     else if (candidate == TECHNOLOGY_HARDCORE) chosen = candidate;
     else if (candidate == TECHNOLOGY_SCAVENGE) chosen = candidate;
     else if (candidate == TECHNOLOGY_COMMAND) chosen = candidate;
-    else if (candidate == TECHNOLOGY_TRENCHES && (prev & TECHNOLOGY_SCAVENGE)) chosen = candidate;
-    else if (candidate == TECHNOLOGY_DISMANTLE && (prev & TECHNOLOGY_NERDS)) chosen = candidate;
+    else if (candidate == TECHNOLOGY_TRENCHES && (prev & (TECHNOLOGY_SCAVENGE | TECHNOLOGY_COMMAND))) chosen = candidate;
+    else if (candidate == TECHNOLOGY_DISMANTLE && (prev & (TECHNOLOGY_NERDS | TECHNOLOGY_COMMAND))) chosen = candidate;
     else if (candidate == TECHNOLOGY_VROOM && (prev & TECHNOLOGY_DISMANTLE)) chosen = candidate;
     else if (candidate == TECHNOLOGY_TRACK && (prev & TECHNOLOGY_EXPLORE)) chosen = candidate;
     else if (candidate == TECHNOLOGY_AGILE && (prev & TECHNOLOGY_EXPLORE)) chosen = candidate;
