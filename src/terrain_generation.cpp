@@ -75,17 +75,15 @@ static float BiasCurve(float v, float bias) {
 
 static void GenerateGrass(Terrain** terrainGrid) {
     for (int y = 0; y < GRID_SIZE; y++)
-        for (int x = 0; x < GRID_SIZE; x++)
-            //if (GetRandomValue(1, 100) <= 90)
+        for (int x = 0; x < GRID_SIZE; x++) {
+            int alt = GetRandomValue(0, 100);
             terrainGrid[y][x] = { &tex::grass, 1.0 };
-            // else {
-            //     int alt = GetRandomValue(2, 4); // 2,3,4
-            //     switch (alt) {
-            //         case 2: terrainGrid[y][x] = { &tex::grass2, 1.0 }; break;
-            //         case 3: terrainGrid[y][x] = { &tex::grass3, 1.0 }; break;
-            //         case 4: terrainGrid[y][x] = { &tex::grass4, 1.0 }; break;
-            //     }
-            // }
+            switch (alt) {
+                case 2: terrainGrid[y][x] = { &tex::grass2, 0.7 }; break;
+                case 3: terrainGrid[y][x] = { &tex::grass3, 0.7 }; break;
+                case 4: terrainGrid[y][x] = { &tex::grass4, 0.7 }; break;
+            }
+        }
 }
 static void GenerateRivers(Terrain** terrainGrid) {
     int NUM_ROADS = 40 * GRID_SIZE * GRID_SIZE / 512 / 512;
