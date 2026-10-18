@@ -44,6 +44,9 @@ for (int i = 0; i < num_units; i++) {
                         }
                     }
                 }
+                if (o.capturing && u.faction && u.faction->demolishing) 
+                    u_damage *= 2.f;
+
                 if (oxi >= 0 && oyi >= 0 && oxi < GRID_SIZE && oyi < GRID_SIZE) skipChance -= terrainGrid[oyi][oxi].extra_sight/2.f;
                 if(o.speed==0.f) skipChance = 0.f;
                 if(u.texture==&tex::kraken) skipChance = 0.f;
@@ -259,7 +262,8 @@ for (int i = 0; i < num_units; i++) {
                     units[j].popup_texture = nullptr;
                 }
                 if (o.health>0 && o.health<o.max_health && o.capturing) {
-                    if(o.capturing==factions+1) o.popup = "capturing";
+                    if(u.faction && u.faction->demolishing) o.popup = "demolishing";
+                    else if(o.capturing==factions+1) o.popup = "capturing";
                     else o.popup = "contested";
                     o.popup_texture = nullptr;
                 }

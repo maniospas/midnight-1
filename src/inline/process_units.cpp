@@ -303,6 +303,7 @@ for (int i = 0; i < num_units; i++) {
                     float sx = u.x + (GetRandomValue(-5000, 5000) * 0.0002f);
                     float sy = u.y + (GetRandomValue(-5000, 5000) * 0.0002f);
                     { CREATE_ROOMBA(u.faction, sx, sy); }
+                    units[num_units-1].capturing = nullptr;
                     if(u.faction && (u.faction->technology & TECHNOLOGY_NERDS)) {
                         units[num_units-1].max_health -= 1;
                         units[num_units-1].health -= 1;

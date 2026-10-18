@@ -101,7 +101,7 @@ if (hovered && hovered->health && !mouseCapturedByUI) {
     else if(hovered->texture==&tex::scrapyard) {
         DrawText("-8 industry", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
         DrawText("Spawns roombas if", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
-        DrawText("below industry cap", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+        DrawText("below industry cap", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITECOL);
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
     else if(hovered->texture==&tex::oil) {

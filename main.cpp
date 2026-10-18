@@ -2801,7 +2801,7 @@ int main() {
                 DrawDemolishProgressBar(bx, by, barW, barH, prog);
             }
             const char* title = "";
-            if (techHover) title = prog ? "Quickly demolishing captures into humans." : "Quick demolish captures into humans for a bit?";;
+            if (techHover) title = prog ? "Quickly demolishing captures into humans." : "Quickly demolish captures into humans for a bit.";;
             DrawTextOutlined(title, techX - MeasureText(title, 30) - 70, techY - 25, 32, Fade(WHITE, 1.f));
 
             // Circle icon
