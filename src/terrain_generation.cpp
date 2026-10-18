@@ -305,6 +305,32 @@ static void GenerateHillsAndDesert(Terrain** terrainGrid) {
             float desertValue = d1 * 0.7f + d2 * 0.3f;
             desertValue = BiasCurve(desertValue, 0.8f);
 
+            if (desertValue > 0.65f && desertValue>hillValue) {
+                // Hills appear toward the center of desert regions
+                if (desertValue > 0.76f) {
+                    int h = (int)(HashNoise2D(x, y) * 100);
+
+                    Texture2D* tex = &tex::hill;
+                    if (h == 1) tex = &tex::hill2;
+                    if (h == 2) tex = &tex::hill3;
+                    if (h == 3) tex = &tex::hill4;
+
+                    terrainGrid[y][x] = {
+                        tex,
+                        0.7f,
+                        0.5f
+                    };
+                }
+                else {
+                    terrainGrid[y][x] = {
+                        &tex::desert,
+                        0.8f,
+                        -0.7f
+                    };
+                }
+                continue;
+            }
+
             if (hillValue > 0.67f) {
                 terrainGrid[y][x] = {
                     &tex::mountain,
@@ -337,14 +363,32 @@ static void GenerateHillsAndDesert(Terrain** terrainGrid) {
                 };
                 continue;
             }
+        }
+    }
+}
 
-            if (desertValue > 0.65f) {
-                terrainGrid[y][x] = {
-                    &tex::desert,
-                    0.8f,
-                    -0.7f
-                };
+static void GenerateMountainTrails(Terrain** terrainGrid) {
+    for (int y = 3; y < GRID_SIZE - 3; y++) {
+        for (int x = 3; x < GRID_SIZE - 3; x++) {
+
+            Terrain &T = terrainGrid[y][x];
+
+            // Only replace mountains and hills
+            if (!IsMountain(T.texture) && !IsHill(T.texture))
                 continue;
+
+            // Two smoothly varying noise fields
+            float n1 = FractalNoise(x + 3000, y + 5000, 65.0f);
+            float n2 = FractalNoise(x + 7000, y + 2000, 45.0f);
+
+            // Trails follow narrow contours of the noise field
+            float trailValue = n1 * 0.7f + n2 * 0.3f;
+
+            // Narrow band around a contour
+            if (fabsf(trailValue - 0.48f) < 0.012f) {
+                T.texture = &tex::grass;
+                T.speed = 1.0f;
+                T.extra_sight = 0.0f;
             }
         }
     }

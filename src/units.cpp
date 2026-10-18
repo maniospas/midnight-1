@@ -343,7 +343,7 @@ struct Unit {
         };
 
 #define CREATE_RAILGUN(faction, x, y) \
-    if (num_units < MAX_UNITS) \
+    if (num_units < MAX_UNITS) {\
         units[num_units++] = { \
             &tex::railgun,   /* texture */ \
             "Railgun",    /* name */ \
@@ -355,13 +355,17 @@ struct Unit {
             1.5,          /* damage */ \
             0.0,          /* experience */ \
             (float)GetRandomValue(0,360),          /* angle */ \
-            0.8,          /* size */ \
+            0.65,          /* size */ \
             20.0,         /* health */ \
             20.0,         /* max_health */ \
             (faction),    /* faction */ \
             (faction),     /* faction */ \
             0.2           /* extra scale*/\
-        };
+        };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
+    }
 
 #define CREATE_CAMP(faction, x, y) \
     if (num_units < MAX_UNITS) { \
@@ -558,7 +562,7 @@ struct Unit {
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \
-            2.0,          /* size */ \
+            1.5,          /* size */ \
             50.0,         /* health */ \
             50.0,         /* max_health */ \
             (faction),    /* faction */ \
@@ -592,6 +596,9 @@ struct Unit {
             (faction),    /* can only be captured */ \
             0.25           /* extra scale*/\
         };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) \
+                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(y+0.5f)+ppy][(int)(x+0.5f)+ppx] = terrainGrid[(int)(y+0.5f)][(int)(x+0.5f)]; \
     }
 
 
@@ -727,7 +734,7 @@ struct Unit {
             (float)(x),   /* x */ \
             (float)(y),   /* y */ \
             0.0,          /* attack_rate */ \
-            4.5,          /* range */ \
+            9.0,          /* range */ \
             0.0,          /* damage */ \
             0.0,          /* experience */ \
             0.0,          /* angle */ \

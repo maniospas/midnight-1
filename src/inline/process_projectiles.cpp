@@ -263,12 +263,12 @@ for (int i = 0; i < num_units; i++) {
                     else o.popup = "contested";
                     o.popup_texture = nullptr;
                 }
-                if(o.capturing && u.faction && u.faction->demolishing && o.health<=o.max_health/2) {
-                    int num_stones = o.max_health/5+2;
+                if(o.capturing && u.faction && u.faction->demolishing && o.health<=0.f && o.texture!=&tex::esper) {
+                    int num_stones = o.max_health/6+2;
                     for(int stone=0;stone<num_stones;++stone) {
                         float sx = o.x + (GetRandomValue(0, 10000)*0.0001-0.5)*o.size;
                         float sy = o.y + (GetRandomValue(0, 10000)*0.0001-0.5)*o.size;
-                        if(stone%3==0) {
+                        if(stone%2==0) {
                             if(u.faction&&(u.faction->technology&TECHNOLOGY_EVOLUTION)&&GetRandomValue(0, 100)<10) {
                                 CREATE_SNOWMAN(u.faction, sx, sy);
                             }
@@ -294,6 +294,30 @@ for (int i = 0; i < num_units; i++) {
                         else {
                             CREATE_ROCK(u.faction, sx, sy);
                         }
+                    }
+                    if(o.texture==&tex::camp) {
+                        last_message = "Demolished by someone crazy: Camp";
+                        last_message_counter = 0.f;
+                    }
+                    else if(o.texture==&tex::oil) {
+                        last_message = "Demolished by someone crazy: Oil";
+                        last_message_counter = 0.f;
+                    }
+                    else if(o.texture==&tex::warehouse) {
+                        last_message = "Demolished by someone crazy: Storage";
+                        last_message_counter = 0.f;
+                    }
+                    else if(o.texture==&tex::curio) {
+                        last_message = "Demolished by someone crazy: Curio";
+                        last_message_counter = 0.f;
+                    }
+                    else if(o.texture==&tex::lighthouse) {
+                        last_message = "Demolished by someone crazy: Big bro";
+                        last_message_counter = 0.f;
+                    }
+                    else if(o.texture==&tex::pyramis) {
+                        last_message = "Demolished by someone crazy: Pyramis";
+                        last_message_counter = 0.f;
                     }
                     units[j] = { \
                         &tex::ghost,  /* texture */
@@ -354,6 +378,10 @@ for (int i = 0; i < num_units; i++) {
                         }
                         else if(o.texture==&tex::oil) {
                             last_message = "Nice capture: Oil";
+                            last_message_counter = 0.f;
+                        }
+                        else if(o.texture==&tex::pyramis) {
+                            last_message = "Nice capture: Pyramis";
                             last_message_counter = 0.f;
                         }
                         else if(o.texture==&tex::warehouse) {

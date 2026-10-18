@@ -131,6 +131,40 @@ enum class MovementMode {Tight,Scattered,Explore};
 //         DrawTextSmallOutlined(stats[i].label, drawX, drawY, FONT_SIZE, Fade(WHITE, 1.f));
 //     }
 // }
+
+float estimate_travel_time(Terrain** terrainGrid, float x1, float y1, float x2, float y2) {
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float distance = sqrtf(dx*dx + dy*dy);
+
+    if(distance < 0.001f)
+        return 0.f;
+
+    // Sample terrain along the straight line.
+    const int samples = 12;
+    float total = 0.f;
+
+    for(int i = 0; i < samples; i++) {
+        float t = (i + 0.5f) / samples;
+
+        int x = (int)(x1 + dx*t);
+        int y = (int)(y1 + dy*t);
+
+        x = std::max(0, std::min(x, GRID_SIZE-1));
+        y = std::max(0, std::min(y, GRID_SIZE-1));
+
+        float speed = terrainGrid[y][x].speed;
+
+        // Avoid division by zero.
+        if(speed < 0.1f)
+            speed = 0.1f;
+
+        total += (distance / samples) / speed;
+    }
+
+    return total;
+}
+
 void DrawUnitStatCircle(Unit* unit, int px, int py) {
     const float WIDTH     = 20.0f;
     const float HEIGHT    = 55.0f;
@@ -442,6 +476,7 @@ int main() {
 
     GenerateGrass(terrainGrid);
     GenerateHillsAndDesert(terrainGrid);
+    GenerateMountainTrails(terrainGrid);
     GenerateSeas(terrainGrid);
     int num_decorators = 0;   // track trees
     {
@@ -1716,7 +1751,7 @@ int main() {
             mouseCapturedByUI = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 factions->demolishing = 30.f;
-                last_message = "DEMOLITION MODE FOR A MINUTE";
+                last_message = "DEMOLITION MODE FOR A BIT";
                 last_message_counter = 0.f;
             }
         }
@@ -2305,17 +2340,20 @@ int main() {
         // draw bases
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];
-            int ux = (int)u.x;
-            int uy = (int)u.y;
+            int ux = (int)(u.x+0.5f);
+            int uy = (int)(u.y+0.5f);
             int range = (int)u.size + 1;
             if (ux < xMin-range || ux >= xMax+range) continue;
             if (uy < yMin-range || uy >= yMax+range) continue;
             if (!visible[uy][ux]) continue;
             float px = u.x * TILE_SIZE;
             float py = u.y * TILE_SIZE;
-            float radius = (u.size * TILE_SIZE * 0.7f);
+
+            Texture2D* tertex = terrainGrid[uy][ux].texture;
+            float height_adjustment =  IsMountain(tertex)?1.45f:IsHill(tertex)?1.3f:1.0f;
+            float radius = (u.size * TILE_SIZE * 0.7f * height_adjustment);
             if(!u.faction) continue;
-            if (u.speed)
+            if (u.speed && tertex!=&tex::water)
                 DrawCircle(px, py, radius, u.selected?Fade(ColorBrightness(u.faction->color, -0.35f), 0.5f):shadow_color);//u.health < u.max_health?shadow_color_damaged:shadow_color);
             // else if(u.texture!=&tex::field && u.texture!=&tex::field_little && u.texture!=&tex::field_empty && u.texture!=&tex::hide)
             //     DrawCircle(px, py, radius, shadow_color);//u.health < u.max_health?shadow_color_damaged:shadow_color);
@@ -2361,8 +2399,8 @@ int main() {
                 if(u.texture==&tex::flowerfield_bloom) continue;
                 if(u.texture==&tex::hide) continue;
                 if(u.faction!=factions+faction_id) continue;
-                int ux = (int)u.x;
-                int uy = (int)u.y;
+                int ux = (int)(u.x+0.5f);
+                int uy = (int)(u.y+0.5f);
                 int range = (int)u.size+1;
                 if (ux < xMin-range || ux >= xMax+range) continue;
                 if (uy < yMin-range || uy >= yMax+range) continue;
@@ -2370,10 +2408,13 @@ int main() {
                 else if (!factions[0].visible_knowledge[i]) continue;
                 float px = u.x * TILE_SIZE;
                 float py = u.y * TILE_SIZE;
+                Texture2D* tertex = terrainGrid[uy][ux].texture;
+                float height_adjustment =  IsMountain(tertex)?1.45f:IsHill(tertex)?1.3f:1.0f;
+
                 Texture2D* tex = u.texture;
                 Rectangle src = { 0, 0, (float)tex->width, (float)tex->height };
-                Rectangle dst = { px, py, TILE_SIZE * (u.size+u.extra_scale), TILE_SIZE * (u.size+u.extra_scale) };
-                Vector2 origin = { dst.width / 2.0f, dst.height / 2.0f };
+                Rectangle dst = { px, py, TILE_SIZE * (u.size+u.extra_scale)* height_adjustment, TILE_SIZE * (u.size+u.extra_scale) * height_adjustment};
+                Vector2 origin = { dst.width / 2.0f, dst.height / 2.0f};
                 DrawTexturePro(*tex, src, dst, origin, u.angle, WHITE);
             }
             EndShaderMode(); // unitShader
@@ -2385,12 +2426,14 @@ int main() {
             Unit &u = units[i];
             if (u.texture!=&tex::house && u.texture!=&tex::engine) continue;
             if (u.faction==factions+1 || u.faction==factions+2) continue;
-            int ux = (int)u.x;
-            int uy = (int)u.y;
+            int ux = (int)(u.x+0.5f);
+            int uy = (int)(u.y+0.5f);
             int range = (int)u.size + 1;
             if (ux < xMin-range || ux >= xMax+range) continue;
             if (uy < yMin-range || uy >= yMax+range) continue;
             if (!visible[uy][ux] && !factions[0].visible_knowledge[i]) continue;
+            Texture2D* tertex = terrainGrid[uy][ux].texture;
+            float height_adjustment =  IsMountain(tertex)?1.45f:IsHill(tertex)?1.3f:1.0f;
             float px = u.x * TILE_SIZE;
             float py = u.y * TILE_SIZE;
             unsigned int seed = (unsigned int)(i * 2654435761u);
@@ -2427,7 +2470,7 @@ int main() {
                 if (pos.y < yMin * TILE_SIZE || pos.y > yMax * TILE_SIZE) continue;
 
                 float radius = (4.0f + size_base * 5.0f) * (0.5f + cycle * 0.5f);
-                radius *= 2;
+                radius *= 2 * height_adjustment;
                 unsigned char gray = (unsigned char)(80 + size_base * 40);
                 unsigned char a8   = (unsigned char)(alpha * 255);
                 DrawCircleV(pos, radius + 1.5f, { 0, 0, 0, 255 });
