@@ -95,6 +95,7 @@ for (int i = 0; i < num_units; i++) {
     // if we are far from target, stop only for stuff that is close to here
     if(u.target_x && u.target_y && (u.target_x-u.x)*(u.target_x-u.x)+(u.target_y-u.y)*(u.target_y-u.y)>AI_ORDER_RADIUS*AI_ORDER_RADIUS) bestDist = 40.f;
     if(GetRandomValue(0, 100) > 40) {
+        bool is_near_vp = false;
         for (int j = 0; j < num_units; j++) {
             if(/*u->faction &&*/ !u.faction->visible_knowledge[j]) {
                 if(GetRandomValue(0, 10000)<5) u.faction->visible_knowledge[j] = 1; // players can "cheat" and see where the ai is going, the ai can cheat this way
@@ -114,10 +115,12 @@ for (int i = 0; i < num_units; i++) {
                 (o.health < o.max_health*0.8f) && (o.texture!=&tex::rock && o.texture!=&tex::railgun);
             if (!isEnemyCapturable && !isOwnDamagedStructure && o.faction) continue;
             // have a brief period in the middle where we try to acquire whatever is available for utopia, in case we can hunker down
-            if ((time_norm>0.8f || (time_norm>0.45f && time_norm<0.5f)) && o.texture!=&tex::oil && o.texture!=&tex::warehouse && o.texture!=&tex::pyramis && o.texture!=&tex::esper && o.texture!=&tex::lighthouse) continue; // at the last stretch attack the victory locations with all means
+            bool is_vp = o.texture!=&tex::oil && o.texture!=&tex::warehouse && o.texture!=&tex::pyramis && o.texture!=&tex::esper && o.texture!=&tex::lighthouse;
             float dx = o.x - u.x;
             float dy = o.y - u.y;
             float d2 = dx*dx + dy*dy;
+            if(is_vp && d2<50) is_near_vp = true;
+            if ((time_norm>0.8f || (time_norm>0.45f && time_norm<0.5f)) && is_vp) continue; // at the last stretch attack the victory locations with all means
             if(isOwnDamagedStructure) d2 *= 0.25; // promote defending our own sturctures
             if (d2 < bestDist && d2>=0) {
                 bestDist = d2;
@@ -127,8 +130,8 @@ for (int i = 0; i < num_units; i++) {
             }
         }
         
-        if(u.faction && (u.faction->technology & TECHNOLOGY_FORT) && GetRandomValue(0,100)<30) {
-            float fort_creation_total_health = destroyHumanGroupForAI(u, units, num_units, 100.f, 25)/5.f;
+        if(u.faction && (u.faction->technology & TECHNOLOGY_FORT) && GetRandomValue(0,100)<5 && is_near_vp) {
+            float fort_creation_total_health = destroyHumanGroupForAI(u, units, num_units, 100.f, 45)/5.f;
             if(fort_creation_total_health>0) {
                 CREATE_FORT(u.faction, u.x, u.y);
                 units[num_units-1].max_health = fort_creation_total_health;
@@ -141,7 +144,7 @@ for (int i = 0; i < num_units; i++) {
             }
         }
 
-        if(u.faction && (u.faction->technology & TECHNOLOGY_DISMANTLE) && u.health>=u.max_health-0.5f && u.speed && is_mecha(u) && GetRandomValue(0,100)<30 && u.faction->industry<u.faction->count_members && u.faction->count_members<u.faction->industry+20) {
+        if(u.faction && (u.faction->technology & TECHNOLOGY_DISMANTLE) && u.health>=u.max_health-0.5f && u.speed && is_mecha(u) && GetRandomValue(0,100)<5 && u.faction->industry<u.faction->count_members && u.faction->count_members<u.faction->industry+20) {
             u.texture = &tex::ghost; // prevent explosion
             CREATE_ENGINE(u.faction, u.x, u.y);
             units[num_units-1].popup = "dismantled";
@@ -149,7 +152,7 @@ for (int i = 0; i < num_units; i++) {
             u.health = 0;
             continue;
         }
-        if((bestDist<20) && u.faction && (u.faction->technology & TECHNOLOGY_TRENCHES) && (u.texture==&tex::tank || u.texture==&tex::van) && GetRandomValue(0,100)<50 && u.faction->industry<u.faction->count_members && u.faction->count_members<u.faction->industry+10) {
+        if((bestDist<20) && u.faction && (u.faction->technology & TECHNOLOGY_TRENCHES) && (u.texture==&tex::tank || u.texture==&tex::van) && is_near_vp && GetRandomValue(0,100)<50 && u.faction->industry<u.faction->count_members && u.faction->count_members<u.faction->industry+10) {
             u.texture = &tex::ghost; // prevent explosion
             CREATE_RAILGUN(u.faction, u.x, u.y);
             units[num_units-1].max_health = u.max_health;
@@ -160,7 +163,7 @@ for (int i = 0; i < num_units; i++) {
             u.health = 0;
             continue;
         }
-        if ((bestDist<20) && u.health>3.1f && (u.faction->technology & TECHNOLOGY_TURTLING) && u.speed && !is_mecha(u)) {
+        if ((bestDist<20) && u.health>3.1f && (u.faction->technology & TECHNOLOGY_TURTLING) && u.speed && !is_mecha(u) && is_near_vp) {
             u.health -= 3;
             u.max_health -= 3;
             if(true) {

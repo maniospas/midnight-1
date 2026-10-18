@@ -1,5 +1,15 @@
 
 for(int i=0;i<max_factions;i++) {
+    if(factions[i].demolishing) {
+        factions[i].demolishing -= dt;
+        if(factions[i].demolishing<0) {
+            factions[i].demolishing = 0.f;
+            if(i==0) {
+                last_message = "Demolition mode ended";
+                last_message_counter = 0.f;
+            }
+        }
+    }
     factions[i].industry = (factions[i].technology&TECHNOLOGY_REACTOR)?60:20;
     factions[i].count_members = 0;
     factions[i].victory_points = (factions[i].technology&TECHNOLOGY_SUPERIORITY)?1.f:0.f;
@@ -47,18 +57,19 @@ for (int i = 0; i < num_units; i++) {
         }
     }
     if(u.texture==&tex::flowerfield_bloom &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
-        if((float)GetRandomValue(0, 1000000) / 1000000.0f * 100.f < dt) {
+        if((float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f < dt) {
             bool applied = false;
             for (int j = 0; j < num_units; j++)
-                if (units[j].faction==u.faction && units[j].speed && units[j].health<units[j].max_health 
-                    && (units[j].name==veteran_name || units[j].name==hero_name)) {
-                    units[j].health = units[j].max_health;
+                if (units[j].faction==u.faction && units[j].speed && units[j].health<units[j].max_health/2
+                    && !is_mecha(units[j])/*&& (units[j].name==veteran_name || units[j].name==hero_name)*/) {
+                    units[j].health += 3;
+                    if(units[j].health>units[j].max_health) units[j].health = units[j].max_health;
                     units[j].popup = "flowerfield";
                     units[j].popup_texture = &tex::heal;
                     applied = true;
                 }
             if(u.faction==factions && applied) {
-                last_message = "Flowerfield: healed vets and heroes.";
+                last_message = "Flowerfield: healed low-health non-mechas.";
                 last_message_counter = 0.f;
             }
         }

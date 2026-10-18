@@ -122,6 +122,14 @@ static void DrawTechProgressBar(float x, float y, float w, float h, float progre
     DrawRectangleRoundedLines({x, y, w, h}, 0.3f, 8, GRAY);
 }
 
+static void DrawDemolishProgressBar(float x, float y, float w, float h, float progress) {
+    if (progress < 0.f) progress = 0.f;
+    if (progress > 1.f) progress = 1.f;
+    DrawRectangleRounded({x, y, w, h}, 0.3f, 8, Fade(DARKGRAY, 0.6f));
+    DrawRectangleRounded({x + 2, y + 2, (w - 4) * progress, h - 4},0.3f, 8,Fade(RED, 0.85f));
+    DrawRectangleRoundedLines({x, y, w, h}, 0.3f, 8, GRAY);
+}
+
 
 static bool DrawTechNode(float x,float y,const char* title,const char* desc,
     unsigned long long& tech,unsigned long long bit,bool enabled)

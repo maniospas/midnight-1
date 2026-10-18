@@ -110,6 +110,8 @@ for (int i = 0; i < num_units; i++) {
                 for(int dx=ux-1;dx<=ux+1;++dx)
                     if(dy>=0 && dy<GRID_SIZE && dx>=0 && dx<GRID_SIZE) {
                         terrainGrid[dy][dx].speed /= 2; // terrain becomes uneven
+                        if(terrainGrid[dy][dx].speed<0.2)
+                            terrainGrid[dy][dx].speed = 0.2;
                         if(terrainGrid[dy][dx].extra_sight>-0.5f) terrainGrid[dy][dx].extra_sight = -0.5f; // extra dodge
                     }
 

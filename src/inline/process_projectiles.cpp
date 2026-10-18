@@ -263,6 +263,58 @@ for (int i = 0; i < num_units; i++) {
                     else o.popup = "contested";
                     o.popup_texture = nullptr;
                 }
+                if(o.capturing && u.faction && u.faction->demolishing && o.health<=o.max_health/2) {
+                    int num_stones = o.max_health/5+2;
+                    for(int stone=0;stone<num_stones;++stone) {
+                        float sx = o.x + (GetRandomValue(0, 10000)*0.0001-0.5)*o.size;
+                        float sy = o.y + (GetRandomValue(0, 10000)*0.0001-0.5)*o.size;
+                        if(stone%3==0) {
+                            if(u.faction&&(u.faction->technology&TECHNOLOGY_EVOLUTION)&&GetRandomValue(0, 100)<10) {
+                                CREATE_SNOWMAN(u.faction, sx, sy);
+                            }
+                            if(u.faction&&(u.faction->technology&TECHNOLOGY_CATS)) { CREATE_CAT(u.faction, sx, sy); }
+                            else { CREATE_HUMAN(u.faction, sx, sy); }
+                            if(u.faction && (u.faction->technology & TECHNOLOGY_NERDS)) {
+                                units[num_units-1].max_health -= 1;
+                                units[num_units-1].health -= 1;
+                            }
+                            if(u.faction && (u.faction->technology & TECHNOLOGY_UNSTABLE)) {
+                                units[num_units-1].max_health -= 1;
+                                units[num_units-1].health -= 1;
+                            }
+                            if(u.faction && (u.faction->technology & TECHNOLOGY_TOUGH)) {
+                                units[num_units-1].max_health += 1;
+                                units[num_units-1].health += 1;
+                            }
+                            if(stone==0) {
+                                units[num_units-1].popup = "demolished";
+                                units[num_units-1].capturing = nullptr;
+                            }
+                        }
+                        else {
+                            CREATE_ROCK(u.faction, sx, sy);
+                        }
+                    }
+                    units[j] = { \
+                        &tex::ghost,  /* texture */
+                        "Bloo",       /* name */
+                        3.0,          /* speed */
+                        o.x,          /* x */
+                        o.y,          /* y */
+                        2.0,          /* attack_rate */
+                        7.0,          /* range */
+                        0.5,          /* damage */
+                        0.0,          /* experience */
+                        o.angle,      /* angle */
+                        0.4,          /* size */
+                        0.0,          /* health (start dead)*/
+                        3.0,          /* max_health */
+                        o.faction,   /* faction */
+                        nullptr   /* faction */
+                    };
+                    continue;
+
+                }
                 if (o.health<=0 && o.capturing) {
                     o.animation = 0.f;
                     if(o.faction==factions) {

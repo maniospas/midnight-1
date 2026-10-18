@@ -270,7 +270,8 @@ int main() {
     bool showTechTree = false;
     bool showHelp = false;
     float icon_sizes = 90.f;
-    Rectangle techBtn = {GetScreenWidth() - 320.0f, GetScreenHeight()      - 140.0f, 280.0f, icon_sizes};
+    Rectangle techBtn = {GetScreenWidth() - 320.0f, GetScreenHeight() - 140.0f, 280.0f, icon_sizes};
+    Rectangle demolishBtn = {GetScreenWidth() - 320.0f, GetScreenHeight() - 140.0f - icon_sizes - 28, 280.0f, icon_sizes};
     //Rectangle helpBtn = {GetScreenWidth() - 260.0f,GetScreenHeight()       - 95.0f-65.f,240.0f,60.0f};
     Rectangle optionsButton = {GetScreenWidth() - 280.0f, 10.f, 240.0f, 60.0f};
 
@@ -1089,7 +1090,7 @@ int main() {
             else if(pref==PREFERENCE_WAREHOUSE) {
                 px = p==0?(bx-5):(bx+5);
                 CREATE_WAREHOUSE(&factions[1], px, by);
-                RevealUnitToAllFactions(num_units - 1);
+                //RevealUnitToAllFactions(num_units - 1);
             }
             else if(pref==PREFERENCE_CURIO) {
                 px = p==0?(bx-5):(bx+5);
@@ -1172,7 +1173,7 @@ int main() {
                 else if(pref==PREFERENCE_WAREHOUSE) {
                     px = p==0?(bx-5):(bx+5);
                     CREATE_WAREHOUSE(&factions[1], px, by);
-                    RevealUnitToAllFactions(num_units - 1);
+                    //RevealUnitToAllFactions(num_units - 1);
                 }
                 else if(pref==PREFERENCE_CURIO) {
                     px = p==0?(bx-5):(bx+5);
@@ -1180,8 +1181,8 @@ int main() {
                     //RevealUnitToAllFactions(num_units - 1);
                 }
                 else if(pref==PREFERENCE_ESPER) {
-                    //CREATE_ESPER(ANIMAL_FACTION, px, by);
-                    RevealUnitToAllFactions(num_units - 1);
+                    // CREATE_ESPER(ANIMAL_FACTION, px, by);
+                    // RevealUnitToAllFactions(num_units - 1);
                 }
                 else if(pref==PREFERENCE_LAB) {
                     px = p==0?(bx-5):(bx+5);
@@ -1402,7 +1403,7 @@ int main() {
                     else {
                         CREATE_WAREHOUSE(&factions[1], x, y);
                     }
-                    RevealUnitToAllFactions(num_units - 1);
+                    //RevealUnitToAllFactions(num_units - 1);
                 }
                 break;
             case 0:
@@ -1416,7 +1417,7 @@ int main() {
             case 2:
                 if(isNearWater && GetRandomValue(0, 99) < 30) {
                     CREATE_LIGHTHOUSE(&factions[1], x, y);
-                    RevealUnitToAllFactions(num_units - 1);
+                    //RevealUnitToAllFactions(num_units - 1);
                 }
                 else {
                     CREATE_RADIO(&factions[1], x, y);
@@ -1447,7 +1448,7 @@ int main() {
         if(isNearWater) {
             if(GetRandomValue(0,100)<30) {
                 CREATE_LIGHTHOUSE(&factions[1], x, y);
-                RevealUnitToAllFactions(num_units - 1);
+                //RevealUnitToAllFactions(num_units - 1);
             }
             CREATE_HOVERCRAFT(&factions[1], x, y-1);
             continue;
@@ -1670,7 +1671,7 @@ int main() {
         bool has_any_selected = false;
 
 
-        float button_py = GetScreenHeight() - 140.0f - (icon_sizes+28);
+        float button_py = GetScreenHeight() - 140.0f - (icon_sizes+28)*2;
         float button_offset = icon_sizes+28;
         Rectangle fortBtn = {GetScreenWidth() - 320.f, button_py, 280.0f, icon_sizes};
         if(factions->technology&TECHNOLOGY_FORT) button_py -= button_offset;
@@ -1708,6 +1709,15 @@ int main() {
                     fort_creation_has_nearby = true;
                     break;
                 }
+            }
+        }
+
+        if (CheckCollisionPointRec(GetMousePosition(), demolishBtn)) {
+            mouseCapturedByUI = true;
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                factions->demolishing = 30.f;
+                last_message = "DEMOLITION MODE FOR A MINUTE";
+                last_message_counter = 0.f;
             }
         }
 
@@ -1928,7 +1938,8 @@ int main() {
         // Vision radius in tile-units
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];
-            if (u.faction != &factions[0] && u.texture!=&tex::warehouse && u.texture!=&tex::esper && u.texture!=&tex::lighthouse) continue;  // only the player, warehouses, lighthouses, or espers give vision
+            //if (u.faction != &factions[0] && u.texture!=&tex::warehouse && u.texture!=&tex::esper && u.texture!=&tex::lighthouse) continue;  // only the player, warehouses, lighthouses, or espers give vision
+            if (u.faction != &factions[0] && u.texture!=&tex::esper) continue;
             int ux = (int)u.x;
             int uy = (int)u.y;
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
@@ -2512,7 +2523,7 @@ int main() {
         ClearBackground(Fade(BLACK, 0.5));
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];
-            if (u.faction != &factions[0] && u.texture!=&tex::warehouse && u.texture!=&tex::esper) continue;
+            if (u.faction != &factions[0] && u.texture!=&tex::esper) continue;
             Vector2 world = { u.x * TILE_SIZE, u.y * TILE_SIZE };
             Vector2 screen = GetWorldToScreen2D(world, camera);
             float extra_sight = terrainGrid[(int)u.y][(int)u.x].extra_sight;
@@ -2719,10 +2730,56 @@ int main() {
             DrawText("Del (station selected humans and tanks with at least 20 industry in a proportionally strong fort)",px+200,py,32,WHITE);
         }
 
+        // --------------------------------------------------
+        // DEMOLITION BUTTON
+        // --------------------------------------------------
+
+        if(!showTechTree){
+            float prog = factions->demolishing/30.0;
+            bool techHover = CheckCollisionPointRec(GetMousePosition(), demolishBtn);
+
+            static float prev_prog = 0.f;
+            prev_prog = prog;
+
+            static float techZoom = demolishBtn.height;
+            techZoom += ((techHover ? techBtn.height + 20.f : techBtn.height) - techZoom) * 20.f * dt;
+
+            float techX = demolishBtn.x + demolishBtn.width - demolishBtn.height / 2.f;
+            float techY = demolishBtn.y + demolishBtn.height / 2.f;
+            float radius = techZoom / 2 + 6;
+
+            // Progress bar to the left of the icon circle
+            if(factions->demolishing) {
+                float padding = 20.0f;
+                float barW = demolishBtn.width - demolishBtn.height - 10.f;
+                float barH = 20.0f;
+                float bx = demolishBtn.x + padding;
+                float by = demolishBtn.y + demolishBtn.height / 2.f - barH / 2.f + 25;
+                DrawDemolishProgressBar(bx, by, barW, barH, prog);
+            }
+            const char* title = "";
+            if (techHover) title = prog ? "Quickly demolishing captures into humans." : "Quick demolish captures into humans for a bit?";;
+            DrawTextOutlined(title, techX - MeasureText(title, 30) - 70, techY - 25, 32, Fade(WHITE, 1.f));
+
+            // Circle icon
+            DrawCircle(techX, techY, radius, Color{20, 20, 20, 255});
+            DrawCircleLines(techX, techY, radius, {80, 80, 80, 255});
+            DrawTextureEx(tex::demolish,
+                {techX - techZoom / 2, techY - techZoom / 2},
+                0,
+                techZoom / (float)tex::demolish.width,
+                WHITE);
+            //if(!prog) DrawTextOutlined("DO", techX-radius*0.4f, techY-radius/2-radius*0.2, 2*radius-6, Fade(RED, 1.f));
+
+            if (techHover) mouseCapturedByUI = true;
+        }
+
 
         // --------------------------------------------------
         // RESEARCH BUTTON
         // --------------------------------------------------
+
+
         {
             float prog = factions[0].technology_progress;
             bool techHover = CheckCollisionPointRec(GetMousePosition(), techBtn);
@@ -2765,7 +2822,7 @@ int main() {
                 0,
                 techZoom / (float)tex::research.width,
                 WHITE);
-            if(prog<1.) DrawTextOutlined("?", techX-radius*0.4f, techY-radius/2-radius*0.2, 2*radius-6, Fade(RED, 1.f));
+            //if(prog<1.) DrawTextOutlined("?", techX-radius*0.4f, techY-radius/2-radius*0.2, 2*radius-6, Fade(RED, 1.f));
 
             if (techHover) mouseCapturedByUI = true;
         }

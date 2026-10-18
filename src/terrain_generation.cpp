@@ -324,11 +324,11 @@ static void GenerateHillsAndDesert(Terrain** terrainGrid) {
             }
 
             if (hillValue > 0.57f) {
-                //int h = HashNoise2D(x, y) * 100;
+                int h = HashNoise2D(x, y) * 100;
                 Texture2D* tex = &tex::hill;
-                // if (h == 1) tex = &tex::hill2;
-                // if (h == 2) tex = &tex::hill3;
-                // if (h == 3) tex = &tex::hill4;
+                if (h == 1) tex = &tex::hill2;
+                if (h == 2) tex = &tex::hill3;
+                if (h == 3) tex = &tex::hill4;
 
                 terrainGrid[y][x] = {
                     tex,

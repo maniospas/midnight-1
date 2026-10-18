@@ -12,4 +12,5 @@ struct Faction {
     std::bitset<MAX_UNITS> visible_knowledge;
     unsigned long long technology;
     float technology_progress;
+    float demolishing;
 };

@@ -88,6 +88,7 @@ namespace tex {
     static Texture2D reward;
     static Texture2D earth;
     static Texture2D research;
+    static Texture2D demolish;
     static Texture2D pristine;
     static Texture2D rat;
     static Texture2D roomba;
@@ -176,6 +177,7 @@ void load() {
     tex::reward = LoadTexture("data/reward.png");
     tex::earth = LoadTexture("data/earth.png");
     tex::research = LoadTexture("data/research.png");
+    tex::demolish = LoadTexture("data/demolish.png");
     tex::snowman = LoadTexture("data/snowman.png");
     tex::railgun = LoadTexture("data/railgun.png");
     tex::fort = LoadTexture("data/fort.png");
