@@ -8,6 +8,7 @@ struct Faction {
     const char* name;
     float victory_points;
     float industry;
+    float healing;
     float count_members;
     std::bitset<MAX_UNITS> visible_knowledge;
     unsigned long long technology;

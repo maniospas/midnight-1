@@ -26,6 +26,11 @@ for (int fi = 3; fi < max_factions; fi++) {
 for (int i = 0; i < num_units; i++) {
     Unit &u = units[i];
     if (u.health <= 0) continue;
+    if (u.ai_decision_countdown) {
+        u.ai_decision_countdown = u.ai_decision_countdown-(_Float16)dt;
+        if(u.ai_decision_countdown<0.f) u.ai_decision_countdown = (_Float16)0.f;
+        continue;
+    }
     if (u.speed <= 0) continue;
     if (u.texture==&tex::esper) continue;
     //if (u.target_x != 0 || u.target_y != 0) continue; // already moving → skip
@@ -35,7 +40,7 @@ for (int i = 0; i < num_units; i++) {
     if (u.faction == ANIMAL_FACTION) {
         if ((float)GetRandomValue(0, 1000000) / 1000000.0f > AI_ORDER_CHANCE * dt * 20) continue;
         //Texture2D* baseTex = terrainGrid[(int)(u.y+0.5f)][(int)(u.x+0.5f)].texture;
-        float tx = 0, ty = 0;
+        _Float16 tx = 0, ty = 0;
         bool found = false;
         float bestDist = 40.f*40.f;
         if(u.max_health<=u.health) bestDist *= 0.25f;
@@ -52,12 +57,12 @@ for (int i = 0; i < num_units; i++) {
             if (d2 < bestDist) {
                 bestDist = d2;
                 if(u.health>u.max_health/2) {
-                    tx = o.x;
-                    ty = o.y;
+                    tx = (_Float16)o.x;
+                    ty = (_Float16)o.y;
                 }
                 else {
-                    tx = u.x-(o.x-u.x)+GetRandomValue(-1,1);
-                    ty = u.y-(o.y-u.y)+GetRandomValue(-1,1);
+                    tx = (_Float16)(u.x-(o.x-u.x)+GetRandomValue(-1,1));
+                    ty = (_Float16)(u.y-(o.y-u.y)+GetRandomValue(-1,1));
                 }
                 found = true;
             }
@@ -69,20 +74,20 @@ for (int i = 0; i < num_units; i++) {
             //     u.target_x = tx;
             //     u.target_y = ty;
             // }
-            u.target_x = u.x+GetRandomValue(-40,40);
-            u.target_y = u.y+GetRandomValue(-40,40);
+            u.target_x = (_Float16)(u.x+GetRandomValue(-40,40));
+            u.target_y = (_Float16)(u.y+GetRandomValue(-40,40));
             if(u.target_x<1) u.target_x = 1;
             if(u.target_y<1) u.target_y = 1;
             if(u.target_x>=GRID_SIZE-2) u.target_x = GRID_SIZE-2;
             if(u.target_y>=GRID_SIZE-2) u.target_y = GRID_SIZE-2;
             bool target_water = terrainGrid[(int)u.target_y][(int)u.target_x].texture==&tex::water;
             if(target_water&&u.texture!=&tex::kraken) {
-                u.target_x = u.x;
-                u.target_y = u.y;
+                u.target_x = (_Float16)u.x;
+                u.target_y = (_Float16)u.y;
             }
             if(!target_water&&u.texture==&tex::kraken) {
-                u.target_x = u.x;
-                u.target_y = u.y;
+                u.target_x = (_Float16)u.x;
+                u.target_y = (_Float16)u.y;
             }
         }
         else if(bestDist>u.range*u.range) {
@@ -97,7 +102,7 @@ for (int i = 0; i < num_units; i++) {
     // Movement
     // ---------------------------------------------------------
     float bestDist = 999999.0f;
-    float tx = 0, ty = 0;
+    _Float16 tx = 0, ty = 0;
     bool found = false;
     // if we are far from target, stop only for stuff that is close to here
     if(u.target_x && u.target_y && (u.target_x-u.x)*(u.target_x-u.x)+(u.target_y-u.y)*(u.target_y-u.y)>AI_ORDER_RADIUS*AI_ORDER_RADIUS) bestDist = 40.f;
@@ -131,8 +136,8 @@ for (int i = 0; i < num_units; i++) {
             if(isOwnDamagedStructure) d2 *= 0.25; // promote defending our own sturctures
             if (d2 < bestDist && d2>=0) {
                 bestDist = d2;
-                tx = o.x;
-                ty = o.y;
+                tx = (_Float16)o.x;
+                ty = (_Float16)o.y;
                 found = true;
             }
         }
@@ -141,9 +146,9 @@ for (int i = 0; i < num_units; i++) {
             float fort_creation_total_health = destroyHumanGroupForAI(u, units, num_units, 100.f, 45)/5.f;
             if(fort_creation_total_health>0) {
                 CREATE_FORT(u.faction, u.x, u.y);
-                units[num_units-1].max_health = fort_creation_total_health;
-                units[num_units-1].health = fort_creation_total_health;
-                units[num_units-1].size = sqrtf(fort_creation_total_health/10);
+                units[num_units-1].max_health = (_Float16)fort_creation_total_health;
+                units[num_units-1].health = (_Float16)fort_creation_total_health;
+                units[num_units-1].size = (_Float16)sqrtf(fort_creation_total_health/10);
                 units[num_units-1].capturing = nullptr;
                 units[num_units-1].popup = "built";
                 PlaySound(sound::select2);
@@ -164,7 +169,7 @@ for (int i = 0; i < num_units; i++) {
             CREATE_RAILGUN(u.faction, u.x, u.y);
             units[num_units-1].max_health = u.max_health;
             units[num_units-1].health = u.health;//units[num_units-1].max_health*u.health/u.max_health;
-            units[num_units-1].size *= sqrtf(u.max_health/20.f); // to account for scaling up from buffs
+            units[num_units-1].size *= (_Float16)sqrtf(u.max_health/20.f); // to account for scaling up from buffs
             units[num_units-1].popup = "entrenched";
             units[num_units-1].capturing = nullptr;
             u.health = 0;
@@ -206,6 +211,7 @@ for (int i = 0; i < num_units; i++) {
             if (!o.faction) continue;
             if (o.faction != u.faction) continue;
             if (o.health <= 0) continue;
+            if (o.ai_decision_countdown) continue;
             if (o.speed <= 0) continue;
             if (o.texture==&tex::esper) continue;
             if (o.texture!=u.texture && u.faction==ANIMAL_FACTION) continue; // move same-typed stuff only when in animal function (e.g., rats together)
@@ -220,6 +226,7 @@ for (int i = 0; i < num_units; i++) {
                 // only order units not already moving
                 o.target_x = tx;
                 o.target_y = ty;
+                o.ai_decision_countdown = (_Float16)3.f;
             }
         }
     }

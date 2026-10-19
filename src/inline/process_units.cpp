@@ -4,9 +4,9 @@ const float AIM_THRESHOLD = 5.0f;
 for (int i = 0; i < num_units; i++) {
     Unit &u = units[i];
     if(u.popup) {
-        u.animation += dt*0.3f;
+        u.animation += (_Float16)(dt*0.3f);
         if(u.animation>1.0f) {
-            u.animation = 0.f;
+            u.animation = (_Float16)0.f;
             u.popup = nullptr;
             u.popup_texture = nullptr;
         }
@@ -30,22 +30,22 @@ for (int i = 0; i < num_units; i++) {
             continue;
         }
         else if ((float)GetRandomValue(0, 1000000) / 1000000.0f < 0.005f * dt * BLOO_RATE) {
-            u = { \
-                &tex::ghost,  /* texture */
-                "Bloo",       /* name */
-                3.0,          /* speed */
-                u.x,          /* x */
-                u.y,          /* y */
-                2.0,          /* attack_rate */
-                7.0,          /* range */
-                0.5,          /* damage */
-                0.0,          /* experience */
-                u.angle,      /* angle */
-                0.4,          /* size */
-                3.0,          /* health */
-                3.0,          /* max_health */
-                factions+2,   /* faction */
-                nullptr   /* faction */
+            u = Unit{
+                .texture = &tex::ghost,
+                .faction = factions+2,
+                .name = "Bloo",
+                .speed = 3.0f,
+                .x = u.x,
+                .y = u.y,
+                .angle = u.angle,
+                .attack_rate = static_cast<_Float16>(2.0f),
+                .range = static_cast<_Float16>(7.0f),
+                .damage = static_cast<_Float16>(0.5f),
+                .experience = static_cast<_Float16>(0.0f),
+                .size = static_cast<_Float16>(0.4f),
+                .health = static_cast<_Float16>(3.0f),
+                .max_health = static_cast<_Float16>(3.0f),
+                .capturing = nullptr
             };
         }
         continue; // blood does nothing else
@@ -57,7 +57,7 @@ for (int i = 0; i < num_units; i++) {
             *((u.faction->technology&TECHNOLOGY_OWNERSHIP)?1.0f:0.5f)
             *(u.faction->count_members<=u.faction->industry?1.0f:OVER_CAP_REGEN_RATE)
         ) {
-        u.health += CAPTURE_RATE;
+        u.health += (_Float16) CAPTURE_RATE;
         if (u.health > u.max_health)
             u.health = u.max_health;
     }
@@ -78,22 +78,22 @@ for (int i = 0; i < num_units; i++) {
         }
         else if(u.texture==&tex::bison || u.texture==&tex::hog){// || u.texture==&tex::wolf) {
             terrainGrid[(int)u.y][(int)u.x].speed /= 2; // terrain becomes uneven
-            u = { \
-                &tex::hide,  /* texture */
-                "Hide",       /* name */
-                0.0,          /* speed */
-                u.x,          /* x */
-                u.y,          /* y */
-                4.0,          /* attack_rate */
-                2.0,          /* range */
-                0.0,          /* damage */
-                0.0,          /* experience */
-                u.angle,      /* angle */
-                0.8,          /* size */
-                15.0,          /* health */
-                15.0,          /* max_health */
-                factions+1,       /* faction */
-                factions+1       /* faction */
+            u = Unit{
+                .texture = &tex::hide,
+                .faction = factions+1,
+                .name = "Hide",
+                .speed = 0.0f,
+                .x = u.x,
+                .y = u.y,
+                .angle = u.angle,
+                .attack_rate = static_cast<_Float16>(4.0f),
+                .range = static_cast<_Float16>(2.0f),
+                .damage = static_cast<_Float16>(0.0f),
+                .experience = static_cast<_Float16>(0.0f),
+                .size = static_cast<_Float16>(0.8f),
+                .health = static_cast<_Float16>(15.0f),
+                .max_health = static_cast<_Float16>(15.0f),
+                .capturing = factions+1
             };
         }
         else if(is_mecha(u)) {
@@ -115,21 +115,21 @@ for (int i = 0; i < num_units; i++) {
                         if(terrainGrid[dy][dx].extra_sight>-0.5f) terrainGrid[dy][dx].extra_sight = -0.5f; // extra dodge
                     }
 
-            u = { \
-                &tex::crater,  /* texture */
-                "Crater",      /* name */
-                0.0,          /* speed */
-                u.x,          /* x */
-                u.y,          /* y */
-                0.0,          /* attack_rate */
-                0.0,          /* range */
-                0.0,          /* damage */
-                0.0,          /* experience */
-                u.angle,      /* angle */
-                1.5,          /* size */
-                0.0,          /* health */
-                0.0,          /* max_health */
-                nullptr       /* faction */
+            u = Unit{
+                .texture = &tex::crater,
+                .faction = nullptr,
+                .name = "Crater",
+                .speed = 0.0f,
+                .x = u.x,
+                .y = u.y,
+                .angle = u.angle,
+                .attack_rate = static_cast<_Float16>(0.0f),
+                .range = static_cast<_Float16>(0.0f),
+                .damage = static_cast<_Float16>(0.0f),
+                .experience = static_cast<_Float16>(0.0f),
+                .size = static_cast<_Float16>(1.5f),
+                .health = static_cast<_Float16>(0.0f),
+                .max_health = static_cast<_Float16>(0.0f)
             };
         }
         else if(u.texture==&tex::ghost || u.texture==&tex::rock) { // use bloos to clean up units
@@ -146,21 +146,21 @@ for (int i = 0; i < num_units; i++) {
                     else sound::damage.Play(camera.zoom*0.2f);
                 }
             }
-            u = { \
-                &tex::blood,  /* texture */
-                "Blood",      /* name */
-                0.0,          /* speed */
-                u.x,          /* x */
-                u.y,          /* y */
-                0.0,          /* attack_rate */
-                0.0,          /* range */
-                0.0,          /* damage */
-                0.0,          /* experience */
-                u.angle,      /* angle */
-                0.5,          /* size */
-                0.0,          /* health */
-                0.0,          /* max_health */
-                nullptr       /* faction */
+            u = Unit{
+                .texture = &tex::blood,
+                .faction = nullptr,
+                .name = "Blood",
+                .speed = 0.0f,
+                .x = u.x,
+                .y = u.y,
+                .angle = u.angle,
+                .attack_rate = static_cast<_Float16>(0.0f),
+                .range = static_cast<_Float16>(0.0f),
+                .damage = static_cast<_Float16>(0.0f),
+                .experience = static_cast<_Float16>(0.0f),
+                .size = static_cast<_Float16>(0.5f),
+                .health = static_cast<_Float16>(0.0f),
+                .max_health = static_cast<_Float16>(0.0f)
             };
         }
         continue;
@@ -234,21 +234,21 @@ for (int i = 0; i < num_units; i++) {
             CREATE_RAT(ANIMAL_FACTION, u.x+0.2, u.y+0.2);
             CREATE_RAT(ANIMAL_FACTION, u.x+0.2, u.y-0.2);
             CREATE_RAT(ANIMAL_FACTION, u.x, u.y);
-            u = { \
-                &tex::blood,  /* texture */
-                "Blood",      /* name */
-                0.0,          /* speed */
-                u.x,          /* x */
-                u.y,          /* y */
-                0.0,          /* attack_rate */
-                0.0,          /* range */
-                0.0,          /* damage */
-                0.0,          /* experience */
-                u.angle,      /* angle */
-                0.5,          /* size */
-                0.0,          /* health */
-                0.0,          /* max_health */
-                nullptr       /* faction */
+            u = Unit{
+                .texture = &tex::blood,
+                .faction = nullptr,
+                .name = "Blood",
+                .speed = 0.0f,
+                .x = u.x,
+                .y = u.y,
+                .angle = u.angle,
+                .attack_rate = static_cast<_Float16>(0.0f),
+                .range = static_cast<_Float16>(0.0f),
+                .damage = static_cast<_Float16>(0.0f),
+                .experience = static_cast<_Float16>(0.0f),
+                .size = static_cast<_Float16>(0.5f),
+                .health = static_cast<_Float16>(0.0f),
+                .max_health = static_cast<_Float16>(0.0f)
             };
         }
         continue;
@@ -354,38 +354,38 @@ for (int i = 0; i < num_units; i++) {
         continue;
     }
     if(u.faction && (u.faction->technology & TECHNOLOGY_MOBILE_FORTRESS) && u.texture==&tex::railgun && (float)GetRandomValue(0, 1000000) / 1000000.0f<dt*0.015) {
-        u = { \
-            &tex::tank,   /* texture */ \
-            "Tank",       /* name */ \
-            3.0,          /* speed */ \
-            (float)(u.x),   /* x */ \
-            (float)(u.y),   /* y */ \
-            0.5,          /* attack_rate */ \
-            6.0,         /* range */ \
-            8.0,          /* damage */ \
-            0.0,          /* experience */ \
-            0.0,          /* angle */ \
-            0.8,          /* size */ \
-            20.0,         /* health */ \
-            20.0,         /* max_health */ \
-            (u.faction),    /* faction */ \
-            nullptr,    /* faction */ \
-            0.3           /* extra scale*/\
+        u = Unit{
+            .texture = &tex::tank,
+            .faction = u.faction,
+            .name = "Tank",
+            .speed = 3.0f,
+            .x = u.x,
+            .y = u.y,
+            .angle = 0.0f,
+            .attack_rate = static_cast<_Float16>(0.5f),
+            .range = static_cast<_Float16>(6.0f),
+            .damage = static_cast<_Float16>(8.0f),
+            .experience = static_cast<_Float16>(0.0f),
+            .size = static_cast<_Float16>(0.8f),
+            .health = static_cast<_Float16>(20.0f),
+            .max_health = static_cast<_Float16>(20.0f),
+            .extra_scale = static_cast<_Float16>(0.3f),
+            .capturing = nullptr
         };
         u.popup = "mobile fort";
         u.popup_texture=nullptr;
         continue;
     }
     if(u.texture==&tex::esper && (float)GetRandomValue(0, 1000000) / 1000000.0f<0.03*dt) { // once every 30 seconds the esper changes their mind
-        u.target_x = u.x+GetRandomValue(-40,40);
-        u.target_y = u.y+GetRandomValue(-40,40);
+        u.target_x = (_Float16)(u.x+ GetRandomValue(-40,40));
+        u.target_y = (_Float16)(u.y+GetRandomValue(-40,40));
         if(u.target_x<1) u.target_x = 1;
         if(u.target_y<1) u.target_y = 1;
         if(u.target_x>=GRID_SIZE-2) u.target_x = GRID_SIZE-2;
         if(u.target_y>=GRID_SIZE-2) u.target_y = GRID_SIZE-2;
         if(terrainGrid[(int)u.target_y][(int)u.target_x].texture==&tex::water) {
-            u.target_x = u.x;
-            u.target_y = u.y;
+            u.target_x = (_Float16)u.x;
+            u.target_y = (_Float16)u.y;
         }
     }
 
@@ -491,11 +491,11 @@ for (int i = 0; i < num_units; i++) {
                     units[num_units-1].popup = "turtling";
                     units[num_units-1].capturing = nullptr;
                 }
-                u.attack_target_x = best->x;
-                u.attack_target_y = best->y;
+                u.attack_target_x = (_Float16)best->x;
+                u.attack_target_y = (_Float16)best->y;
                 if((u.attack_target_x-u.target_x)*(u.attack_target_x-u.target_x)+(u.attack_target_y-u.target_y)*(u.attack_target_y-u.target_y)<u_range*u_range/16
                     && u.faction!=factions && u.faction /*&& (u.faction->technology & TECHNOLOGY_TRACK)*/) {
-                    u.stunned = 1.0f/u.attack_rate; // only stun non-player units; players are expected to actually manage swarm vs distance
+                    u.stunned = (_Float16)(1.0f/u.attack_rate); // only stun non-player units; players are expected to actually manage swarm vs distance
                 }
                 else
                     u.stunned = 0;
@@ -540,7 +540,7 @@ for (int i = 0; i < num_units; i++) {
         float ang = (u.texture==&tex::fort?targetAngle:u.angle) * DEG2RAD;
         u.attack_x = u.x + cosf(ang) * (rad / TILE_SIZE);
         u.attack_y = u.y + sinf(ang) * (rad / TILE_SIZE);
-        u.stunned = 0.1/u.attack_rate;
+        u.stunned = (_Float16)(0.1f/u.attack_rate);
         int ux = (int)(u.x+0.5f);
         int uy = (int)(u.y+0.5f);
         if(visible[uy][ux]) {
@@ -557,8 +557,8 @@ for (int i = 0; i < num_units; i++) {
     }
     // TODO: perhaps heal only if not moving, but for now this is hard to properly check
     if (u.health < u.max_health && (!is_mecha(u) || (u.faction && (u.faction->technology & TECHNOLOGY_AUTOREPAIRS)))) {
-        if ((float)GetRandomValue(0, 1000000) / 1000000.0f < dt*0.5f && (is_mecha(u) || u.faction==nullptr || !(u.faction->technology & TECHNOLOGY_NUCLEAR))) {
-            u.health += 1.0f;
+        if ((float)GetRandomValue(0, 1000000) / 1000000.0f < dt*0.5f && (is_mecha(u) || u.faction==nullptr || u.faction->healing > 0.f)) {
+            u.health += (_Float16)(u.faction?u.faction->healing:1.0f);
             if (u.health > u.max_health)
                 u.health = u.max_health;
         }
@@ -642,7 +642,7 @@ for (int i = 0; i < num_units; i++) {
     }
     if(u.stunned>0) {
         if(u.attack_target_x!=0 || u.attack_target_y!=0) continue;
-        u.stunned -= dt;
+        u.stunned -= (_Float16)dt;
         if(u.stunned<0)
             u.stunned = 0;
         continue;

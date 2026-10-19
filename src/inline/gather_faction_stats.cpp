@@ -11,6 +11,7 @@ for(int i=0;i<max_factions;i++) {
         }
     }
     factions[i].industry = (factions[i].technology&TECHNOLOGY_REACTOR)?60:20;
+    factions[i].healing = (factions[i].technology&TECHNOLOGY_NUCLEAR)?0:1.f;
     factions[i].count_members = 0;
     factions[i].victory_points = (factions[i].technology&TECHNOLOGY_SUPERIORITY)?1.f:0.f;
     factions[i].technology_progress += dt*0.009f;
@@ -56,24 +57,24 @@ for (int i = 0; i < num_units; i++) {
             }
         }
     }
-    if(u.texture==&tex::flowerfield_bloom &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
-        if((float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f < dt) {
-            bool applied = false;
-            for (int j = 0; j < num_units; j++)
-                if (units[j].faction==u.faction && units[j].speed && units[j].health<units[j].max_health/2
-                    && !is_mecha(units[j])/*&& (units[j].name==veteran_name || units[j].name==hero_name)*/) {
-                    units[j].health += 3;
-                    if(units[j].health>units[j].max_health) units[j].health = units[j].max_health;
-                    units[j].popup = "flowerfield";
-                    units[j].popup_texture = &tex::heal;
-                    applied = true;
-                }
-            if(u.faction==factions && applied) {
-                last_message = "Flowerfield: healed low-health non-mechas.";
-                last_message_counter = 0.f;
-            }
-        }
-    }
+    // if(u.texture==&tex::flowerfield_bloom &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
+    //     if((float)GetRandomValue(0, 1000000) / 1000000.0f * 30.f < dt) {
+    //         bool applied = false;
+    //         for (int j = 0; j < num_units; j++)
+    //             if (units[j].faction==u.faction && units[j].speed && units[j].health<units[j].max_health/2
+    //                 && !is_mecha(units[j])/*&& (units[j].name==veteran_name || units[j].name==hero_name)*/) {
+    //                 units[j].health += 3;
+    //                 if(units[j].health>units[j].max_health) units[j].health = units[j].max_health;
+    //                 units[j].popup = "flowerfield";
+    //                 units[j].popup_texture = &tex::heal;
+    //                 applied = true;
+    //             }
+    //         if(u.faction==factions && applied) {
+    //             last_message = "Flowerfield: mass low-healthhealing.";
+    //             last_message_counter = 0.f;
+    //         }
+    //     }
+    // }
     if(u.texture==&tex::pyramis &&  u.faction && u.faction!=factions+1 && u.faction!=ANIMAL_FACTION){
         if((float)GetRandomValue(0, 1000000) / 1000000.0f * 90.f < dt) {
             bool applied = false;
@@ -104,22 +105,22 @@ for (int i = 0; i < num_units; i++) {
                     float dy = units[j].y - u.y;
                     float d2 = dx*dx + dy*dy;
                     if(d2<10.f*10.f) {
-                        units[j] = { \
-                            &tex::ghost,  /* texture */
-                            "Bloo",       /* name */
-                            3.0,          /* speed */
-                            units[j].x,          /* x */
-                            units[j].y,          /* y */
-                            2.0,          /* attack_rate */
-                            7.0,          /* range */
-                            0.5,          /* damage */
-                            0.0,          /* experience */
-                            units[j].angle,      /* angle */
-                            0.4,          /* size */
-                            3.0,          /* health */
-                            3.0,          /* max_health */
-                            factions+2,   /* faction */
-                            nullptr   /* faction */
+                        units[j] = Unit{
+                            .texture = &tex::ghost,
+                            .faction = factions+2,
+                            .name = "Bloo",
+                            .speed = 3.0f,
+                            .x = units[j].x,
+                            .y = units[j].y,
+                            .angle = units[j].angle,
+                            .attack_rate = static_cast<_Float16>(2.0f),
+                            .range = static_cast<_Float16>(7.0f),
+                            .damage = static_cast<_Float16>(0.5f),
+                            .experience = static_cast<_Float16>(0.0f),
+                            .size = static_cast<_Float16>(0.4f),
+                            .health = static_cast<_Float16>(3.0f),
+                            .max_health = static_cast<_Float16>(3.0f),
+                            .capturing = nullptr
                         };
                         units[j].popup = "radiation";
                         applied = true;
@@ -231,6 +232,7 @@ for (int i = 0; i < num_units; i++) {
         if(u.texture==&tex::house2) u.faction->industry += 1.f;
         if(u.texture==&tex::mine) u.faction->industry += 18.f;
         if(u.texture==&tex::scrapyard) u.faction->industry -= 8.f;
+        if(u.texture==&tex::flowerfield_bloom) u.faction->healing += 0.20f;
         if(u.texture==&tex::engine) {
             u.faction->industry += 3.f;
             game_time -= dt*0.01f;
@@ -266,4 +268,5 @@ if(factions[0].count_members==0) {
 }
 for(int i=0;i<max_factions;i++) {
     if(factions[i].industry<0) factions[i].industry = 0;
+    if(factions[i].healing<0) factions[i].healing = 0;
 }

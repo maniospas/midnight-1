@@ -551,7 +551,7 @@ int main() {
             decorators[num_decorators++] = {&tex::tree,(float)x+ox-0.5f,(float)y+oy-0.5f,1.0f};
             T.extra_sight -= 0.7f;
             if(T.extra_sight<-0.7f) T.extra_sight = -0.7f;
-            T.speed = 0.4f;
+            T.speed = (_Float16)0.4f;
         }
     }
     for (int y = 1; y < GRID_SIZE-1; y++)
@@ -1155,8 +1155,8 @@ int main() {
             if(player_preferred_start[0]==PREFERENCE_SPEED && i%2==0) {CREATE_CAT(&factions[0], sx, sy);}
             else if(player_preferred_start[1]==PREFERENCE_SPEED && i%2==1) { CREATE_CAT(&factions[0], sx, sy);}
             else { CREATE_HUMAN(&factions[0], sx, sy);}
-            if(player_preferred_start[0]==PREFERENCE_EXPERIENCE) units[num_units-1].experience += 8.f;
-            if(player_preferred_start[1]==PREFERENCE_EXPERIENCE) units[num_units-1].experience += 8.f;
+            if(player_preferred_start[0]==PREFERENCE_EXPERIENCE) units[num_units-1].experience += (_Float16) 8.f;
+            if(player_preferred_start[1]==PREFERENCE_EXPERIENCE) units[num_units-1].experience += (_Float16) 8.f;
             // if(player_preferred_start[0]==PREFERENCE_SPEED) units[num_units-1].speed *= 1.2f;
             // if(player_preferred_start[1]==PREFERENCE_SPEED) units[num_units-1].speed *= 1.2f;
         }
@@ -1900,20 +1900,20 @@ int main() {
             Vector2 worldClick = IsKeyPressed(KEY_ENTER)
                 ?GetScreenToWorld2D({(float)GetScreenWidth()*0.5f, (float)GetScreenHeight()*0.5f}, camera)
                 :GetScreenToWorld2D(GetMousePosition(), camera);
-            float tx = (worldClick.x / TILE_SIZE);
-            float ty = (worldClick.y / TILE_SIZE);
+            _Float16 tx = (_Float16) (worldClick.x / TILE_SIZE);
+            _Float16 ty = (_Float16) (worldClick.y / TILE_SIZE);
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
 
                 if (u.selected && u.speed && u.texture!=&tex::esper) {
                     u.stunned = 0; // we "cheat" in favor of smooth gameplay
                     if(currentMovementMode==MovementMode::Explore) {
-                        u.target_x = tx + (float)GetRandomValue(-10,10);
-                        u.target_y = ty + (float)GetRandomValue(-10,10);
+                        u.target_x = tx + (_Float16)GetRandomValue(-10,10);
+                        u.target_y = ty + (_Float16)GetRandomValue(-10,10);
                     }
                     else if(currentMovementMode==MovementMode::Scattered) {
-                        u.target_x = tx + (float)GetRandomValue(-2,2);
-                        u.target_y = ty + (float)GetRandomValue(-2,2);
+                        u.target_x = tx + (_Float16)GetRandomValue(-2,2);
+                        u.target_y = ty + (_Float16)GetRandomValue(-2,2);
                     }
                     else {
 

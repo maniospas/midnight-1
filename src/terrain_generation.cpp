@@ -385,7 +385,7 @@ static void GenerateMountainTrails(Terrain** terrainGrid) {
             // Narrow band around a contour
             if (fabsf(trailValue - 0.48f) < 0.012f) {
                 T.texture = &tex::grass;
-                T.speed = 1.0f;
+                T.speed = (_Float16)1.0f;
                 T.extra_sight = 0.0f;
             }
         }

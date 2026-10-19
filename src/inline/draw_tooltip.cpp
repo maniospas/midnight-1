@@ -67,7 +67,7 @@ if (hovered && hovered->health && !mouseCapturedByUI) {
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
     else if(hovered->texture==&tex::flowerfield_bloom) {
-        DrawText("Heals vets & heroes", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText("+20% healing", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
         DrawText("Eratic crop cycle", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
         DrawText("Spreads if in bloom", px + 80, textY+(DESC_FONT_SIZE+2)*2, DESC_FONT_SIZE, WHITECOL);
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);

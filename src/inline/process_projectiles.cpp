@@ -67,10 +67,10 @@ for (int i = 0; i < num_units; i++) {
                 if ((float)GetRandomValue(0, 1000000) / 1000000.0f >= skipChance) {
                     if(o.capturing && o.faction == u.faction) o.health += 1;
                     else if(o.capturing && o.capturing==factions+1) {
-                        if(u.faction && o.speed==0 && (u.faction->technology&TECHNOLOGY_SCAVENGE)) o.health -= CAPTURE_RATE*2*u_damage;
-                        else o.health -= CAPTURE_RATE*u_damage*0.5f;
+                        if(u.faction && o.speed==0 && (u.faction->technology&TECHNOLOGY_SCAVENGE)) o.health -= (_Float16)(CAPTURE_RATE*2*u_damage);
+                        else o.health -= (_Float16)(CAPTURE_RATE*u_damage*0.5f);
                     }
-                    else if(o.capturing) o.health -= CAPTURE_RATE*u_damage*0.5f;
+                    else if(o.capturing) o.health -= (_Float16)(CAPTURE_RATE*u_damage*0.5f);
                     else {
                         if(o.texture==&tex::kraken) {
                             u_damage *= 0.2f;
@@ -93,7 +93,7 @@ for (int i = 0; i < num_units; i++) {
                                 o.popup_texture = nullptr;
                             }
                         }
-                        o.health -= u_damage;
+                        o.health -= (_Float16)u_damage;
                         if(o.speed || o.texture==&tex::rock) {
                             float dx = o.x-u.x;
                             float dy = o.y-u.y;
@@ -144,10 +144,10 @@ for (int i = 0; i < num_units; i++) {
                     if(u.faction && (u.faction->technology&TECHNOLOGY_FIGHT)) experience_bonus *= 2.f;
                     if(u.texture==&tex::ghost && u.faction && (u.faction->technology&TECHNOLOGY_ARTIFICIAL)) experience_bonus *= 5.f;
                     if(o.texture == &tex::retreat) experience_bonus += 100;
-                    u.experience += experience_bonus;
+                    u.experience += (_Float16)experience_bonus;
                     if(u.experience>=10 && (!is_mecha(u) || (u.faction && (u.faction->technology & TECHNOLOGY_INDUSTRY)))
                         && u.name!=veteran_name && u.name!=hero_name) {
-                        u.size *= 1.2;
+                        u.size *= (_Float16)1.2;
                         u.name = veteran_name;
                         if(u.texture==&tex::human) u.texture = &tex::scout;
                         u.damage *= 2;
@@ -157,37 +157,37 @@ for (int i = 0; i < num_units; i++) {
                         u.popup_texture = nullptr;
                     }
                     if(u.experience>=50 && u.name==veteran_name) {
-                        u.size *= 1.2;
+                        u.size *= (_Float16)1.2;
                         u.name = hero_name;
                         if(u.texture==&tex::scout) u.texture = &tex::hero;
-                        u.damage *= 1.5;
-                        u.max_health += 5;
-                        u.health += 5;
+                        u.damage *= (_Float16)1.5;
+                        u.max_health += (_Float16)5;
+                        u.health += (_Float16)5;
                         u.popup = "new hero";
                         u.popup_texture = nullptr;
                     }
                     if(u.experience>70 && u.name==hero_name) {
                         int r = GetRandomValue(0, 100);
                         while(u.experience>70) {
-                            u.experience -= 20;
+                            u.experience -= (_Float16)20;
                             if(r<25) {
-                                u.attack_rate *= 1.5f;
+                                u.attack_rate *= (_Float16)1.5f;
                                 u.popup = "hero: aggression";
                                 u.popup_texture = nullptr;
                             }
                             else if(r<50) {
-                                u.speed *= 1.2f;
+                                u.speed *= (_Float16)1.2f;
                                 u.popup = "hero: faster";
                                 u.popup_texture = nullptr;
                             }
                             else if(r<75){
-                                u.max_health += 2.f;
-                                u.health += 2.f;
+                                u.max_health += (_Float16)2.f;
+                                u.health += (_Float16)2.f;
                                 u.popup = "hero: healthier";
                                 u.popup_texture = nullptr;
                             }
                             else {
-                                u.range *= 1.2f;
+                                u.range *= (_Float16) 1.2f;
                                 u.popup = "hero: farsight";
                                 u.popup_texture = nullptr;
                             }
@@ -205,7 +205,7 @@ for (int i = 0; i < num_units; i++) {
                     o.health = o.max_health;
                     o.popup = "hijacked";
                     o.popup_texture = &tex::hijack;
-                    o.animation = 0.f;
+                    o.animation = (_Float16) 0.f;
                 }
                 else if(o.health<=0 && o.texture==&tex::wolf && GetRandomValue(0, 99) < 50) {
                     o.faction = u.faction;
@@ -220,43 +220,43 @@ for (int i = 0; i < num_units; i++) {
                     o.popup_texture = nullptr;
                 }
                 else if(o.health<=0 && o.faction && (o.faction->technology & TECHNOLOGY_UNSTABLE) && (o.texture==&tex::rat || o.texture==&tex::human || o.texture==&tex::scout || o.texture==&tex::hero || o.texture==&tex::cat)) {
-                    units[j] = { \
-                        &tex::ghost,  /* texture */
-                        "Bloo",       /* name */
-                        3.0,          /* speed */
-                        o.x,          /* x */
-                        o.y,          /* y */
-                        2.0,          /* attack_rate */
-                        7.0,          /* range */
-                        0.5,          /* damage */
-                        0.0,          /* experience */
-                        o.angle,      /* angle */
-                        0.4,          /* size */
-                        3.0,          /* health */
-                        3.0,          /* max_health */
-                        o.faction,   /* faction */
-                        nullptr   /* faction */
+                    units[j] = Unit{
+                        .texture = &tex::ghost,
+                        .faction = o.faction,
+                        .name = "Bloo",
+                        .speed = (_Float16)3.0f,
+                        .x = o.x,
+                        .y = o.y,
+                        .angle = o.angle,
+                        .attack_rate = static_cast<_Float16>(2.0f),
+                        .range = static_cast<_Float16>(7.0f),
+                        .damage = static_cast<_Float16>(0.5f),
+                        .experience = static_cast<_Float16>(0.0f),
+                        .size = static_cast<_Float16>(0.4f),
+                        .health = static_cast<_Float16>(3.0f),
+                        .max_health = static_cast<_Float16>(3.0f),
+                        .capturing = nullptr
                     };
                     units[j].popup = "unstable";
                     units[j].popup_texture = nullptr;
                 }
                 else if(o.health<=0 && u.faction && (u.faction->technology & TECHNOLOGY_BIOWEAPON) && (o.texture==&tex::human || o.texture==&tex::scout || o.texture==&tex::hero)) {
-                    units[j] = { \
-                        &tex::ghost,  /* texture */
-                        "Bloo",       /* name */
-                        3.0,          /* speed */
-                        o.x,          /* x */
-                        o.y,          /* y */
-                        2.0,          /* attack_rate */
-                        7.0,          /* range */
-                        0.5,          /* damage */
-                        0.0,          /* experience */
-                        o.angle,      /* angle */
-                        0.4,          /* size */
-                        3.0,          /* health */
-                        3.0,          /* max_health */
-                        o.faction,   /* faction */
-                        nullptr   /* faction */
+                    units[j] = Unit{
+                        .texture = &tex::ghost,
+                        .faction = o.faction,
+                        .name = "Bloo",
+                        .speed = (_Float16)3.0f,
+                        .x = o.x,
+                        .y = o.y,
+                        .angle = o.angle,
+                        .attack_rate = static_cast<_Float16>(2.0f),
+                        .range = static_cast<_Float16>(7.0f),
+                        .damage = static_cast<_Float16>(0.5f),
+                        .experience = static_cast<_Float16>(0.0f),
+                        .size = static_cast<_Float16>(0.4f),
+                        .health = static_cast<_Float16>(3.0f),
+                        .max_health = static_cast<_Float16>(3.0f),
+                        .capturing = nullptr
                     };
                     units[j].popup = "bioweapon";
                     units[j].popup_texture = nullptr;
@@ -323,22 +323,22 @@ for (int i = 0; i < num_units; i++) {
                         last_message = "Demolished by someone crazy: Pyramis";
                         last_message_counter = 0.f;
                     }
-                    units[j] = { \
-                        &tex::ghost,  /* texture */
-                        "Bloo",       /* name */
-                        3.0,          /* speed */
-                        o.x,          /* x */
-                        o.y,          /* y */
-                        2.0,          /* attack_rate */
-                        7.0,          /* range */
-                        0.5,          /* damage */
-                        0.0,          /* experience */
-                        o.angle,      /* angle */
-                        0.4,          /* size */
-                        0.0,          /* health (start dead)*/
-                        3.0,          /* max_health */
-                        o.faction,   /* faction */
-                        nullptr   /* faction */
+                    units[j] = Unit{
+                        .texture = &tex::ghost,
+                        .faction = o.faction,
+                        .name = "Bloo",
+                        .speed = (_Float16)3.0f,
+                        .x = o.x,
+                        .y = o.y,
+                        .angle = o.angle,
+                        .attack_rate = static_cast<_Float16>(2.0f),
+                        .range = static_cast<_Float16>(7.0f),
+                        .damage = static_cast<_Float16>(0.5f),
+                        .experience = static_cast<_Float16>(0.0f),
+                        .size = static_cast<_Float16>(0.4f),
+                        .health = static_cast<_Float16>(0.0f),
+                        .max_health = static_cast<_Float16>(3.0f),
+                        .capturing = nullptr
                     };
                     continue;
 

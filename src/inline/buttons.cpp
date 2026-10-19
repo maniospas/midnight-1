@@ -73,9 +73,9 @@ if(!showTechTree && (factions->technology&TECHNOLOGY_COMMAND) && !mouseCapturedB
         }
         CREATE_VAN(factions, fort_creation_px, fort_creation_py);
         fort_creation_total_health = fort_creation_total_health/100.f;
-        units[num_units-1].max_health *= fort_creation_total_health;
-        units[num_units-1].health *= fort_creation_total_health;
-        units[num_units-1].size *= sqrtf(fort_creation_total_health);
+        units[num_units-1].max_health *= (_Float16)fort_creation_total_health;
+        units[num_units-1].health *= (_Float16)fort_creation_total_health;
+        units[num_units-1].size *= (_Float16)sqrtf(fort_creation_total_health);
         units[num_units-1].capturing = nullptr;
         units[num_units-1].popup = "constructed";
         PlaySound(sound::select2);
@@ -102,10 +102,10 @@ if(!showTechTree && (factions->technology&TECHNOLOGY_FORT) && !mouseCapturedByUI
             }
         }
         CREATE_FORT(factions, fort_creation_px, fort_creation_py);
-        fort_creation_total_health = fort_creation_total_health/5;
-        units[num_units-1].max_health = fort_creation_total_health;
-        units[num_units-1].health = fort_creation_total_health;
-        units[num_units-1].size = sqrtf(fort_creation_total_health/10);
+        fort_creation_total_health = (_Float16)fort_creation_total_health/5;
+        units[num_units-1].max_health = (_Float16)fort_creation_total_health;
+        units[num_units-1].health = (_Float16)fort_creation_total_health;
+        units[num_units-1].size = (_Float16)sqrtf(fort_creation_total_health/10);
         units[num_units-1].popup = "built";
         PlaySound(sound::select2);
         fort_creation_num = 0;

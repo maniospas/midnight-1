@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MIDNIGHT next morn — A post-collapse strategy simulation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MIDNIGHT next morn is a large-scale strategy and simulation game set in the aftermath of civilization. When pollution weakens temporarily, survivors emerge from bunkers. They salvage the remains of a broken world and prepare their utopia. Until the clock ticks again.">
+    <meta name="author" content="Emmanouil Krasanakis">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+
+
+<style>
+
+
+  :root {
+      --bg: #0b0d10;
+      --panel: #141820;
+      --text: #e3e6ea;
+      --muted: #9aa2ad;
+      --accent: #d24b4b;
+      --line: #1f2530;
+      --max-width: 1100px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+      margin: 0;
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+  }
+
+.page{max-width:800px;padding:1.5rem 0;font-family:var(--font-sans);color:var(--color-text-primary);margin:auto}
+h1{font-size:32px;font-weight:700;margin-bottom:4px}
+h2{font-size:18px;font-weight:500;margin:2rem 0 .75rem}
+h3{font-size:15px;font-weight:500;margin-bottom:4px}
+p,li{font-size:14px;line-height:1.7;color:var(--color-text-secondary)}
+ul{padding-left:1.2rem}
+.sub{font-size:13px;color:var(--color-text-tertiary)}
+.badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;margin-bottom:5px}
+.b-blue{background:#E6F1FB;color:#0C447C}
+.b-red{background:#FCEBEB;color:#A32D2D}
+.b-green{background:#EAF3DE;color:#3B6D11}
+.b-amber{background:#FAEEDA;color:#854F0B}
+.b-gray{background:#F1EFE8;color:#5F5E5A}
+.b-purple{background:#EEEDFE;color:#3C3489}
+.b-teal{background:#E1F5EE;color:#0F6E56}
+.divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:1.5rem 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-bottom:1rem}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:.85rem 1rem;position:relative;overflow:hidden}
+.card-img{position:absolute;bottom:-6px;right:-6px;width:64px;height:64px;opacity:.18;image-rendering:pixelated}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.unit-img{width:40px;height:40px;image-rendering:pixelated;flex-shrink:0}
+.stat-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.stat{font-size:11px;color:var(--color-text-tertiary);background:var(--color-background-secondary);padding:2px 6px;border-radius:4px}
+.section-rule{display:flex;align-items:center;gap:10px;margin:2rem 0 1rem}
+.section-rule span{font-size:22px;font-weight:700;white-space:nowrap}
+.section-rule:after{content:'';flex:1;height:0.5px;background:var(--color-border-tertiary)}
+.key-row{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:.5rem 0;font-size:14px}
+.key-row kbd{font-family:var(--font-mono);font-size:12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:4px;padding:1px 6px;color:var(--color-text-primary);white-space:nowrap}
+.key-row .desc{color:var(--color-text-secondary);line-height:1.6}
+.tip{background:var(--color-background-secondary);border-left:2px solid #378ADD;border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;padding:.6rem .9rem;margin:.6rem 0;font-size:13px;color:var(--color-text-secondary)}
+.warn{background:var(--color-background-secondary);border-left:2px solid #E24B4A;border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;padding:.6rem .9rem;margin:.6rem 0;font-size:13px;color:var(--color-text-secondary)}
+.phase-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:.75rem 0}
+.phase-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:.75rem}
+.phase-num{font-size:11px;font-weight:500;color:var(--color-text-tertiary);margin-bottom:4px}
+.xp-track{display:flex;align-items:center;gap:0;margin:1rem 0}
+.xp-step{flex:1;text-align:center;padding:.6rem .4rem;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);position:relative}
+.xp-step:first-child{border-radius:var(--border-radius-md) 0 0 var(--border-radius-md)}
+.xp-step:last-child{border-radius:0 var(--border-radius-md) var(--border-radius-md) 0}
+.xp-step img{width:36px;height:36px;image-rendering:pixelated;display:block;margin:0 auto 4px}
+.xp-step .xp-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.xp-step .xp-req{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+.xp-step .xp-bonus{font-size:11px;color:var(--color-text-secondary);margin-top:3px}
+.xp-arrow{font-size:18px;color:var(--color-text-tertiary);padding:0 4px;flex-shrink:0}
+.terrain-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:.75rem 1rem;position:relative;overflow:hidden;min-height:80px}
+.terrain-bg{position:absolute;inset:0;image-rendering:pixelated;width:100%;height:100%;object-fit:cover;opacity:.22}
+.terrain-content{position:relative;z-index:1}
+.utopia-box{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin:.75rem 0;display:flex;gap:16px;align-items:flex-start}
+.utopia-icon{width:48px;height:48px;image-rendering:pixelated;flex-shrink:0;opacity:.9}
+.terrain-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:.75rem 1rem;position:relative;overflow:hidden;min-height:90px}
+.terrain-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated;opacity:.28}
+.terrain-content{position:relative;z-index:1}
+.utopia-box{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin:.75rem 0;display:flex;gap:16px;align-items:flex-start}
+.utopia-icon{width:48px;height:48px;image-rendering:pixelated;flex-shrink:0}
+.tech-row{display:flex;align-items:center;gap:12px;padding:.6rem .75rem;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);margin-bottom:6px}
+.tech-row img{width:32px;height:32px;image-rendering:pixelated;flex-shrink:0}
+.tech-row .tech-name{font-size:13px;font-weight:500;color:var(--color-text-primary);min-width:120px}
+.tech-row .tech-desc{font-size:12px;color:var(--color-text-secondary);flex:1}
+.tech-group{margin-bottom:1rem}
+.tech-group-label{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;margin-top:1rem}
+
+
+        .button {
+            padding: 14px 26px;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            text-decoration: none;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: var(--text);
+            background: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition:
+                background 0.25s ease,
+                border-color 0.25s ease,
+                transform 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .button.download {
+            border-color: var(--accent);
+            background:
+                linear-gradient(180deg, rgba(210,75,75,0.18), rgba(210,75,75,0.05));
+            box-shadow:
+                inset 0 0 0 1px rgba(210,75,75,0.15),
+                0 6px 20px rgba(0,0,0,0.35);
+        }
+        .button.spread {
+            width: 100%;
+            border-color: var(--muted);
+            background:
+                linear-gradient(180deg, rgba(75,210,75,0.18), rgba(75,210,75,0.05));
+            box-shadow:
+                inset 0 0 0 1px rgba(75,210,75,0.15),
+                0 6px 20px rgba(0,0,0,0.35);
+        }
+
+        .button.spread:hover {
+            background:
+                linear-gradient(180deg, rgba(75,210,75,0.35), rgba(75,210,75,0.12));
+            box-shadow:
+                inset 0 0 0 1px rgba(75,210,75,0.3),
+                0 10px 30px rgba(0,0,0,0.5);
+            /*transform: translateY(-1px);*/
+        }
+
+        .button.spread:active {
+            transform: translateY(0);
+            box-shadow:
+                inset 0 0 0 1px rgba(75,210,75,0.3),
+                0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .button.download:hover {
+            background:
+                linear-gradient(180deg, rgba(210,75,75,0.35), rgba(210,75,75,0.12));
+            box-shadow:
+                inset 0 0 0 1px rgba(210,75,75,0.3),
+                0 10px 30px rgba(0,0,0,0.5);
+            /*transform: translateY(-1px);*/
+        }
+
+        .button.download:active {
+            transform: translateY(0);
+            box-shadow:
+                inset 0 0 0 1px rgba(210,75,75,0.3),
+                0 4px 12px rgba(0,0,0,0.4);
+        }
+
+</style>
+</head>
+<body>
+
+
+<header class="page">
+    <div class="container">
+        <img src="data/sun.png" style="max-width:512px" alt="sun">
+        <h1>MIDNIGHT <sup>next morn</sup></h1>
+        <p><i>Classified commander's manual. Unauthorized bunker personnel are forbidden from reading further.</i></p>
+  </div>
+  <div class="container">
+    <a href="index.html" class="button spread">
+        Back
+    </a>
+  </div>
+</header>
+
+<div class="page">
+<div class="section-rule"><img class="utopia-icon" src="data/utopia.png" alt="utopia"><span>Capture utopia points</span></div>
+
+<div>
+  <p>Howdy expedition commander! Mission briefer here. You are to capture utopia structures like oil wells or warehouses. Alongside other structures or mechanical units ("mechas" per bunker slang) that let our military control utopia sources. When world pollution fills, eta somewhat over 15 minutes, return safely and you will be set for life in the bunker hierarchy.</p>
+</div>
+<div>
+  <p>Do not forget; the most utopic our bunker, the more people will stay with us instead of leaving in desperation and die out in the fumes. We must walk away with <b>more utopia than any other enemy</b>. See controlled utopia and pollution status at the top right hud.</p>
+</div>
+<div>
+  <p>Prevent enemies from gaining control of our structures; utopia only matters at the end, after all. Be especially vigilant against late rushes. Be the one to do it instead. If you can time it correctly. Depending on circumstance, there are other ways to increase our utopia too; you may encounter espers that have stayed aboveground, or techs like PROPAGANDA. By the way, there is a compendium of all techs at the end; they are written capitalized.</p>
+</div>
+
+
+
+<div class="warn"><b>On industry.</b> Utopia is our victory tally. But industry is our ability to get some work in. In candid terms: the limit of our war machine. Camps will receive reinforcements only when we are below the industry cap. See below. Going over the maximum capacity ("cap") reduces our speed of restoring damaged structures too. A huge industry also accelerates pollution, but that's normal and it is policy to not care about the broken environment anymore. Just make sure that you secure our utopia before pollution fills back.</div>
+
+<div class="section-rule"><span>Structures</span></div>
+
+<div class="grid">
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#3B6D11;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/camp.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-green">Core</span><h3>Camp</h3></div>
+  </div>
+  <p style="font-size:13px">Our underground bunker will send fodder -sorry, reinforcements- here periodically. As long as we are below the cap of what our glorious industry can sustain. The cap already accounts for maximum profit margins, sure. But, once reached, we can still go over it by capturing more mechas. Nobody would complain about having more of <i>those</i>.</p>
+  <div class="stat-row"><span class="stat">Spawns units</span><span class="stat">Capturable</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#3B6D11;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/field.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-green">Industry</span><h3>Field</h3></div>
+  </div>
+  <p style="font-size:13px">Reports say that plants have -I quote- "gone ngrazy". Honestly, to be expected after what we did to the environment. Barren fields grow, bloom, and turn back to barren periodically. While there are crops, we can squeeze industrial capacity out of them. Like juice. But better. Anyone will work harder if that helps avoid canned food. The FARMING tech, should you choose to pursue it, will let us keep fields in bloom for longer.</p>
+  <div class="stat-row"><span class="stat">0-4 industry</span><span class="stat">Capturable</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#3B6D11;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/hide.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-green">Industry</span><h3>Hide</h3></div>
+  </div>
+  <p style="font-size:13px">Dropped by hunted bisons, like in the good old neolithic days. The base of excellent material to fuel our industry, especially since it somehow keeps growing with all the radiation keeping the cells active. But hides can spoil at random. If they do, you will be able to tell. From the rats gnawing at their remnants.</p>
+  <div class="stat-row"><span class="stat">4 industry</span><span class="stat">Capturable</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#5F5E5A;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/mine.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-gray">Industry</span><h3>Mine</h3></div>
+  </div>
+  <p style="font-size:13px">There used to be mines everywhere in the <i>before</i> times. But only those up the mountains remain uncollapsed. Perhaps they were farther away from the blasts targeting cities. Anyway, mines are a pain to capture, what with snowmen, enemy turrets, and slow capture time. But well worth the effort, I am told. Industry rules! Ah, some things never change, even if you are above- or below- ground.</p>
+  <div class="stat-row"><span class="stat">12 industry</span><span class="stat">Capturable</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#A32D2D;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/oil.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-red">Utopia</span><h3>Oil well</h3></div>
+  </div>
+  <p style="font-size:13px">There is no way an utopia can exist without some <i>black gold</i> to trade and fuel everyday activities. Like cleansing water by heating it up. We do have the technology to be fully renewable, but it's too expensive and the damage has already been done anyway. Oil can be found mainly in deserts. The REFINERY tech adds 25 industry for each well, letting it power our infrastructure aside from being bragging rights.</p>
+  <div class="stat-row"><span class="stat">3 utopia</span><span class="stat">Capturable</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#854F0B;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/warehouse.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-amber">Utopia + vision</span><h3>Storage</h3></div>
+  </div>
+  <p style="font-size:13px">Remaining storage warehouses have been carefully mapped by all bunkers. So everyone knows where they are from the start. Expect fierce competition, but if you are first you can capture the railguns the patrolling military used. Or let the others fight it out and sweep in later. Your head, your call. All types of useless goodies in there can help further our utopia.</p>
+  <div class="stat-row"><span class="stat">2 utopia</span><span class="stat">Capturable</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#854F0B;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/curio.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-amber">Utopia</span><h3>Curio</h3></div>
+  </div>
+  <p style="font-size:13px">These are trinket production facilities from the old civilization. Somehow, a lot have survived. Perhaps the leaders felt levelling them was the one line they could not cross? Who knows what those idiots were thinking. Anyway, good for bragging rights. What's that Alex? Oh, he says you can take advantage of the many rats infested there. Either tame them or use their blood clots for a stream of bloo... Of for the love of- here comes the manic laughter again. Someone come relieve of caretaker duty!</p>
+  <div class="stat-row"><span class="stat">1 utopia</span><span class="stat">Capturable</span><span class="stat">Spawns wild rats</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#854F0B;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/lighthouse.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-amber">Utopia + vision + industry</span><h3>Big bro</h3></div>
+  </div>
+  <p style="font-size:13px">Facilities that carefully "collect" and "curate" entertaining material. They sure can make us look good, and motivate the populace. If you do not mind the council complaining about it, try the AI FARM tech; will turn your big bro and AI labs into pure industrial production megaliths. Nothing better than sloppily mining private data for <i>scaling</i> all sorts of infrastructure. Oh, by the way, too much industry increase pollution, which means that your mission may need to conclude more quickly. But who cares? Our predecessors made sure that we do not.</p>
+  <div class="stat-row"><span class="stat">0.5 utopia</span><span class="stat">+5 industry</span><span class="stat">Capturable</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#185FA5;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/radio.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-blue">Vision</span><h3>Radio tower</h3></div>
+  </div>
+  <p style="font-size:13px">In the late days before midnight, once it became certain that those in charge would doom civilization, there was mass hysteria about not being able to meme about it. There are a lot of hobby communication towers remaining from that time. Of course, everyone else is the <i>enemy</i> now. But hobbyists have always been touched in the head; we can readily convert their unnecessarily sophisticated equipment into far-reaching radars. The MEDIA tech doubles the range; pretty impressive if the radio is up the mountains. Perhaps research some PROPAGANDA to convince everyone of our utopia?</p>
+  <div class="stat-row"><span class="stat">Range 16</span><span class="stat">Capturable</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#3C3489;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/lab.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-purple">Research</span><h3>Lab</h3></div>
+  </div>
+  <p style="font-size:13px">Ah, where would we be without the old research facilities? BIOWEAPON. Use them to recover techs enough for practical use. BIOWEAPON. There are many combinations that I find particularly interesting. Like- BIOWEAPON. Ah, the previous expedition's commander is here with me as I transcribe this message and he is quite ...fixated... on a particular research field. BIOWEAPON. BIOWEAPON. Alex! Stop shouting! We know you went all-in in one of the techs that led to the Midnight. No, stop giggling at your selfie of all those radioactive <i>bloos</i> swarming everyone else- no, give me the controller! No, I need to explain why AI farms are ba-</p>
+  <div class="stat-row"><span class="stat">Adds 10% research rate</span><span class="stat">Capturable</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#3C3489;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/datacenter.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-purple">Random events</span><h3>Databank</h3></div>
+  </div>
+  <p style="font-size:13px">Hi, hi, Alex here... Listen while my clarity lasts. Not usually mentioned in these manuals but I saw it; you need no fancy techs. Just luck. There are a lot of discarded databanks; make personnel shift through their records. The higher ups fear the discovery of other governance systems but it's so worth it. There may emerge health manuals to help everyone, repair instructions for mechas (motivating their drivers to fix everything immediately once), and how-to videos for acquiring tech knowledge. But beware that some leaking substance tends to turn blood into <i>bloo</i> creatures more frequently than normal around datacenters. Bloo. Bloo. Blooooo. Ha- haha. HAHAHA! BIOWEAPON!</p>
+  <div class="stat-row"><span class="stat">Random benefits</span><span class="stat">Capturable</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#5F5E5A;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/fort.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-gray">Built forts</span><h3>Fort</h3></div>
+  </div>
+  <p style="font-size:13px">Hello, briefer here again. Once you acquire the FORT tech, humans and tanks can be stationed into fortifications operating at minimal industry cost. Having them in one place weakens the combat power quite a bit, but the practice has a very good operational ratio of combat prowess per industry consumed. Excellent for establishing defensive positions. Only, be careful that enemies can capture the fort too.</p>
+  <div class="stat-row"><span class="stat">More difficult to capture by stationing more industry</span><span class="stat">Min 20 stationed industry to build</span><span class="stat">DMG 4</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#5F5E5A;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/house.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-gray">Industry</span><h3>House</h3></div>
+  </div>
+  <p style="font-size:13px">Some standardized worker dwellings may have survived. Or not. Depends on the location, really. If you do find a district, use it to get the personnel more comfortable. Hypnotic... suggestion... or not, comfort always helps work performance. And even the houses of the former low-class near-slaves are a huge comfort compared to the bunker.</p>
+  <div class="stat-row"><span class="stat"><span class="stat">+half industry</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#5F5E5A;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/house2.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-gray">Industry</span><h3>House</h3></div>
+  </div>
+  <p style="font-size:13px">Oh, really? Briefing here says that some houses from the former middle class survived too. I did not realize the middle class survived till the end of the days; I thought there was only a separation between the poor and ultra-wealthy. Oh, it says here that they were useful for giving the illusion of social mobility? Fiiine. Anyway, if you can, smuggle a bed back. Alex demands it or he says he will unleash a bioweapon.</p>
+  <div class="stat-row"><span class="stat"><span class="stat">+1 industry</span></div>
+</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#5F5E5A;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/villa.png" style="width:35px;height:35px;">
+    </div>
+    <div><span class="badge b-gray">Healing</span><h3>Townhall</h3></div>
+  </div>
+  <p style="font-size:13px">It is said that those in charge of struggler groups that did not have the... foresight... to have bunker ready moved within government buildings. Every law other than populist policies was subsequently burned. You can use such policies for wellfare when you find them; you are granted full autonomy, including the questionable freedom of healing your troops through means other than their genetically engineered healing factor.</p>
+  <div class="stat-row"><span class="stat"><span class="stat">Occasional mass healing</span></div>
+</div>
+
+</div>
+
+<div class="section-rule"><span>Units</span></div>
+
+<div class="grid">
+
+<div class="card">
+  <img class="card-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png" onerror="this.style.opacity=0" alt="">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#4a90d9;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/human.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-blue">Spawnable</span><h3>Human</h3></div>
+  </div>
+  <p style="font-size:13px">Our core human unit, permitted to leave the bunker only under your command. Fast turning speed. Can become stronger by fighting and capturing stuff; first a Veteran and eventually a Hero. These are not mere titles -who would care for them?- but a representation of tank-comparable destructive force on a single human. The HELLBRINGER tech is aptly named, because it's what heroes feel like when equipped with its rapid firing ability.</p>
+  <div class="stat-row"><span class="stat">Speed 5</span><span class="stat">HP 5</span><span class="stat">DMG 1</span><span class="stat">Range 4</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#bb88bb;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/esper.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-teal">Capturable</span><h3>Esper</h3></div>
+  </div>
+  <p style="font-size:13px">A paranormal person that somehow survives in the surface. One theory says that espers are former radio station operators merged with their equipment. However, they are too powerful to have been mere nerds. Once overcome for a moment, espers will nod once and keep wandering randomly. Consider them "captured" if they do that. They never listen to commands, but the higher-ups say that acknowledgement by any esper is good news for our fledgling utopia.</p>
+  <div class="stat-row"><span class="stat">Speed 5</span><span class="stat">HP 15</span><span class="stat">DMG 3</span><span class="stat">2 utopia</span><span class="stat">Broadcasts what it sees</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#aaaaaa;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/tank.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-gray">Mecha</span><h3>Tank</h3></div>
+  </div>
+  <p style="font-size:13px">Heavy mecha, remnant of the wars from the <i>before</i> times. Discover and reclaim them. They do cost industry and we have no way of fixing them when damaged. But they are a terror. Half the survivors from past expeditions suffer from trauma due to those. They will be the first to be <i>let go</i> if our bunker utopia starts losing its ability of self-sustenance.</p>
+  <div class="stat-row"><span class="stat">Speed 3</span><span class="stat">HP 20</span><span class="stat">DMG 8</span><span class="stat">Range 6</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#aaaaaa;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/railgun.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-gray">Mecha</span><h3>Railgun</h3></div>
+  </div>
+  <p style="font-size:13px">A mecha with high damage throughput left behind by old sentries. Obviously cannot move and it is slow in turning around, but with some support a fine defensive point. We often choose a first camp location amidst several of these. Good for racing to espers and distant structures. MOBILE FORT is heavily recommended as a tech goal, idle railguns can be repurposed as tanks.</p>
+  <div class="stat-row"><span class="stat">Speed 0</span><span class="stat">HP 20</span><span class="stat">DMG 7.5</span><span class="stat">Range 6</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#aaaaaa;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/van.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-gray">Mecha</span><h3>Van</h3></div>
+  </div>
+  <p style="font-size:13px">Fast scout mecha. They say everyone used to drive cars, but only the heavily armored vans have survived enough to be salvageable. Low damage but huge speed advantage; the qualities that let us win world wars two and four, by transporting troops and drone engineering teams around. Good for exploration and racing to strategic locations, either to temporarily stall off enemy advances, or be reinforcements.</p>
+  <div class="stat-row"><span class="stat">Speed 9</span><span class="stat">HP 20</span><span class="stat">DMG 1</span><span class="stat">Range 6</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#aaaaaa;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/hovercraft.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-gray">Mecha</span><h3>Hovercraft</h3></div>
+  </div>
+  <p style="font-size:13px">An old status symbol, surprisingly convenient for being equipped with guns. Their owners thought they would repel hordes of impoverished primitives, but those not rich enough mostly perished in fancy restaurants when the first round of armageddon came to pass. Anyway, ah, the good-ol' hovercraft. Nothing beats it for bringing the terror of our glory across the sea. Perhaps a Van if you research SEAFARING. The deadly part is the combination of speed and damage throughput once the grunts modify it per protocol.</p>
+  <div class="stat-row"><span class="stat">Speed 7</span><span class="stat">HP 10</span><span class="stat">DMG 6</span><span class="stat">Range 4</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#aaaaaa;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/roomba.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-gray">Mecha</span><h3>Roomba</h3></div>
+  </div>
+  <p style="font-size:13px">People used to be obsessed with autonomous vacuum cleaners. Before they realized that a robot uprising would start from these. Many have been unceremoniously damped in the forests for safety. We managed to end civilization both before the robots gained sentience and before the plastic became an environmental hazard too. And the nuclear winter kept them cool. Our technicians can repurpose the roombas for <i>defensive</i> purposes. But the blasted nerds refuse to violate the laws of robotics; they know they are too valuable to execute for insubordination. So these cleaners can deal only with animals and bloos. And, of course, help with houses. Other mechas are obviously too sturdy to be afraid of cleaning. If found, to be used as a distraction, city takeovers, or pest cleaners. As they say "vroom-vroom, ****ers". Oh, got censored by the transcription service.</p>
+  <div class="stat-row"><span class="stat">Speed 7</span><span class="stat">HP 10</span><span class="stat">DMG 2</span><span class="stat">Animals only</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#A32D2D;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/ghost.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-red">Wild hostile</span><h3>Bloo</h3></div>
+  </div>
+  <p style="font-size:13px">The radioactive atmosphere lets blood come back to life. Or at least as something that resembles life. Spawns from blood pools. There is a whole tech branch for handling those. Because what's better than an abomination is an abomination you can control. For example, HOMUNCULI converts killed bloos to allies. Some of them, at least.</p>
+  <div class="stat-row"><span class="stat">Speed 2</span><span class="stat">HP 3</span><span class="stat">DMG 1</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#BA7517;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/bison.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-amber">Wild animal</span><h3>Bison</h3></div>
+  </div>
+  <p style="font-size:13px">Bisons graze on grass and attack violently after evolving into top tier predators. The biggest beneficiaries of the Midnight crisis, if I can be allowed to comment. So much so that there was that bedtime story about bisons being a secretly intelligent species manipulating humanity behind the scenes. Their aggressive and self-centered temperament did not differ to that of our leaders after all... Bisons drop their hide on death; capture those too for some nice industry bonuses. Tame-able with the right tech.</p>
+  <div class="stat-row"><span class="stat">Speed 5</span><span class="stat">HP 15</span><span class="stat">DMG 6</span><span class="stat">Drops hide</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#BA7517;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/wolf.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-amber">Wild animal</span><h3>Wolf</h3></div>
+  </div>
+  <p style="font-size:13px">Fast predator. We think these are mainly dogs that have gone feral in the long absence of humans. 50-50 chance to be tamed again. No tech required for this. After all, we do have dogs down here in the bunker too. These just bite more. I USED TO HAVE A DOG. Thank you for the input, Alex. Why am I the one you are bothering today again?</p>
+  <div class="stat-row"><span class="stat">Speed 9</span><span class="stat">HP 5</span><span class="stat">DMG 3</span><span class="stat">50% taming</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#BA7517;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/rat.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-amber">Wild animal</span><h3>Rat</h3></div>
+  </div>
+  <p style="font-size:13px">Weak individually but proliferates fast. Spawns from old hides, and can be sometimes found in massive numbers in the mountains. Ask any divine that did not intervene during Midnight to save you if you encounter a rat swarm. You might encounter some lesser swarms and think that you can handle the pesky pests. YOU WILL KNOW WHEN YOU ARE IN TROUBLE.</p>
+  <div class="stat-row"><span class="stat">Speed 7</span><span class="stat">HP 2</span><span class="stat">DMG 2</span><span class="stat">Multiplies</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#185FA5;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/snowman.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-gray">Wild animal</span><h3>Snowman</h3></div>
+  </div>
+  <p style="font-size:13px">The robot revolution never came. But somehow new life was still created in the form of snowmen. Some argue they are previously unseen yeti that have grown bolder. Hogwash. If blood can come to life (I mean bloo) so can a snowman with a carrot nose. Perhaps the carrot is the important part, being organic matter and all. Slow on plains, but extremely fast on hills and mountains. Also extremely aggressive. Perhaps this is just what sentient life has evolved to during the nuclear winter. What's that Alex? He says to research the EVOLUTION tech to learn how to create your own.</p>
+  <div class="stat-row"><span class="stat">Speed 3+</span><span class="stat">HP 10</span><span class="stat">Fast on high altitude</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div style="width:40px;height:40px;border-radius:6px;background:#BA7517;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="data/kraken.png" style="width:30px;height:30px;">
+    </div>
+    <div><span class="badge b-amber">Wild animal</span><h3>Kraken</h3></div>
+  </div>
+  <p style="font-size:13px">No, do <i>not</i> get intimidated by its name. Its merely a giant radioactive octopus-squid hybrid. That just behaves like a kraken. ...Fine! Call it a kraken if you must. Honestly, we have yet to study it in detail. But we have studied numerous trails of destruction in its wake; it likes terrorizing islands and any unfortunate fleet. Commander Alexei has the only recorded case of surviving one; it says here, and I quote: "[...] by fleeing in the direction of the wind. They don't have noses, but it sure helps swimming alongside the waves."</p>
+  <div class="stat-row"><span class="stat">Speed 3</span><span class="stat">HP 100</span><span class="stat">DMG 10</span><span class="stat">Takes only 10% damage</span></div>
+</div>
+
+</div>
+
+<div class="section-rule"><span>Heroes and veterans</span></div>
+
+<p style="margin-bottom:.75rem">Units earn experience from kills and captures. Basically, when they <i>do</i> something other than waste bunker resources. With enough experience they become veterans, and afterwards heroes! Each promotion increases size, damage, and max health. Heroes keep improving with random gains, including to sight and speed. Ah, the limitless potential of humanity! Yet our mild brainwashing -standard practice on deployed troops- always holds; they will keep following commands even in their enhanced state. We have some uniforms for the improved ranks to set them up as motivational figures. LIKE INFLUENCERS! Yes, thank you for the input, Alex.</p>
+
+<div class="xp-track">
+  <div class="xp-step">
+    <img src="data/human.png" alt="Human">
+    <div class="xp-name">Human (same for other units)</div>
+    <div class="xp-bonus">1 DMG, 5 HP</div>
+  </div>
+  <div class="xp-arrow">&rarr;</div>
+  <div class="xp-step" style="background:var(--color-background-secondary)">
+    <img src="data/scout.png" alt="Veteran">
+    <div class="xp-name">Veteran</div>
+    <div class="xp-bonus">2 DMG, 10 HP</div>
+  </div>
+  <div class="xp-arrow">&rarr;</div>
+  <div class="xp-step" style="background:var(--color-background-secondary)">
+    <img src="data/hero.png" alt="Hero">
+    <div class="xp-name">Hero</div>
+    <div class="xp-bonus">3 DMG, 20 HP, follow-up upgrades</div>
+  </div>
+</div>
+
+<p style="font-size:13px;color:var(--color-text-secondary)">Mechas or, more accurately, mecha driving personnel, can gain experience too! However, you need the INDUSTRY tech to let them modify their vehicles to suit them. HEROICS tech gives veterans and heroes 30% dodge by putting them through some quick but effective training. This includes high-level advice like ducking when others aim their barrels right at them. Highly effective in rough terrain.</p>
+
+
+<div class="section-rule"><span>Movement, sight, and terrain</span></div>
+
+<div>
+<p>Do not forget your training, commander! Quick copy-paste from the manual below. Because everything underground is concrete flat and narrow, so five out of five commanders skip reading about the terrain, even if they still pass the exam. Oh, not talking about you obviously... ... Thank professor Burguare for making this section mandatory. Or at least leave a stone on the mount of gratitude that has formed over his ashes' storage container.</p>
+</div><div><p><i>All kinds of terrain should be taken into consideration. Units will move slower in rough terrain, and have increased or decreased sight -meaning attack range too- elsewhere.
+As a general rule, all non-grass terrain hampers speed but also grants dodging to units inside.
+It also restricts sight, unless in higher altitudes. Rough terrain offers opportunities to dodge. Techs like AGILE can also work around personnel limitations that we have not found a way of genetically engineering away. Yet.</p></div><div><p>Leverage differences at the points where terrain
+changes to gain an advantage. Or straight up fight at places that are advantageous for your combination of units and tech. For example, dealing with animals is easier in forests but you can stall a lot
+with the added dodging by placing units in water. Humans can circle around slow-turning mecha for hit-and-run tactics. And much more. You can always be creative with your micromanaging, should you choose to be more hands-on. Reminder to not neglect your total command for too long, though.</i>
+</p>
+</div>
+
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+<div class="terrain-card">
+  <img class="terrain-bg" src="data/grass.png" alt="">
+  <div class="terrain-content">
+    <h3>Grass</h3>
+    <p style="font-size:12px">Full speed. Neutral sight. Most structures can be found here.</p>
+  </div>
+</div>
+<div class="terrain-card">
+  <img class="terrain-bg" src="data/tree.png" alt="" style="opacity:.35;object-position:center">
+  <div class="terrain-content" style="background:rgba(10,40,15,.18);border-radius:var(--border-radius-md);padding:4px 6px">
+    <h3>Forest</h3>
+    <p style="font-size:12px">Slow. Bad sight. Roombas lurk here.</p>
+  </div>
+</div>
+<div class="terrain-card">
+  <img class="terrain-bg" src="data/desert.png" alt="">
+  <div class="terrain-content">
+    <h3>Desert</h3>
+    <p style="font-size:12px">Slightly slow. Bad sight. More oil and mechas here. AGILE reduces penalty.</p>
+  </div>
+</div>
+<div class="terrain-card">
+  <img class="terrain-bg" src="data/hill.png" alt="">
+  <div class="terrain-content">
+    <h3>Hills</h3>
+    <p style="font-size:12px">Slightly slow. Double sight. Rats and railguns here.</p>
+  </div>
+</div>
+<div class="terrain-card">
+  <img class="terrain-bg" src="data/mountain.png" alt="">
+  <div class="terrain-content">
+    <h3>Mountain</h3>
+    <p style="font-size:12px">Slow. Double sight. Mines here. Snowman habitat.</p>
+  </div>
+</div>
+<div class="terrain-card">
+  <img class="terrain-bg" src="data/water.png" alt="">
+  <div class="terrain-content">
+    <h3>Water</h3>
+    <p style="font-size:12px">Very slow. Move alongside the current for a speed boost. Or research SEAFARING. </p>
+  </div>
+</div>
+</div>
+
+<div class="section-rule"><span>Controls</span></div>
+
+<div class="key-row">
+  <kbd>Left drag</kbd><span class="desc">Selection rectangle around your units</span>
+  <kbd>Shift</kbd><span class="desc">Select all visible player units at once</span>
+  <kbd>Right click</kbd><span class="desc">Move selected units to that location</span>
+  <kbd>Space</kbd><span class="desc">Cycle formations: Tight &rarr; Scattered &rarr; Explore</span>
+  <kbd>WASD</kbd><span class="desc">Pan the camera</span>
+  <kbd>Q / E / scroll</kbd><span class="desc">Zoom in and out</span>
+  <kbd>Esc</kbd><span class="desc">Open/close tech tree (also has Concede)</span>
+  <kbd>Tab</kbd><span class="desc">Open/close help</span>
+  <kbd>Del</kbd><span class="desc">Convert selected units into a Fort</span>
+</div>
+
+<div class="section-rule"><span>Techs</span></div>
+
+<p style="margin-bottom:.75rem">Research fills automatically because we did provide some scientists to run our newest portable agents. The most anti-social ones because the higher-ups don't like them. Dunno why. They leave you alone and produce results. Capturing labs can help them speed up. Select what to unlock on the tech tree. Each unlock costs one full research bar. Straightforward, huh? Also completely unrealistic. If only we could tell in which places the scientists are slacking, we could further optimize the process. Unfortunately, all of them have some agreement and keep their mouth shut.</p>
+<div class="warn" style="margin-bottom:1rem">Not all tech trees are available in each mission; they are affected by the state of the environment. At least our <i>disagree-ers</i> have the same problems.</div>
+<div class="warn" style="margin-bottom:1rem">Bioweapon, Propaganda, Superiority, Hivemind, and AI Farm are ethically "iffy". Winning while holding any of them will not garner enough political support to grant you more starting resource options next time. But nobody can take back options already voted by the Council.</div>
+
+
+
+
+<style>
+* { box-sizing: border-box; }
+#tc { display: block; cursor: grab; }
+#tc:active { cursor: grabbing; }
+#tt {
+  position: absolute; background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md);
+  padding: 8px 12px; font-size: 12px; pointer-events: none; max-width: 220px; z-index: 99;
+  color: var(--color-text-primary); display: none; line-height: 1.5;
+}
+#wrap { position: relative; overflow: hidden; width: 100%; height: 700px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); background: var(--color-background-secondary); }
+#toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; font-size: 12px; color: var(--color-text-secondary); }
+.btn { font-size: 12px; padding: 4px 10px; cursor: pointer; }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+.leg { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+.leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+</style>
+
+<div id="toolbar">
+  <button class="btn" onclick="zoom(1.15)">+ Zoom</button>
+  <button class="btn" onclick="zoom(0.87)">− Zoom</button>
+  <button class="btn" onclick="reset()">Reset</button>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:#534AB7"></div>Exploration</div>
+    <div class="leg"><div class="leg-dot" style="background:#993C1D"></div>Combat</div>
+    <div class="leg"><div class="leg-dot" style="background:#0F6E56"></div>Industry</div>
+    <div class="leg"><div class="leg-dot" style="background:#185FA5"></div>Research</div>
+    <div class="leg"><div class="leg-dot" style="background:#993556"></div>Bloo</div>
+    <div class="leg"><div class="leg-dot" style="background:#854F0B"></div>Mecha</div>
+    <div class="leg"><div class="leg-dot" style="background:#5F5E5A"></div>Other</div>
+  </div>
+</div>
+<div id="wrap"><canvas id="tc"></canvas></div>
+<div id="tt"></div>
+
+<script>
+const DARK = matchMedia('(prefers-color-scheme:dark)').matches;
+const CLR = {
+  bg:      DARK ? '#1e1e1c' : '#f3f2ee',
+  line:    DARK ? '#4a4945' : '#c0beb6',
+  text:    DARK ? '#c2c0b6' : '#2c2c2a',
+  textMut: DARK ? '#73726c' : '#888780',
+  shadow:  DARK ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.07)',
+};
+const STROKE = { explore:'#534AB7', combat:'#993C1D', industry:'#0F6E56', research:'#185FA5', bloo:'#993556', mecha:'#854F0B', other:'#5F5E5A' };
+const FILL   = { explore: DARK?'#26215C':'#EEEDFE', combat: DARK?'#4A1B0C':'#FAECE7', industry: DARK?'#04342C':'#E1F5EE', research: DARK?'#042C53':'#E6F1FB', bloo: DARK?'#4B1528':'#FBEAF0', mecha: DARK?'#412402':'#FAEEDA', other: DARK?'#2C2C2A':'#F1EFE8' };
+const LABEL_CLR = { explore: DARK?'#CECBF6':'#3C3489', combat: DARK?'#F5C4B3':'#712B13', industry: DARK?'#9FE1CB':'#085041', research: DARK?'#B5D4F4':'#0C447C', bloo: DARK?'#F4C0D1':'#72243E', mecha: DARK?'#FAC775':'#633806', other: DARK?'#D3D1C7':'#444441' };
+// Node definitions: icon path from data/, name, desc, category, col, row
+const NODES = [
+  // ROOT COLUMN (col 0) — always visible
+  {id:'trenches',   icon:'trenches',   name:'ENTRENCH',      desc:'Vans & tanks to railguns',             cat:'combat',   col:0, row:-0.5},
+  {id:'explore',    icon:'chart',      name:'CHARTED',       desc:'Wide camp & storage sight',            cat:'explore',  col:0, row:0},
+  {id:'taming',     icon:'bison',      name:'TAMER',         desc:'-50% research, 50% taming',            cat:'other',    col:0, row:4},
+  {id:'hunting',    icon:'hide',       name:'CIVILIZED',     desc:'+3 camp & hide industry',              cat:'industry', col:0, row:6},
+  {id:'nerds',      icon:'nerds',      name:'NERDS',         desc:'+30% research, -1 spawn HP',           cat:'research', col:0, row:9},
+  {id:'hardcore',   icon:'blood',      name:'HARDCORE',      desc:'-7 camp industry, 2x spawn',           cat:'combat',   col:0, row:11},
+
+  // COL 1
+  {id:'track',      icon:'track',      name:'TRACKER',       desc:'+70% unit sight',                      cat:'explore',  col:1, row:0},
+  {id:'agile',      icon:'agile',      name:'AGILE',         desc:'Terrain slows less',                   cat:'explore',  col:1, row:1.2},
+  {id:'farming',    icon:'field',      name:'FARMING',       desc:'Fields stay long in bloom',            cat:'industry', col:1, row:2.3},
+  {id:'fort',       icon:'fort',       name:'FORT',          desc:'Can build forts',                      cat:'combat',   col:1, row:3.5},
+  {id:'research',   icon:'research',   name:'RESEARCH',      desc:'+30% research',                        cat:'research', col:1, row:4.6},
+  {id:'homunculi',  icon:'homunculi',  name:'HOMUNCULI',     desc:'50% to control killed bloo',           cat:'bloo',     col:1, row:5.7},
+  {id:'mecha',      icon:'shield',     name:'HULL',          desc:'+50% mecha dodge',                     cat:'mecha',    col:1, row:6.8},
+  {id:'driver',     icon:'driver',     name:'DRIVER',        desc:'Mechas turn faster',                   cat:'mecha',    col:1, row:7.8},
+  {id:'fight',      icon:'fight',      name:'FIGHT',         desc:'Double unit experience',               cat:'combat',   col:1, row:8.8},
+
+  // COL 2
+  {id:'sniping',    icon:'snipe',      name:'SNIPING',       desc:'x2 accuracy vs dodge',                 cat:'explore',  col:2, row:0},
+  {id:'sniffing',   icon:'human',      name:'FREE THINKING', desc:'Unit autonomy, +1 utopia',             cat:'explore',  col:2, row:1.1},
+  {id:'seafaring',  icon:'seafaring',  name:'SEAFARING',     desc:'Water increases speed',                cat:'explore',  col:2, row:2.15},
+  {id:'infrastructure',icon:'radio',   name:'MEDIA',         desc:'x2 radio & fort sight',               cat:'research', col:2, row:3.25},
+  {id:'autorepair', icon:'autorepair', name:'AUTOREPAIR',    desc:'Mecha regen HP',                       cat:'mecha',    col:2, row:4.35},
+  {id:'nuclear',    icon:'nuclear',    name:'NUCLEAR',       desc:'x2 damage for no regen',               cat:'research', col:2, row:5.4},
+  {id:'unstable',   icon:'unstable',   name:'UNSTABLE',      desc:'-1 spawn HP, bloo on death',           cat:'bloo',     col:2, row:6.45},
+  {id:'industry',   icon:'gear',       name:'LOST .INC',     desc:'Mechas gain experience',               cat:'mecha',    col:2, row:7.45},
+  {id:'grit',       icon:'grit',       name:'GRIT',          desc:'+50% dodge vs lethal',                 cat:'combat',   col:2, row:8.45},
+  {id:'tough',      icon:'tough',      name:'TOUGH',         desc:'+1 spawn HP',                          cat:'combat',   col:2, row:9.4},
+  {id:'heroics',    icon:'heroics',    name:'HEROICS',       desc:'+30% vet & hero dodge',                cat:'combat',   col:2, row:10.35},
+
+  // COL 3
+  {id:'discourse',  icon:'discourse',  name:'DISCOURSE',     desc:'1 utopia per 10 big bro industry',     cat:'explore',  col:3, row:0},
+  {id:'wonder',     icon:'wonder',     name:'WONDER',        desc:'Discoveries grant research',           cat:'explore',  col:3, row:1.3},
+  {id:'ownership',  icon:'ownership',  name:'OWNERSHIP',     desc:'Better hold captured assets',          cat:'industry', col:3, row:2.6},
+  {id:'central',    icon:'central',    name:'CENTRAL',       desc:'Fort & curio spread fields',           cat:'industry', col:3, row:3.5},
+  {id:'reactor',    icon:'nuclear',    name:'REACTOR',       desc:'+40 industry',                         cat:'research', col:3, row:4.5},
+  {id:'bioweapon',  icon:'bioweapon',  name:'BIOWEAPON ⚠',  desc:'Kills become bloo',                   cat:'bloo',     col:3, row:5.8},
+  {id:'gigajoule',  icon:'gigajoule',  name:'GIGAJOULE',     desc:'No mecha industry cost',               cat:'mecha',    col:3, row:7.0},
+  {id:'antimech',   icon:'human',      name:'SABOTAGE',      desc:'x2 damage vs fort & mecha',           cat:'combat',   col:3, row:8.15},
+  {id:'hellbringer',icon:'hero',       name:'HELLBRINGER',   desc:'Rapid vet & hero fire',                cat:'combat',   col:3, row:10.35},
+
+  // COL 4
+  {id:'aifarm',     icon:'lab',        name:'AI FARM ⚠',    desc:'+16 lab & big bro industry',          cat:'research', col:4, row:0.5},
+  {id:'propaganda', icon:'propaganda', name:'PROPAGANDA ⚠', desc:'+1 utopia per 2 radios',              cat:'other',    col:4, row:2.2},
+  {id:'luxury',     icon:'pristine',   name:'PRISTINE',      desc:'+50% dodge vs animal & bloo',          cat:'combat',   col:4, row:3.4},
+  {id:'hypermagnet',icon:'magnet',     name:'HYPERMAGNET',   desc:'x2 industry cost and speed',           cat:'mecha',    col:4, row:4.5},
+  {id:'evolution',  icon:'snowman',    name:'EVOLUTION',     desc:'Some spawn are snowmen',               cat:'bloo',     col:4, row:5.7},
+  {id:'artificial', icon:'ghost',      name:'HIVEMIND ⚠',   desc:'Fast bloo experience',                cat:'bloo',     col:4, row:6.8},
+  {id:'mechanised', icon:'gear',       name:'MECHANIZE',     desc:'+1 industry per 10 mecha HP',           cat:'mecha',    col:4, row:7.9},
+  {id:'flanking',   icon:'flank',      name:'FLANKING',      desc:'x2 damage from behind',                cat:'combat',   col:4, row:9.0},
+  {id:'speedy',     icon:'rotate',     name:'360 ANGLE',     desc:'Rotate faster',                        cat:'combat',   col:4, row:10.1},
+
+  // COL 5
+  {id:'technocracy',icon:'utopia',     name:'TECHNOCRACY',   desc:'+1 utopia per 100 industry',           cat:'industry', col:5, row:0.5},
+  {id:'superiority',icon:'utopia',     name:'SUPERIORITY ⚠', desc:'+1 utopia, 25% of spawns are hostile',cat:'other',    col:5, row:2.2},
+  {id:'refinery',   icon:'oil',        name:'REFINERY',      desc:'+25 industry from oil',                cat:'industry', col:5, row:3.4},
+  {id:'turtling',   icon:'rock',       name:'TURTLING',      desc:'-3 max health to stack rocks',cat:'combat',   col:5, row:4.5},
+  {id:'terraforming',icon:'field',     name:'TERRAFORM',     desc:'Double field expansion',               cat:'industry', col:5, row:5.5},
+  {id:'mobile',     icon:'tank',       name:'MOBILE FORT',   desc:'Railguns may become tanks',            cat:'mecha',    col:5, row:7.5},
+  {id:'hijack',     icon:'hijack',     name:'HIJACK',        desc:'Often capture mechas',                 cat:'mecha',    col:5, row:8.6},
+
+  // COL 6
+  {id:'atmosphere', icon:'earth',      name:'AIR v2.0',      desc:'Fields delay pollution',               cat:'industry', col:6, row:5.5},
+];
+
+const EDGES = [
+  ['explore','track'],
+  ['explore','agile'],
+  ['explore','driver'],
+  ['trenches','sniping'],
+  ['taming','heroics'],
+  ['taming','wonder'],
+  ['hardcore','fight'],
+  ['track','sniping'],
+  ['track','sniffing'],
+  ['agile','wonder'],
+  ['agile','seafaring'],
+  ['hunting','farming'],
+  ['hunting','grit'],
+  ['hunting','fort'],
+  ['nerds','research'],
+  ['nerds','homunculi'],
+  ['nerds','mecha'],
+  ['fight','heroics'],
+  ['fight','tough'],
+  ['seafaring','discourse'],
+  ['seafaring','ownership'],
+  ['sniffing','discourse'],
+  ['farming','infrastructure'],
+  ['research','infrastructure'],
+  ['research','nuclear'],
+  ['fort','central'],
+  ['homunculi','unstable'],
+  ['mecha','autorepair'],
+  ['driver','industry'],
+  ['industry','gigajoule'],
+  ['autorepair','mobile'],
+  ['autorepair','hijack'],
+  ['heroics','hellbringer'],
+  ['heroics','propaganda'],
+  ['hellbringer','speedy'],
+  ['grit','antimech'],
+  ['grit','evolution'],
+  ['tough','antimech'],
+  ['antimech','flanking'],
+  ['nuclear','reactor'],
+  ['reactor','hypermagnet'],
+  ['unstable','bioweapon'],
+  ['bioweapon','evolution'],
+  ['bioweapon','artificial'],
+  ['infrastructure','aifarm'],
+  ['infrastructure','ownership'],
+  ['ownership','propaganda'],
+  ['ownership','luxury'],
+  ['ownership','refinery'],
+  ['wonder','luxury'],
+  ['gigajoule','refinery'],
+  ['gigajoule','mechanised'],
+  ['gigajoule','terraforming'],
+  ['aifarm','technocracy'],
+  ['mechanised','technocracy'],
+  ['propaganda','superiority'],
+  ['sniping','turtling'],
+  ['turtling','terraforming'],
+  ['terraforming','atmosphere'],
+];
+
+// Node layout constants
+const ICON_SIZE = 28;
+const ICON_PAD  = 6;
+const TEXT_PAD  = 8;
+const NODE_H    = ICON_SIZE + ICON_PAD * 2;   // 40
+const COL_GAP   = 52;
+const ROW_H     = NODE_H + 14;                // vertical step
+const PAD       = 24;
+
+// Pre-measure text to set node width
+// name: 500 11px, desc: 9px
+function measureNodeWidth(name, desc) {
+  const nameW = name.length * 7.2;
+  const descW = desc.length * 5.8;
+  return Math.max(nameW, descW) + ICON_SIZE + ICON_PAD * 2 + TEXT_PAD + 14;
+}
+
+// Assign widths
+NODES.forEach(n => { n.w = measureNodeWidth(n.name, n.desc); n.h = NODE_H; });
+
+// Column widths = max node width in that column
+const colWidths = [];
+for (let c = 0; c < 7; c++) {
+  const inCol = NODES.filter(n => n.col === c);
+  colWidths[c] = inCol.length ? Math.max(...inCol.map(n => n.w)) : 100;
+}
+
+// Column X positions
+const colX = [];
+let cx = PAD;
+for (let c = 0; c < 7; c++) { colX[c] = cx; cx += colWidths[c] + COL_GAP; }
+const CANVAS_W = cx - COL_GAP + PAD;
+
+// Max row
+const maxRow = Math.max(...NODES.map(n => n.row)) + 1;
+const CANVAS_H = PAD + maxRow * ROW_H + NODE_H + PAD;
+
+function getPos(n) {
+  return { x: colX[n.col], y: PAD + n.row * ROW_H };
+}
+
+// Load all icons
+const imgs = {};
+const iconNames = [...new Set(NODES.map(n => n.icon))];
+let loaded = 0;
+const total = iconNames.length;
+
+iconNames.forEach(name => {
+  const img = new Image();
+  img.onload  = () => { loaded++; if (loaded === total) draw(); };
+  img.onerror = () => { imgs[name] = null; loaded++; if (loaded === total) draw(); };
+  img.src = `data/${name}.png`;
+  imgs[name] = img;
+});
+
+const wrap  = document.getElementById('wrap');
+const canvas = document.getElementById('tc');
+const ctx    = canvas.getContext('2d');
+const tooltip = document.getElementById('tt');
+
+let scale = 1, offX = 0, offY = 0, dragging = false, lastX = 0, lastY = 0;
+
+const nodeMap = {};
+NODES.forEach(n => nodeMap[n.id] = n);
+
+function drawArrowHead(x2, y2, x1, y1, color) {
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const len = 7;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - len * Math.cos(angle - 0.4), y2 - len * Math.sin(angle - 0.4));
+  ctx.lineTo(x2 - len * Math.cos(angle + 0.4), y2 - len * Math.sin(angle + 0.4));
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function draw() {
+  const dpr = window.devicePixelRatio || 1;
+  const cw = wrap.clientWidth, ch = wrap.clientHeight;
+  canvas.width  = cw * dpr; canvas.height = ch * dpr;
+  canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, cw, ch);
+  ctx.save();
+  ctx.translate(offX, offY);
+  ctx.scale(scale, scale);
+
+  // --- Edges ---
+  EDGES.forEach(([a, b]) => {
+    const na = nodeMap[a], nb = nodeMap[b];
+    if (!na || !nb) return;
+    const pa = getPos(na), pb = getPos(nb);
+    const x1 = pa.x + na.w, y1 = pa.y + na.h / 2;
+    const x2 = pb.x,        y2 = pb.y + nb.h / 2;
+    const midX = (x1 + x2) / 2;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.bezierCurveTo(midX, y1, midX, y2, x2, y2);
+    ctx.strokeStyle = CLR.line;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Arrow tip pointing into target box
+    drawArrowHead(x2, y2, midX, y2, CLR.line);
+  });
+
+  // --- Nodes ---
+  NODES.forEach(n => {
+    const {x, y} = getPos(n);
+    const str = STROKE[n.cat];
+    const fil = FILL[n.cat];
+    const lbl = LABEL_CLR[n.cat];
+
+    // Shadow
+    ctx.shadowColor  = CLR.shadow;
+    ctx.shadowBlur   = 7;
+    ctx.shadowOffsetY = 2;
+
+    // Box
+    ctx.beginPath();
+    ctx.roundRect(x, y, n.w, n.h, 7);
+    ctx.fillStyle = fil;
+    ctx.fill();
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = str;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Icon
+    const img = imgs[n.icon];
+    const ix = x + ICON_PAD;
+    const iy = y + (n.h - ICON_SIZE) / 2;
+    if (img && img.complete && img.naturalWidth) {
+      // Tint by drawing coloured rect with destination-in, then icon
+      ctx.save();
+      ctx.globalAlpha = 1;
+      // Draw icon with slight tint overlay
+      ctx.drawImage(img, ix, iy, ICON_SIZE, ICON_SIZE);
+      // Colour overlay using multiply-ish
+      ctx.globalAlpha = 0.30;
+      ctx.fillStyle = str;
+      ctx.beginPath(); ctx.roundRect(ix, iy, ICON_SIZE, ICON_SIZE, 3);
+      ctx.fill();
+      ctx.restore();
+    } else {
+      // Fallback: colored square placeholder
+      ctx.fillStyle = str;
+      ctx.globalAlpha = 0.2;
+      ctx.beginPath(); ctx.roundRect(ix, iy, ICON_SIZE, ICON_SIZE, 4); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    const tx = x + ICON_PAD + ICON_SIZE + TEXT_PAD;
+    const midY = y + n.h / 2;
+
+    // Name
+    ctx.font = `500 11px var(--font-sans,"Anthropic Sans",sans-serif)`;
+    ctx.fillStyle = lbl;
+    ctx.globalAlpha = 1;
+    ctx.fillText(n.name, tx, midY - 4);
+
+    // Desc
+    ctx.font = `9.5px var(--font-sans,"Anthropic Sans",sans-serif)`;
+    ctx.fillStyle = CLR.textMut;
+    ctx.fillText(n.desc, tx, midY + 9);
+  });
+
+  ctx.restore();
+}
+
+function nodeAt(mx, my) {
+  const wx = (mx - offX) / scale, wy = (my - offY) / scale;
+  return NODES.find(n => {
+    const {x, y} = getPos(n);
+    return wx >= x && wx <= x + n.w && wy >= y && wy <= y + n.h;
+  });
+}
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  if (dragging) {
+    offX += mx - lastX; offY += my - lastY;
+    lastX = mx; lastY = my; draw(); return;
+  }
+  const n = nodeAt(mx, my);
+  if (n) {
+    tooltip.style.display = 'block';
+    tooltip.style.left = (mx + 14) + 'px';
+    tooltip.style.top  = (my - 8) + 'px';
+    tooltip.innerHTML  = `<strong>${n.name}</strong><br>${n.desc}`;
+  } else { tooltip.style.display = 'none'; }
+});
+canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; dragging = false; });
+canvas.addEventListener('mousedown', e => {
+  dragging = true;
+  const r = canvas.getBoundingClientRect();
+  lastX = e.clientX - r.left; lastY = e.clientY - r.top;
+});
+canvas.addEventListener('mouseup', () => { dragging = false; });
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = canvas.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  const f = e.deltaY > 0 ? 0.9 : 1.1;
+  const ns = Math.max(0.25, Math.min(3, scale * f));
+  offX = mx - (mx - offX) * (ns / scale);
+  offY = my - (my - offY) * (ns / scale);
+  scale = ns; draw();
+}, { passive: false });
+
+let lastTouchDist = null;
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) { dragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; }
+}, { passive: true });
+canvas.addEventListener('touchmove', e => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (lastTouchDist) { const f = dist / lastTouchDist; scale = Math.max(0.25, Math.min(3, scale * f)); draw(); }
+    lastTouchDist = dist;
+  } else if (e.touches.length === 1 && dragging) {
+    offX += e.touches[0].clientX - lastX; offY += e.touches[0].clientY - lastY;
+    lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; draw();
+  }
+}, { passive: true });
+canvas.addEventListener('touchend', () => { dragging = false; lastTouchDist = null; });
+
+function zoom(f) {
+  const cx = wrap.clientWidth / 2, cy = wrap.clientHeight / 2;
+  const ns = Math.max(0.25, Math.min(3, scale * f));
+  offX = cx - (cx - offX) * (ns / scale);
+  offY = cy - (cy - offY) * (ns / scale);
+  scale = ns; draw();
+}
+
+function reset() {
+  const cw = wrap.clientWidth;
+  scale = Math.min(1, (cw - 32) / CANVAS_W);
+  offX = 16; offY = 16;
+  draw();
+}
+
+const ro = new ResizeObserver(reset);
+ro.observe(wrap);
+</script>
+
+
+
+</div>
+
+
+
+</div>
+
+</body>
+</html>
+
