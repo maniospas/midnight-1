@@ -3,8 +3,8 @@
 // AI FOR FACTIONS >= 3
 // ============================================================================
 float competency = 0.3f; // 0.1f is competent but not unbeatable
-float AI_ORDER_CHANCE = player_rating/1200.f*competency*0.1f;
-float AI_ORDER_RADIUS = 10.0f;
+float AI_ORDER_CHANCE = player_rating/1200.f*competency*0.3f;
+float AI_ORDER_RADIUS = 20.0f;
 
 
 Faction* primary_target = factions;
@@ -17,7 +17,7 @@ for (int fi = 3; fi < max_factions; fi++)
 
 
 for (int fi = 3; fi < max_factions; fi++) {
-    if(((float)GetRandomValue(0, 1000000) / 1000000.0f > dt/90)) continue; // 0.5 minute every 1.5+0.5 minutes may be spent in blitz
+    if(((float)GetRandomValue(0, 1000000) / 1000000.0f > dt/120)) continue; // 0.5 minute every 2.0+0.5 minutes may be spent in blitz
     if(factions[fi].count_members < primary_target->count_members*1.5 && factions[fi].count_members>=factions[fi].industry)
         factions[fi].demolishing = 30.f;
 }
@@ -96,6 +96,7 @@ for (int i = 0; i < num_units; i++) {
         }
         continue;
     }
+    if(u.attack_target_x!=0 || u.attack_target_y!=0) {u.ai_decision_countdown = 3;u.target_x = u.attack_target_x;u.target_y=u.attack_target_y;continue;}
     float industry_completion = (u.faction&&u.faction->industry)?u.faction->count_members/u.faction->industry:1.0;
     if ((float)GetRandomValue(0, 1000000) / 1000000.0f > AI_ORDER_CHANCE * dt * industry_completion * industry_completion ) continue;
     // ---------------------------------------------------------
@@ -192,6 +193,7 @@ for (int i = 0; i < num_units; i++) {
             continue;
         }
         if(!found && GetRandomValue(0, 100)<30) {
+            u.ai_decision_countdown = 20;
             tx = GetRandomValue(10, GRID_SIZE - 10);
             ty = GetRandomValue(10, GRID_SIZE - 10);
             u.target_x = tx;
@@ -222,11 +224,11 @@ for (int i = 0; i < num_units; i++) {
             // grab everything if the game has progressed enough
             if (dx*dx + dy*dy <= AI_ORDER_RADIUS * AI_ORDER_RADIUS && 
                 (odx*odx + ody*ody < AI_ORDER_RADIUS * AI_ORDER_RADIUS || !(o.target_x || o.target_y)) &&
-                (GetRandomValue(0, 100) < accompany_chance || time_norm>0.8f) && !o.selected) {
+                (GetRandomValue(0, 100) < accompany_chance || time_norm>0.8f) && !o.selected && !o.ai_decision_countdown) {
                 // only order units not already moving
                 o.target_x = tx;
                 o.target_y = ty;
-                o.ai_decision_countdown = (_Float16)3.f;
+                o.ai_decision_countdown = (_Float16)10.f;
             }
         }
     }
