@@ -17,7 +17,7 @@ for (int fi = 3; fi < max_factions; fi++)
 
 
 for (int fi = 3; fi < max_factions; fi++) {
-    if(((float)GetRandomValue(0, 1000000) / 1000000.0f > dt/120)) continue; // 0.5 minute every 2.0+0.5 minutes may be spent in blitz
+    if(((float)GetRandomValue(0, 1000000) / 1000000.0f > dt/360)) continue; // 0.5 minute every 6.0+0.5 minutes may be spent in blitz FOR EACHE OPPONET
     if(factions[fi].count_members < primary_target->count_members*1.5 && factions[fi].count_members>=factions[fi].industry)
         factions[fi].demolishing = 30.f;
 }

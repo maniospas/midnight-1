@@ -175,8 +175,8 @@ for (int i = 0; i < num_units; i++) {
                                 u.popup = "hero: aggression";
                                 u.popup_texture = nullptr;
                             }
-                            else if(r<50) {
-                                u.speed *= (_Float16)1.2f;
+                            else if(r<50 && u.speed<14) {
+                                u.speed *= (_Float16)1.1f;
                                 u.popup = "hero: faster";
                                 u.popup_texture = nullptr;
                             }
