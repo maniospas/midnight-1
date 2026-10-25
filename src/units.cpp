@@ -2,8 +2,8 @@
 #include <raylib.h>
 #include "texture.cpp"
 #include "faction.cpp"
-//#include <cstdint>
-//#include <cmath>
+#include <cstdint>
+#include <cmath>
 #define _Float16 float
 
 // struct Number100 {uint8_t value;};
