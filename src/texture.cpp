@@ -244,7 +244,12 @@ void load() {
     sound::water.Load("data/water.ogg", 5);
     sound::select = LoadSound("data/select.wav");
     sound::select2 = LoadSound("data/select2.wav");
+    sound::siren = LoadSound("data/siren.ogg");
+    sound::success = LoadSound("data/success.ogg");
     sound::bg = LoadMusicStream("data/track.ogg");
+    sound::despair = LoadMusicStream("data/despair.ogg");
+    sound::victory = LoadMusicStream("data/victory.ogg");
+    sound::menu = LoadMusicStream("data/menu.ogg");
 }
 
 

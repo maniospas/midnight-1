@@ -331,7 +331,7 @@ struct Unit {
         };
 
 #define CREATE_FORT(_faction, _x, _y) \
-    if (num_units < MAX_UNITS) \
+    if (num_units < MAX_UNITS) {\
         units[num_units++] = Unit{ \
             .texture = &tex::fort, \
             .faction = (_faction), \
@@ -349,7 +349,9 @@ struct Unit {
             .max_health = static_cast<_Float16>(20.0), \
             .extra_scale = static_cast<_Float16>(1.0), \
             .capturing = (_faction) \
-        };
+        };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
+    }
 
 #define CREATE_RAILGUN(_faction, _x, _y) \
     if (num_units < MAX_UNITS) {\
@@ -371,6 +373,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.2), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
@@ -397,6 +400,7 @@ struct Unit {
             .max_health = static_cast<_Float16>(50.0), \
             .capturing = (_faction) \
         }; \
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(bby+0.5f)+ppy][(int)(bbx+0.5f)+ppx] = { &tex::grass, 1.0 }; \
@@ -419,8 +423,8 @@ struct Unit {
                 .damage = static_cast<_Float16>(0.0), \
                 .experience = static_cast<_Float16>(0.0), \
                 .size = static_cast<_Float16>(1.4), \
-                .health = static_cast<_Float16>(50.0), \
-                .max_health = static_cast<_Float16>(50.0), \
+                .health = static_cast<_Float16>(25.0), \
+                .max_health = static_cast<_Float16>(25.0), \
                 .extra_scale = static_cast<_Float16>(-0.1f), \
                 .capturing = (_faction) \
             }; \
@@ -477,6 +481,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.3f), \
             .capturing = (_faction) \
         }; \
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
@@ -527,6 +532,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.5), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
@@ -553,6 +559,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.5), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
@@ -578,6 +585,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.5), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
@@ -605,6 +613,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.25), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
@@ -631,6 +640,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.25), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
     }
 
 
@@ -654,6 +664,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.5), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
@@ -680,6 +691,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.3), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
@@ -704,6 +716,7 @@ struct Unit {
             .max_health = static_cast<_Float16>(25.0), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
@@ -729,6 +742,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.5), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
@@ -754,6 +768,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.5), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
@@ -779,6 +794,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.3), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
@@ -805,6 +821,7 @@ struct Unit {
             .extra_scale = static_cast<_Float16>(0.5), \
             .capturing = (_faction) \
         };\
+        terrainGrid[(int)(_x+0.5f)][(int)(_x+0.5f)].speed /= 3;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) \
                 if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \

@@ -7,6 +7,7 @@ for(int i=0;i<max_factions;i++) {
             if(i==0) {
                 last_message = "Demolition mode ended";
                 last_message_counter = 0.f;
+                PlaySound(sound::success);
             }
         }
     }
@@ -54,6 +55,7 @@ for (int i = 0; i < num_units; i++) {
             if(u.faction==factions && applied) {
                 last_message = "Townhall: good policies let your non-mechas recover.";
                 last_message_counter = 0.f;
+                PlaySound(sound::success);
             }
         }
     }
@@ -93,6 +95,7 @@ for (int i = 0; i < num_units; i++) {
             if(u.faction==factions && applied) {
                 last_message = "Pyramis: a plague permanently hampers your non-mechas.";
                 last_message_counter = 0.f;
+                PlaySound(sound::siren);
             }
         }
     }
@@ -129,6 +132,7 @@ for (int i = 0; i < num_units; i++) {
             if(applied) {
                 last_message = "A databank released radiation that created a mass of bloo.";
                 last_message_counter = 0.f;
+                PlaySound(sound::siren);
             }
         }
         else if((float)GetRandomValue(0, 1000000) / 1000000.0f * 300.f < dt) {
@@ -144,6 +148,7 @@ for (int i = 0; i < num_units; i++) {
             if(u.faction==factions && applied) {
                 last_message = "Databank: found care products and increased non-mecha HP.";
                 last_message_counter = 0.f;
+                PlaySound(sound::success);
             }
         }
         else if((float)GetRandomValue(0, 1000000) / 1000000.0f * 300.f < dt) {
@@ -158,6 +163,7 @@ for (int i = 0; i < num_units; i++) {
             if(u.faction==factions && applied) {
                 last_message = "Databank: found spare parts and fixed your mechas.";
                 last_message_counter = 0.f;
+                PlaySound(sound::success);
             }
         }
         else if((float)GetRandomValue(0, 1000000) / 1000000.0f * 5000.f < dt) {
@@ -169,6 +175,7 @@ for (int i = 0; i < num_units; i++) {
                 if(u.faction==factions) {
                     last_message = "Databank: recovered a tech";
                     last_message_counter = 0.f;
+                    PlaySound(sound::success);
                 }
             }
         }

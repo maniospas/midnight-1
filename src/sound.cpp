@@ -46,7 +46,12 @@ namespace sound {
     static SoundPool noise;
     static SoundPool notify;
     static SoundPool water;
+    static Sound siren;
+    static Sound success;
     static Sound select;
     static Sound select2;
     static Music bg;
+    static Music despair;
+    static Music victory;
+    static Music menu;
 }

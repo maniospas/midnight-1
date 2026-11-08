@@ -584,31 +584,48 @@ for (int i = 0; i < num_units; i++) {
         continue;
     }
 
-    if (dist2 > 20.f*20.f) {
-        const float lookahead = 20.f;
-        const int directions = 16;
-        float best_cost = estimate_travel_time(terrainGrid, u.x, u.y, u.target_x, u.target_y);
-        for(int k = 0; k < directions; k++) {
-            float angle = k * (2.f * PI / directions);
-            float candidate_x = u.x + cosf(angle)*lookahead;
-            float candidate_y = u.y + sinf(angle)*lookahead;
-            if(candidate_x < 2 || candidate_y < 2 ||
-            candidate_x >= GRID_SIZE-2 ||
-            candidate_y >= GRID_SIZE-2)
-                continue;
-            float cost =
-                estimate_travel_time(terrainGrid, u.x, u.y, candidate_x, candidate_y) +
-                estimate_travel_time(terrainGrid, candidate_x, candidate_y, u.target_x, u.target_y);
-            if(cost < best_cost) {
-                best_cost = cost;
-                interim_target_x = candidate_x;
-                interim_target_y = candidate_y;
+    if (dist2 > 20.f * 20.f) {
+        const float lookaheads[] = {3.f, 20.f};
+        const int directions[] = {16, 8};
+
+        float best_cost = estimate_travel_time(
+            terrainGrid, u.x, u.y, u.target_x, u.target_y
+        );
+
+        for (int j = 0; j < 2; j++) {
+            const float lookahead = lookaheads[j];
+            const int num_directions = directions[j];
+
+            for (int k = 0; k < num_directions; k++) {
+                float angle = k * (2.f * PI / num_directions);
+                float candidate_x = u.x + cosf(angle) * lookahead;
+                float candidate_y = u.y + sinf(angle) * lookahead;
+
+                if (candidate_x < 2 || candidate_y < 2 ||
+                    candidate_x >= GRID_SIZE - 2 ||
+                    candidate_y >= GRID_SIZE - 2)
+                    continue;
+
+                float cost =
+                    estimate_travel_time(
+                        terrainGrid, u.x, u.y, candidate_x, candidate_y
+                    ) +
+                    estimate_travel_time(
+                        terrainGrid, candidate_x, candidate_y,
+                        u.target_x, u.target_y
+                    );
+
+                if (cost < best_cost) {
+                    best_cost = cost;
+                    interim_target_x = candidate_x;
+                    interim_target_y = candidate_y;
+                }
             }
         }
 
         dx = interim_target_x - u.x;
         dy = interim_target_y - u.y;
-        dist2 = dx*dx + dy*dy;
+        dist2 = dx * dx + dy * dy;
     }
 
     float dist = sqrtf(dist2);

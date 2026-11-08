@@ -271,7 +271,10 @@ int main() {
     load_fonts();
     load();
     sound::bg.looping = true;
-    PlayMusicStream(sound::bg);
+    sound::menu.looping = true;
+    sound::victory.looping = true;
+    sound::despair.looping = true;
+    PlayMusicStream(sound::menu);
     SetTargetFPS(60);
 
     int num_units = 0;
@@ -360,7 +363,7 @@ int main() {
 
     MAIN_MENU:
     while (true) {
-        UpdateMusicStream(sound::bg);
+        UpdateMusicStream(sound::menu);
         if(main_menu_transition_mode)
             main_menu_progress += GetFrameTime()*5.f;
         if(main_menu_progress>1.f) {
@@ -574,7 +577,7 @@ int main() {
     EndTextureMode(); // minimap
 
     while (true) {
-        UpdateMusicStream(sound::bg);
+        UpdateMusicStream(sound::menu);
         if(new_game_transition_mode)
             new_game_progress += GetFrameTime()*5.f;
         if(new_game_progress>1.f) {
@@ -841,8 +844,10 @@ int main() {
                 fclose(f);
             }
         }
+        StopMusicStream(sound::bg);
+        PlayMusicStream(victory?sound::victory:sound::despair);
         while (true) {
-            UpdateMusicStream(sound::bg);
+            UpdateMusicStream(victory?sound::victory:sound::despair);
             if(game_over_transition_mode)
                 game_over_progress += GetFrameTime()*5.f;
             if(game_over_progress>1.f) {
@@ -854,6 +859,8 @@ int main() {
                     goto CLAIM_REWARDS;
                 }
                 main_menu_transition_mode = -2;
+                StopMusicStream(victory?sound::victory:sound::despair);
+                PlayMusicStream(sound::menu);
                 goto MAIN_MENU;
             }
             float baseY = (float)GetScreenHeight()/2 - 450;
@@ -929,7 +936,7 @@ int main() {
 
         CLAIM_REWARDS:
         while (true) {
-            UpdateMusicStream(sound::bg);
+            UpdateMusicStream(victory?sound::victory:sound::despair);
             if(reward_transition_mode)
                 reward_progress += GetFrameTime()*5.f;
             if(reward_progress>1.f) {
@@ -939,6 +946,8 @@ int main() {
                     reward_progress = 0;
                     reward_transition_mode = -1;
                     main_menu_transition_mode = -2;
+                    StopMusicStream(victory?sound::victory:sound::despair);
+                    PlayMusicStream(sound::menu);
                     goto MAIN_MENU;
                 }
             }
@@ -1644,7 +1653,8 @@ int main() {
     float last_message_counter = 0.f;
     const char* last_message = "Create the best utopia before re-pollution.";
     float prev_game_time = 0.f;
-
+    StopMusicStream(sound::menu);
+    PlayMusicStream(sound::bg);
     while (true) {
         UpdateMusicStream(sound::bg);
         //factions[0].technology |= TECHNOLOGY_EXPLORE; // for debug
@@ -1653,10 +1663,12 @@ int main() {
         if (prev_game_time / GAME_DURATION < 0.7f && game_time / GAME_DURATION >= 0.7f ) {
             last_message_counter = 0.f;
             last_message = "Pollution is coming back! How is our utopia looking?";
+            PlaySound(sound::siren);
         }
         if (prev_game_time / GAME_DURATION < 0.9f && game_time / GAME_DURATION >= 0.9f ) {
             last_message_counter = 0.f;
             last_message = "Pollution has peaked! This forray will end soon.";
+            PlaySound(sound::siren);
         }
         prev_game_time = game_time;
         game_time += dt;
@@ -1674,16 +1686,19 @@ int main() {
                 currentMovementMode = MovementMode::Explore;
                 last_message = "Explore formation";
                 last_message_counter = 0.f;
+                PlaySound(sound::select);
             }
             else if(currentMovementMode==MovementMode::Explore) {
                 currentMovementMode = MovementMode::Tight;
                 last_message = "Tight formation";
                 last_message_counter = 0.f;
+                PlaySound(sound::select);
             }
             else {
                 currentMovementMode = MovementMode::Scattered;
                 last_message = "Scattered formation";
                 last_message_counter = 0.f;
+                PlaySound(sound::select);
             }
         }
         if (IsKeyPressed(KEY_ESCAPE)) {
@@ -1753,6 +1768,7 @@ int main() {
                 factions->demolishing = 30.f;
                 last_message = "DEMOLITION MODE FOR A BIT";
                 last_message_counter = 0.f;
+                PlaySound(sound::siren);
             }
         }
 
@@ -2831,6 +2847,7 @@ int main() {
             if(prev_prog < 1.f && prog >= 1.0f) {
                 last_message_counter = 0.f;
                 last_message = "New tech can be selected.";
+                PlaySound(sound::success);
             }
             prev_prog = prog;
 

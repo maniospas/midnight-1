@@ -11,6 +11,7 @@ if (GetRandomValue(0, 1000000) < (int)(ANIMAL_SPAWN_RATE * dt * 1000000.0f)) {
             RevealUnitToAllFactions(num_units - 1);
             last_message_counter = 0.f;
             last_message = "An esper broadcasts their brainwaves!";
+            PlaySound(sound::siren);
         }
         else if(T.texture == &tex::grass) {
             if(GetRandomValue(0,100)<50) {

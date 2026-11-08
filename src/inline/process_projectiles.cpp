@@ -302,26 +302,32 @@ for (int i = 0; i < num_units; i++) {
                     if(o.texture==&tex::camp) {
                         last_message = "Demolished by someone crazy: Camp";
                         last_message_counter = 0.f;
+                        PlaySound(sound::siren);
                     }
                     else if(o.texture==&tex::oil) {
                         last_message = "Demolished by someone crazy: Oil";
                         last_message_counter = 0.f;
+                        PlaySound(sound::siren);
                     }
                     else if(o.texture==&tex::warehouse) {
                         last_message = "Demolished by someone crazy: Storage";
                         last_message_counter = 0.f;
+                        PlaySound(sound::siren);
                     }
                     else if(o.texture==&tex::curio) {
                         last_message = "Demolished by someone crazy: Curio";
                         last_message_counter = 0.f;
+                        PlaySound(sound::siren);
                     }
                     else if(o.texture==&tex::lighthouse) {
                         last_message = "Demolished by someone crazy: Big bro";
                         last_message_counter = 0.f;
+                        PlaySound(sound::siren);
                     }
                     else if(o.texture==&tex::pyramis) {
                         last_message = "Demolished by someone crazy: Pyramis";
                         last_message_counter = 0.f;
+                        PlaySound(sound::siren);
                     }
                     units[j] = Unit{
                         .texture = &tex::ghost,
@@ -349,60 +355,74 @@ for (int i = 0; i < num_units; i++) {
                         if(o.texture==&tex::camp) {
                             last_message = "Important loss: Camp";
                             last_message_counter = 0.f;
+                            PlaySound(sound::siren);
                         }
                         else if(o.texture==&tex::oil) {
                             last_message = "Important loss: Oil";
                             last_message_counter = 0.f;
+                            PlaySound(sound::siren);
                         }
                         else if(o.texture==&tex::warehouse) {
                             last_message = "Important loss: Storage";
                             last_message_counter = 0.f;
+                            PlaySound(sound::siren);
                         }
                         else if(o.texture==&tex::pyramis) {
                             last_message = "Important loss: Pyramis";
                             last_message_counter = 0.f;
+                            PlaySound(sound::siren);
                         }
                         else if(o.texture==&tex::esper) {
                             last_message = "Important loss: Esper";
                             last_message_counter = 0.f;
+                            PlaySound(sound::siren);
                         }
                         else if(o.texture==&tex::lighthouse) {
                             last_message = "Important loss: Big bro";
                             last_message_counter = 0.f;
+                            PlaySound(sound::siren);
                         }
                         else if(o.texture==&tex::curio) {
                             last_message = "Important loss: Curio";
                             last_message_counter = 0.f;
+                            PlaySound(sound::siren);
                         }
                     }
                     if(u.faction==factions) {
                         if(o.texture==&tex::camp) {
                             last_message = "Nice capture: Camp";
                             last_message_counter = 0.f;
+                            PlaySound(sound::success);
                         }
                         else if(o.texture==&tex::oil) {
                             last_message = "Nice capture: Oil";
                             last_message_counter = 0.f;
+                            PlaySound(sound::success);
                         }
                         else if(o.texture==&tex::pyramis) {
                             last_message = "Nice capture: Pyramis";
                             last_message_counter = 0.f;
+                            PlaySound(sound::success);
                         }
                         else if(o.texture==&tex::warehouse) {
                             last_message = "Nice capture: Storage";
                             last_message_counter = 0.f;
+                            PlaySound(sound::success);
                         }
                         else if(o.texture==&tex::esper) {
                             last_message = "Nice capture: Esper";
                             last_message_counter = 0.f;
+                            PlaySound(sound::success);
                         }
                         else if(o.texture==&tex::curio) {
                             last_message = "Nice capture: Curio";
                             last_message_counter = 0.f;
+                            PlaySound(sound::success);
                         }
                         else if(o.texture==&tex::lighthouse) {
                             last_message = "Nice capture: Big bro";
                             last_message_counter = 0.f;
+                            PlaySound(sound::success);
                         }
                     }
                     o.popup = "captured";
