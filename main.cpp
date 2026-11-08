@@ -132,36 +132,22 @@ enum class MovementMode {Tight,Scattered,Explore};
 //     }
 // }
 
-float estimate_travel_time(Terrain** terrainGrid, float x1, float y1, float x2, float y2) {
+float estimate_travel_time(Terrain** terrainGrid, float x1, float y1, float x2, float y2, int samples) {
     float dx = x2 - x1;
     float dy = y2 - y1;
     float distance = sqrtf(dx*dx + dy*dy);
-
-    if(distance < 0.001f)
-        return 0.f;
-
-    // Sample terrain along the straight line.
-    const int samples = 12;
+    if(distance < 0.001f) return 0.f;
     float total = 0.f;
-
     for(int i = 0; i < samples; i++) {
         float t = (i + 0.5f) / samples;
-
         int x = (int)(x1 + dx*t);
         int y = (int)(y1 + dy*t);
-
         x = std::max(0, std::min(x, GRID_SIZE-1));
         y = std::max(0, std::min(y, GRID_SIZE-1));
-
         float speed = terrainGrid[y][x].speed;
-
-        // Avoid division by zero.
-        if(speed < 0.1f)
-            speed = 0.1f;
-
+        if(speed < 0.1f) speed = 0.1f;
         total += (distance / samples) / speed;
     }
-
     return total;
 }
 
@@ -245,6 +231,187 @@ float destroyHumanGroupForAI(Unit& unit, Unit* units, int num_units, float requi
     return required_gathered_health;
 }
 
+
+// Global audio preferences. Values are normalized to [0, 1].
+float global_music_volume = 1.0f;
+float global_sfx_volume = 1.0f;
+
+static bool settings_open = false;
+static bool settings_dirty = false;
+static int settings_dragging_slider = 0; // 0=none, 1=music, 2=SFX
+
+static float ValidVolume(float value) {
+    return std::isfinite(value) ? fmaxf(0.0f, fminf(1.0f, value)) : 1.0f;
+}
+
+// Same binary layout as the original save, with two OPTIONAL floats at the end.
+static void SaveProgress(PrefMask unlocked_preferences, double player_rating) {
+    FILE* f = fopen("midnight-save.dat", "wb");
+    if (!f) return;
+    fwrite(&unlocked_preferences, sizeof(unlocked_preferences), 1, f);
+    fwrite(&player_rating, sizeof(player_rating), 1, f);
+    fwrite(&global_music_volume, sizeof(global_music_volume), 1, f);
+    fwrite(&global_sfx_volume, sizeof(global_sfx_volume), 1, f);
+    fclose(f);
+}
+
+static void ApplyMusicVolume() {
+    SetMusicVolume(sound::menu, global_music_volume);
+    SetMusicVolume(sound::bg, global_music_volume);
+    SetMusicVolume(sound::victory, global_music_volume);
+    SetMusicVolume(sound::despair, global_music_volume);
+}
+
+static void ApplySfxVolume() {
+    SetSoundVolume(sound::select, global_sfx_volume);
+    SetSoundVolume(sound::select2, global_sfx_volume);
+    SetSoundVolume(sound::siren, global_sfx_volume);
+    SetSoundVolume(sound::success, global_sfx_volume);
+}
+
+static void ApplyAudioVolumes() {
+    ApplyMusicVolume();
+    ApplySfxVolume();
+}
+
+enum class SettingsAction { None, Concede };
+
+// Call once *inside BeginDrawing()/EndDrawing()* on EVERY screen.
+// Owns rendering and UI interactions for the gear, modal and both sliders.
+static SettingsAction RenderGlobalSettings(bool inGame, PrefMask preferences, double rating) {
+    Vector2 mouse = GetMousePosition();
+    bool clicked = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    Vector2 gear = {(float)GetScreenWidth() - 72.0f, 72.0f};
+    bool gear_hovered = CheckCollisionPointCircle(mouse, gear, 58.0f);
+
+    // Gear works both to open and to close settings on every screen.
+    if (gear_hovered && clicked) {
+        settings_open = !settings_open;
+        settings_dragging_slider = 0;
+        if (!settings_open && settings_dirty) {
+            SaveProgress(preferences, rating);
+            settings_dirty = false;
+        }
+        PlaySound(sound::select);
+    }
+
+    SettingsAction result = SettingsAction::None;
+    if (settings_open) {
+        // Back/Escape closes only the settings overlay, not the current screen.
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            settings_open = false;
+            settings_dragging_slider = 0;
+            if (settings_dirty) {
+                SaveProgress(preferences, rating);
+                settings_dirty = false;
+            }
+            PlaySound(sound::select);
+        } else {
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.82f));
+
+            const float panelW = fminf(720.0f, (float)GetScreenWidth() - 40.0f);
+            const float panelH = fminf(500.0f, (float)GetScreenHeight() - 40.0f);
+            Rectangle panel = {
+                ((float)GetScreenWidth() - panelW) * 0.5f,
+                ((float)GetScreenHeight() - panelH) * 0.5f,
+                panelW, panelH
+            };
+            //DrawRectangleRounded(panel, 0.08f, 12, Color{18, 18, 18, 250});
+            //DrawRectangleLinesEx(panel, 2.0f, DARKGRAY);
+            //DrawText("Settings", (int)(panel.x + 46), (int)(panel.y + 28), 52, WHITE);
+
+            const float trackX = panel.x + 64.0f;
+            const float trackW = panel.width - 205.0f;
+            const float musicY = panel.y + 171.0f + 70.f;
+            const float sfxY = panel.y + 292.0f + 70.0;
+            Rectangle tracks[2] = {
+                {trackX, musicY, trackW, 12.0f},
+                {trackX, sfxY, trackW, 12.0f}
+            };
+            float* values[2] = {&global_music_volume, &global_sfx_volume};
+            const char* labels[2] = {"Music", "SFX"};
+
+            // Sliders capture the mouse until release, including outside the track.
+            if (clicked && !gear_hovered) {
+                for (int i = 0; i < 2; ++i) {
+                    Rectangle hit = {tracks[i].x - 16.0f, tracks[i].y - 23.0f, tracks[i].width + 32.0f, 60.0f};
+                    if (CheckCollisionPointRec(mouse, hit)) {
+                        settings_dragging_slider = i + 1;
+                        break;
+                    }
+                }
+            }
+            if (settings_dragging_slider && IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                int i = settings_dragging_slider - 1;
+                float next = ValidVolume((mouse.x - tracks[i].x) / tracks[i].width);
+                if (next != *values[i]) {
+                    *values[i] = next;
+                    if (i == 0) ApplyMusicVolume();
+                    else ApplySfxVolume();
+                    settings_dirty = true;
+                }
+            }
+            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+                settings_dragging_slider = 0;
+                if (settings_dirty) {
+                    SaveProgress(preferences, rating);
+                    settings_dirty = false;
+                }
+            }
+
+            for (int i = 0; i < 2; ++i) {
+                DrawText(labels[i], (int)trackX, (int)(tracks[i].y - 48.0f), 32, LIGHTGRAY);
+                DrawRectangleRounded(tracks[i], 0.8f, 8, Color{64, 64, 64, 255});
+                DrawRectangleRounded({tracks[i].x, tracks[i].y,
+                                      tracks[i].width * (*values[i]), tracks[i].height},
+                                     0.8f, 8, Color{145, 145, 145, 255});
+                float knobX = tracks[i].x + tracks[i].width * (*values[i]);
+                bool knobHovered = CheckCollisionPointCircle(mouse, {knobX, tracks[i].y + 6.0f}, 20.0f);
+                DrawCircleV({knobX, tracks[i].y + 6.0f},
+                            settings_dragging_slider == i + 1 || knobHovered ? 17.0f : 14.0f,
+                            LIGHTGRAY);
+                DrawText(TextFormat("%d%%", (int)(*values[i] * 100.0f + 0.5f)),
+                         (int)(tracks[i].x + tracks[i].width + 22),
+                         (int)(tracks[i].y - 13.0f), 30, WHITE);
+            }
+
+            Rectangle back = {panel.x + 45.0f, panel.y + panel.height - 10.0f, 190.0f, 65.0f};
+            bool backHovered = CheckCollisionPointRec(mouse, back);
+            DrawText("Apply", (int)back.x+30, (int)(back.y + 8), 43, backHovered ? WHITE : GRAY);
+            Rectangle concede = {panel.x + panel.width - 250.0f, panel.y + panel.height - 10.0f, 210.0f, 65.0f};
+            bool concedeHovered = inGame && CheckCollisionPointRec(mouse, concede);
+            if (inGame) {
+                DrawText("Concede", (int)concede.x, (int)(concede.y + 8), 40, concedeHovered ? RED : GRAY);
+            }
+            if (clicked && !gear_hovered && !settings_dragging_slider &&
+                (backHovered || concedeHovered)) {
+                if (settings_dirty) {
+                    SaveProgress(preferences, rating);
+                    settings_dirty = false;
+                }
+                settings_open = false;
+                PlaySound(sound::select);
+                if (concedeHovered) result = SettingsAction::Concede;
+            }
+        }
+    }
+
+    // Use the same dark circle, outline and springy hover enlargement as game icons.
+    static float gearZoom = 90.0f;
+    const bool enlarged = gear_hovered || settings_open;
+    const float targetZoom = enlarged ? 110.0f : 90.0f;
+    gearZoom += (targetZoom - gearZoom) * fminf(1.0f, GetFrameTime() * 20.0f);
+    const float radius = gearZoom * 0.5f + 6.0f;
+    DrawCircleV(gear, radius, Color{20, 20, 20, 255});
+    DrawCircleLines((int)gear.x, (int)gear.y, radius, Color{80, 80, 80, 255});
+    Rectangle gearSource = {0, 0, (float)tex::gear.width, (float)tex::gear.height};
+    Rectangle gearDest = {gear.x, gear.y, gearZoom, gearZoom};
+    DrawTexturePro(tex::gear, gearSource, gearDest,
+                   {gearZoom * 0.5f, gearZoom * 0.5f}, 0.0f,
+                   enlarged ? LIGHTGRAY : GRAY);
+    return result;
+}
+
 int main() {
     ChangeDirectory(GetApplicationDirectory());
     PrefMask unlocked_preferences = 0;
@@ -254,7 +421,14 @@ int main() {
         FILE* f = fopen("midnight-save.dat", "rb");
         if(f) {
             if(fread(&unlocked_preferences, sizeof(unlocked_preferences), 1, f)!=1) unlocked_preferences = 0;
-            if(fread(&player_rating, sizeof(player_rating), 1, f)!=1) player_rating = 0;
+            if(fread(&player_rating, sizeof(player_rating), 1, f)!=1) player_rating = 1200;
+            // Older saves stop here; missing or invalid volume fields retain the default (100%).
+            float loadedVolume = 1.0f;
+            if(fread(&loadedVolume, sizeof(loadedVolume), 1, f)==1)
+                global_music_volume = ValidVolume(loadedVolume);
+            loadedVolume = 1.0f;
+            if(fread(&loadedVolume, sizeof(loadedVolume), 1, f)==1)
+                global_sfx_volume = ValidVolume(loadedVolume);
             fclose(f);
         }
     }
@@ -270,6 +444,7 @@ int main() {
     SetRandomSeed((unsigned)time(NULL));
     load_fonts();
     load();
+    ApplyAudioVolumes();
     sound::bg.looping = true;
     sound::menu.looping = true;
     sound::victory.looping = true;
@@ -305,12 +480,9 @@ int main() {
     // prepare buttons
     MovementMode currentMovementMode = MovementMode::Tight;
     bool showTechTree = false;
-    bool showHelp = false;
     float icon_sizes = 90.f;
     Rectangle techBtn = {GetScreenWidth() - 320.0f, GetScreenHeight() - 140.0f, 280.0f, icon_sizes};
     Rectangle demolishBtn = {GetScreenWidth() - 320.0f, GetScreenHeight() - 140.0f - icon_sizes - 28, 280.0f, icon_sizes};
-    //Rectangle helpBtn = {GetScreenWidth() - 260.0f,GetScreenHeight()       - 95.0f-65.f,240.0f,60.0f};
-    Rectangle optionsButton = {GetScreenWidth() - 280.0f, 10.f, 240.0f, 60.0f};
 
     static float fort_creation_px = 0;
     static float fort_creation_py = 0;
@@ -363,6 +535,7 @@ int main() {
 
     MAIN_MENU:
     while (true) {
+        const bool settingsWasOpen = settings_open;
         UpdateMusicStream(sound::menu);
         if(main_menu_transition_mode)
             main_menu_progress += GetFrameTime()*5.f;
@@ -374,7 +547,6 @@ int main() {
                 new_game_transition_mode = -1;
                 main_menu_transition_mode = -1;
                 showTechTree = false;
-                showHelp = false;
                 goto NEW_GAME;
             }
             else if (main_menu_transition_mode==2) {
@@ -406,7 +578,7 @@ int main() {
         DrawText("next", baseX +260, baseY+400, 64, WHITE);
         DrawText("morn", baseX +260, baseY+450, 64, WHITE);
         Vector2 mouse = GetMousePosition();
-        bool hoverStart = !main_menu_transition_mode && CheckCollisionPointRec(mouse, btnStart);
+        bool hoverStart = !settings_open && !main_menu_transition_mode && CheckCollisionPointRec(mouse, btnStart);
         DrawText("New expedition", btnStart.x, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
         {
             int rank_index = 0;
@@ -441,14 +613,16 @@ int main() {
                 DrawText(rankName, cx - textWidth/2, cy - radius - 30, fontSize, ranks[rank_index].color);
             }
         }
-        bool hoverQuit = !main_menu_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
+        bool hoverQuit = !settings_open && !main_menu_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
         DrawText("Quit", btnQuit.x, btnQuit.y + 8, 58, hoverQuit ? RED : GRAY);
+        RenderGlobalSettings(false, unlocked_preferences, player_rating);
         EndDrawing();
         if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             main_menu_transition_mode = 1;
             PlaySound(sound::select);
         }
-        if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
+        if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
+            (!settingsWasOpen && !settings_open && IsKeyPressed(KEY_ESCAPE))) {
             if(main_menu_transition_mode && main_menu_transition_mode!=2) {
                 main_menu_transition_mode = -1;
                 main_menu_progress = 1.f-main_menu_progress;
@@ -577,6 +751,7 @@ int main() {
     EndTextureMode(); // minimap
 
     while (true) {
+        const bool settingsWasOpen = settings_open;
         UpdateMusicStream(sound::menu);
         if(new_game_transition_mode)
             new_game_progress += GetFrameTime()*5.f;
@@ -588,7 +763,6 @@ int main() {
             else if (new_game_transition_mode==1) {
                 new_game_transition_mode = -1;
                 showTechTree = false;
-                showHelp = false;
                 goto START_GAME;
             }
             else if (new_game_transition_mode==2) {
@@ -655,8 +829,8 @@ int main() {
                 Rectangle leftArrow  = { prefBox[i].x - 28-7, prefBox[i].y + 15, 24, 40 };
                 Rectangle rightArrow = { prefBox[i].x + prefBox[i].width + 4, prefBox[i].y + 15, 24, 40 };
 
-                bool hoverL = !new_game_transition_mode && CheckCollisionPointRec(mouse, leftArrow);
-                bool hoverR = !new_game_transition_mode && CheckCollisionPointRec(mouse, rightArrow);
+                bool hoverL = !settings_open && !new_game_transition_mode && CheckCollisionPointRec(mouse, leftArrow);
+                bool hoverR = !settings_open && !new_game_transition_mode && CheckCollisionPointRec(mouse, rightArrow);
                 DrawTriangle(
                     Vector2{ leftArrow.x + leftArrow.width, leftArrow.y },
                              Vector2{ leftArrow.x, leftArrow.y + leftArrow.height/2 },
@@ -668,7 +842,7 @@ int main() {
                              Vector2{ rightArrow.x + rightArrow.width, rightArrow.y + rightArrow.height/2 },
                              hoverR ? ORANGE : DARKGRAY);
 
-                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                if ((hoverL || hoverR) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                     PlaySound(sound::select);
                     int p = player_preferred_start[i];
                     if (hoverR) {
@@ -683,7 +857,7 @@ int main() {
 
             }
         // Start button
-        bool hoverStart = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnStart);
+        bool hoverStart = !settings_open && !new_game_transition_mode && CheckCollisionPointRec(mouse, btnStart);
         {
             int rank_index = 0;
             double rank_progress = 0;
@@ -719,7 +893,7 @@ int main() {
         }
         DrawText("Embark now", btnStart.x, btnStart.y + 8, 58, hoverStart ? WHITE : GRAY);
         // quit button
-        bool hoverReroll = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnReroll);
+        bool hoverReroll = !settings_open && !new_game_transition_mode && CheckCollisionPointRec(mouse, btnReroll);
         DrawText("Elsewhere", btnReroll.x, btnReroll.y + 8, 42, hoverReroll ? WHITE : GRAY);
 
         float py = btnReroll.y + 230;
@@ -765,10 +939,11 @@ int main() {
         }
 
 
-        bool hoverQuit = !new_game_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
+        bool hoverQuit = !settings_open && !new_game_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
         // DrawRectangleRec(btnQuit, hoverQuit ? DARKGRAY : BLACK);
         // DrawRectangleLinesEx(btnQuit, 2, DARKGRAY);
         DrawText("Back", btnQuit.x, btnQuit.y + 8, 58, hoverQuit ? WHITE : GRAY);
+        RenderGlobalSettings(false, unlocked_preferences, player_rating);
         EndDrawing();
         if (hoverStart && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             PlaySound(sound::select);
@@ -778,10 +953,10 @@ int main() {
             // new_game_transition_mode = -1;
             // main_menu_transition_mode = -1;
             showTechTree = false;
-            showHelp = false;
             goto NEW_GAME;
         }
-        if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
+        if ((hoverQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
+            (!settingsWasOpen && !settings_open && IsKeyPressed(KEY_ESCAPE))) {
             new_game_transition_mode = 2;
             PlaySound(sound::select);
         }
@@ -836,17 +1011,11 @@ int main() {
             if (rank_progress < 0) rank_progress = 0;
             if (rank_progress > 1) rank_progress = 1;
         }
-        {
-            FILE* f = fopen("midnight-save.dat", "wb");
-            if(f) {
-                fwrite(&unlocked_preferences, sizeof(unlocked_preferences), 1, f);
-                fwrite(&player_rating, sizeof(player_rating), 1, f);
-                fclose(f);
-            }
-        }
+        SaveProgress(unlocked_preferences, player_rating);
         StopMusicStream(sound::bg);
         PlayMusicStream(victory?sound::victory:sound::despair);
         while (true) {
+            const bool settingsWasOpen = settings_open;
             UpdateMusicStream(victory?sound::victory:sound::despair);
             if(game_over_transition_mode)
                 game_over_progress += GetFrameTime()*5.f;
@@ -911,7 +1080,7 @@ int main() {
                 DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.85f));
                 DrawTechs(*best_faction);
             }
-            bool techHover = CheckCollisionPointRec(GetMousePosition(), btnStart);
+            bool techHover = !settings_open && CheckCollisionPointRec(GetMousePosition(), btnStart);
             if (techHover) {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                     best_faction->technology_progress = 0;
@@ -923,12 +1092,14 @@ int main() {
             DrawText(tech_msg, btnStart.x+btnStart.width-MeasureText(tech_msg, 58), btnStart.y + 8, 58, techHover ? WHITE : GRAY);
 
             Vector2 mouse = GetMousePosition();
-            bool hoverOk = !showTechTree && !game_over_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
+            bool hoverOk = !settings_open && !showTechTree && !game_over_transition_mode && CheckCollisionPointRec(mouse, btnQuit);
             if(!showTechTree) {
                 DrawText(victory?"Veni, vidi, vici":"Retreat", btnQuit.x, btnQuit.y + 8, 58, hoverOk ? WHITE : GRAY);
             }
+            RenderGlobalSettings(false, unlocked_preferences, player_rating);
             EndDrawing();
-            if ((!showTechTree && hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
+            if ((!showTechTree && hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
+                (!settingsWasOpen && !settings_open && IsKeyPressed(KEY_ESCAPE))) {
                 PlaySound(sound::select);
                 game_over_transition_mode = 1;
             }
@@ -936,6 +1107,7 @@ int main() {
 
         CLAIM_REWARDS:
         while (true) {
+            const bool settingsWasOpen = settings_open;
             UpdateMusicStream(victory?sound::victory:sound::despair);
             if(reward_transition_mode)
                 reward_progress += GetFrameTime()*5.f;
@@ -1006,12 +1178,14 @@ int main() {
             }
             // --- OK button ---
             Vector2 mouse = GetMousePosition();
-            bool hoverOk = !reward_transition_mode && CheckCollisionPointRec(mouse, btnOk);
+            bool hoverOk = !settings_open && !reward_transition_mode && CheckCollisionPointRec(mouse, btnOk);
             DrawRectangleRec(btnOk, hoverOk ? DARKGRAY : BLACK);
             DrawRectangleLinesEx(btnOk, 2, GRAY);
             DrawText("OK", btnOk.x + btnOk.width/2 - MeasureText("OK", 48)/2, btnOk.y + 14, 48,hoverOk ? WHITE : GRAY);
+            RenderGlobalSettings(false, unlocked_preferences, player_rating);
             EndDrawing();
-            if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) || IsKeyPressed(KEY_ESCAPE)) {
+            if ((hoverOk && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
+                (!settingsWasOpen && !settings_open && IsKeyPressed(KEY_ESCAPE))) {
                 reward_transition_mode = 1;
                 PlaySound(sound::select);
             }
@@ -1679,8 +1853,10 @@ int main() {
         }
         time_norm = game_time / GAME_DURATION;
 
-        bool mouseCapturedByUI = false;
-        if (IsKeyPressed(KEY_SPACE)) {
+        Vector2 gearCenter = {(float)GetScreenWidth() - 72.0f, 72.0f};
+        bool mouseCapturedByUI = settings_open ||
+            CheckCollisionPointCircle(GetMousePosition(), gearCenter, 62.0f);
+        if (!settings_open && IsKeyPressed(KEY_SPACE)) {
             PlaySound(sound::select2);
             if(currentMovementMode==MovementMode::Scattered) {
                 currentMovementMode = MovementMode::Explore;
@@ -1701,12 +1877,8 @@ int main() {
                 PlaySound(sound::select);
             }
         }
-        if (IsKeyPressed(KEY_ESCAPE)) {
+        if (!settings_open && IsKeyPressed(KEY_ESCAPE)) {
             showTechTree = !showTechTree;
-            PlaySound(sound::select2);
-        }
-        if(IsKeyPressed(KEY_TAB)) {
-            showHelp = !showHelp;
             PlaySound(sound::select2);
         }
 
@@ -1762,7 +1934,7 @@ int main() {
             }
         }
 
-        if (CheckCollisionPointRec(GetMousePosition(), demolishBtn)) {
+        if (!settings_open && CheckCollisionPointRec(GetMousePosition(), demolishBtn)) {
             mouseCapturedByUI = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 factions->demolishing = 30.f;
@@ -1772,33 +1944,23 @@ int main() {
             }
         }
 
-        if (CheckCollisionPointRec(GetMousePosition(), techBtn)) {
+        if (!settings_open && CheckCollisionPointRec(GetMousePosition(), techBtn)) {
             mouseCapturedByUI = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 showTechTree = !showTechTree;
                 PlaySound(sound::select2);
             }
         }
-        // if (!showTechTree && CheckCollisionPointRec(GetMousePosition(), helpBtn)) {
-        //     mouseCapturedByUI = true;
-        //     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        //         showHelp = !showHelp;
-        //         PlaySound(sound::select2);
-        //     }
-        // }
-
 
         #include "src/inline/buttons.cpp"
-
-        if (showTechTree) showHelp = false;
 
 
         // camera
         const float move = 2000.0f * GetFrameTime() / camera.zoom;
-        if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) camera.target.x += move;
-        if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))  camera.target.x -= move;
-        if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))    camera.target.y -= move;
-        if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))  camera.target.y += move;
+        if (!settings_open && (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))) camera.target.x += move;
+        if (!settings_open && (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)))  camera.target.x -= move;
+        if (!settings_open && (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)))    camera.target.y -= move;
+        if (!settings_open && (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)))  camera.target.y += move;
         if(camera.target.x<0) camera.target.x = 0;
         if(camera.target.y<0) camera.target.y = 0;
         if(camera.target.x>=GRID_SIZE*TILE_SIZE) camera.target.x = GRID_SIZE*TILE_SIZE;
@@ -1806,9 +1968,9 @@ int main() {
         //camera.zoom += GetMouseWheelMove() * 0.2f;
         //if (camera.zoom < 0.5f) camera.zoom = 0.5f;
         //if (camera.zoom < 0.25f) camera.zoom = 0.25f;
-        float wheel = GetMouseWheelMove();
-        if (IsKeyDown(KEY_Q))  wheel += dt*20.f;
-        if (IsKeyDown(KEY_E))  wheel -= dt*20.f;
+        float wheel = settings_open ? 0.0f : GetMouseWheelMove();
+        if (!settings_open && IsKeyDown(KEY_Q))  wheel += dt*20.f;
+        if (!settings_open && IsKeyDown(KEY_E))  wheel -= dt*20.f;
         if (wheel) target_zoom += wheel * 0.1f;
         if (camera.zoom!=target_zoom) {
             Vector2 mouseWorldBefore = GetScreenToWorld2D(GetMousePosition(), camera);
@@ -1894,7 +2056,7 @@ int main() {
             dragStartTarget = camera.target;
         }
 
-        if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
+        if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) || settings_open) {
             draggingCamera = false;
         }
 
@@ -2296,7 +2458,7 @@ int main() {
             //water_sound_intensity = sqrtf(water_sound_intensity);
             if(water_sound_intensity>0.3f) water_sound_intensity = 0.3f;
             if((float)GetRandomValue(0, 1000000) / 1000000.0f<dt)
-                sound::water.Play(water_sound_intensity*camera.zoom);
+                sound::water.Play(water_sound_intensity * camera.zoom * global_sfx_volume);
         }
 
         // --- UNDER UNIT LAYER ---
@@ -2751,44 +2913,6 @@ int main() {
             DrawTechs(factions[0]);
         }
 
-        if (showHelp) {
-            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.85f));
-            float px = GetScreenWidth()*0.5f-600;
-            float py = GetScreenHeight()*0.5f-380;
-            DrawRectangleRounded(Rectangle{px-5, py-3, 260, 60}, 0.2f, 8, Fade(WHITE, 0.5f));
-            DrawText("What to do",px,py,52,BLACK);
-            py += 80;
-            DrawText("Your units capture stuff - explore to find more.",px,py,32,WHITE);
-            py += 40;
-            DrawText("Gather the most utopia points before pollution fills.",px,py,32,WHITE);
-            py += 40;
-            DrawText("Spawning stops if you exceed available industry.",px,py,32,WHITE);
-            py += 40;
-            DrawText("Select techs once research fills.",px,py,32,WHITE);
-            py += 40;
-            py += 250;
-            DrawRectangleRounded(Rectangle{px-5, py-3, 260, 60}, 0.2f, 8, Fade(WHITE, 0.5f));
-            DrawText("Controls",px,py,52,BLACK);
-            py += 80;
-            DrawText("Zoom",px,py,32,WHITE);
-            DrawText("QE/scroll",px+200,py,32,WHITE);
-            py += 40;
-            DrawText("Camera",px,py,32,WHITE);
-            DrawText("WASD/right drag",px+200,py,32,WHITE);
-            py += 40;
-            DrawText("Description",px,py,32,WHITE);
-            DrawText("Mouse over units",px+200,py,32,WHITE);
-            py += 40;
-            DrawText("Select",px,py,32,WHITE);
-            DrawText("Left drag for selection rectangle/shift selects all visible",px+200,py,32,WHITE);
-            py += 40;
-            DrawText("Move",px,py,32,WHITE);
-            DrawText("Right click (units auto-attack and may stop when near target), SPACE to change move mode",px+200,py,32,WHITE);
-            py += 40;
-            DrawText("Build fort",px,py,32,WHITE);
-            DrawText("Del (station selected humans and tanks with at least 20 industry in a proportionally strong fort)",px+200,py,32,WHITE);
-        }
-
         // --------------------------------------------------
         // DEMOLITION BUTTON
         // --------------------------------------------------
@@ -3025,36 +3149,6 @@ int main() {
             if(techHover) mouseCapturedByUI = true;
         }
 
-        // --------------------------------------------------
-        // EXIT APP BUTTON
-        // --------------------------------------------------
-        if (showTechTree) {
-            Vector2 mouse = GetMousePosition();
-            bool hover = CheckCollisionPointRec(mouse, optionsButton);
-            DrawRectangleRounded(optionsButton, 0.2f, 8, hover ? Fade(RED, 0.65f) : Fade(BLACK, 0.6f));
-            DrawText("Concede",
-                     optionsButton.x + 20,
-                     optionsButton.y + 15,
-                     32,WHITE);
-            if (hover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                factions[0].victory_points = -factions[0].victory_points;
-                showTechTree = false;
-                goto GAME_OVER;
-            }
-        }
-        // else {
-        //     Vector2 mouse = GetMousePosition();
-        //     bool hover = CheckCollisionPointRec(mouse, helpBtn);
-        //     DrawRectangleRounded(helpBtn, 0.2f, 8, hover ? Fade(DARKGRAY, 0.5f) : Fade(BLACK, 0.5f));
-        //     DrawText(showHelp?"Close":"Info",
-        //              helpBtn.x + 20,
-        //              helpBtn.y + 15,
-        //              32,WHITE);
-
-        //     DrawRectangleRounded({helpBtn.x+helpBtn.width-70, helpBtn.y+15, 50, 25},0.2f, 8, WHITE);
-        //     DrawTextSmall("tab",helpBtn.x+helpBtn.width-65+5,helpBtn.y+15,24,BLACK);
-        // }
-
         if (last_message) {
             static int   visible_chars = 0;
             static float type_timer = 0.0f;
@@ -3232,7 +3326,13 @@ int main() {
         if(!showTechTree && hovered && !mouseCapturedByUI) {
             #include "src/inline/draw_tooltip.cpp"
         }
+        SettingsAction settingsAction = RenderGlobalSettings(true, unlocked_preferences, player_rating);
         EndDrawing();
+        if (settingsAction == SettingsAction::Concede) {
+            factions[0].victory_points = -std::abs(factions[0].victory_points);
+            showTechTree = false;
+            goto GAME_OVER;
+        }
     }
 
     free(terrainBlock);

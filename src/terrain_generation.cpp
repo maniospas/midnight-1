@@ -269,7 +269,7 @@ static void GenerateSeas(Terrain** terrainGrid) {
                     if (h == 3) tex = &tex::hill4;
                     terrainGrid[gy][gx] = {
                         tex,
-                        0.7f,
+                        0.5f,
                         0.5f
                     };
                 }
@@ -322,7 +322,7 @@ static void GenerateHillsAndDesert(Terrain** terrainGrid) {
                 else {
                     terrainGrid[y][x] = {
                         &tex::desert,
-                        0.8f,
+                        0.6f,
                         -0.7f
                     };
                 }

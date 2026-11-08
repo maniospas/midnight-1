@@ -584,55 +584,47 @@ for (int i = 0; i < num_units; i++) {
         continue;
     }
 
-    if (dist2 > 20.f * 20.f) {
-        const float lookaheads[] = {3.f, 20.f};
-        const int directions[] = {16, 8};
+    if (dist2 > 5.f * 5.f) {
+        const float short_lookahead = fminf(2.f, sqrtf(dist2) * 0.25f);
+        const float long_lookahead = fminf(30.f, sqrtf(dist2) * 0.75f);
+        const int short_directions = 9;
+        const int long_directions = 9;
 
-        float best_cost = estimate_travel_time(
-            terrainGrid, u.x, u.y, u.target_x, u.target_y
-        );
+        float base_angle = atan2f(dy, dx);
+        float best_cost = estimate_travel_time(terrainGrid, u.x, u.y, u.target_x, u.target_y, 32);
 
-        for (int j = 0; j < 2; j++) {
-            const float lookahead = lookaheads[j];
-            const int num_directions = directions[j];
-
-            for (int k = 0; k < num_directions; k++) {
-                float angle = k * (2.f * PI / num_directions);
-                float candidate_x = u.x + cosf(angle) * lookahead;
-                float candidate_y = u.y + sinf(angle) * lookahead;
-
-                if (candidate_x < 2 || candidate_y < 2 ||
-                    candidate_x >= GRID_SIZE - 2 ||
-                    candidate_y >= GRID_SIZE - 2)
-                    continue;
-
+        for (int i = 0; i < short_directions; i++) {
+            float angle1 = base_angle - PI * 0.5f + i * (PI / (short_directions - 1));
+            float x1 = u.x + cosf(angle1) * short_lookahead;
+            float y1 = u.y + sinf(angle1) * short_lookahead;
+            if (x1 < 2 || y1 < 2 || x1 >= GRID_SIZE - 2 || y1 >= GRID_SIZE - 2) continue;
+            float cost1 = estimate_travel_time(terrainGrid, u.x, u.y, x1, y1, 8);
+            for (int j = 0; j < long_directions; j++) {
+                float angle2 = base_angle - PI * 0.5f + j * (PI / (long_directions - 1));
+                float x2 = u.x + cosf(angle2) * long_lookahead;
+                float y2 = u.y + sinf(angle2) * long_lookahead;
+                if (x2 < 2 || y2 < 2 || x2 >= GRID_SIZE - 2 || y2 >= GRID_SIZE - 2) continue;
                 float cost =
-                    estimate_travel_time(
-                        terrainGrid, u.x, u.y, candidate_x, candidate_y
-                    ) +
-                    estimate_travel_time(
-                        terrainGrid, candidate_x, candidate_y,
-                        u.target_x, u.target_y
-                    );
-
+                    cost1 +
+                    estimate_travel_time(terrainGrid, x1, y1, x2, y2, 32) +
+                    estimate_travel_time(terrainGrid, x2, y2, u.target_x, u.target_y, 32);
                 if (cost < best_cost) {
                     best_cost = cost;
-                    interim_target_x = candidate_x;
-                    interim_target_y = candidate_y;
+                    interim_target_x = x1;
+                    interim_target_y = y1;
                 }
             }
         }
-
         dx = interim_target_x - u.x;
         dy = interim_target_y - u.y;
         dist2 = dx * dx + dy * dy;
     }
-
+    
     float dist = sqrtf(dist2);
     float desiredAngle = atan2f(dy, dx) * RAD2DEG;
 
     if((u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::cat) && !u.stunned) {
-        desiredAngle += cos(t*10+u.speed*3.14159)*20;
+        desiredAngle += cos(t*10+u.speed*3.14159+i)*45;
     }
 
     // compute smallest signed difference

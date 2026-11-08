@@ -3,6 +3,7 @@
 #include <iostream>
 
 
+extern float global_sfx_volume;
 struct SoundPool {
     Sound* voices;
     int next = 0;
@@ -19,7 +20,8 @@ struct SoundPool {
         voiceCount = 0;
     }
     void Play(float volume) {
-        if(!voiceCount) return;
+        volume *= global_sfx_volume;
+        if(!voiceCount || !volume) return;
         int idx = -1;
         for(int i = 0;i < voiceCount;i++)
             if (!IsSoundPlaying(voices[i])) {
