@@ -307,7 +307,7 @@ static SettingsAction RenderGlobalSettings(bool inGame, PrefMask preferences, do
             }
             PlaySound(sound::select);
         } else {
-            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.82f));
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
 
             const float panelW = fminf(720.0f, (float)GetScreenWidth() - 40.0f);
             const float panelH = fminf(500.0f, (float)GetScreenHeight() - 40.0f);
@@ -500,6 +500,7 @@ int main() {
         terrainGrid[y] = &terrainBlock[y * GRID_SIZE];
     static Unit units[MAX_UNITS];
     static Decorator decorators[MAX_DECORATORS];
+    static Decorator groundDecorators[MAX_DECORATORS];
     static Faction factions[11] = {
         { ColorBrightness(BLUE, 0.25), "Player", 0 },
         { GRAY, "Unclaimed", 0},
@@ -656,6 +657,7 @@ int main() {
     GenerateMountainTrails(terrainGrid);
     GenerateSeas(terrainGrid);
     int num_decorators = 0;   // track trees
+    int num_ground_decorators = 0;   // track trees
     {
         int numPaths = 20;
         for (int p = 0; p < numPaths; p++) {
@@ -734,8 +736,11 @@ int main() {
     for (int y = 1; y < GRID_SIZE-1; y++)
     for (int x = 1; x < GRID_SIZE-1; x++) {
         Terrain &T = terrainGrid[y][x];
-        if (T.texture == &tex::tree) {
+        if (T.texture == &tex::tree) 
             T.texture = &tex::grass; // or whichever grass variant you want for paths
+        if(T.speed>1.0){
+            T.texture = &tex::grass;
+            groundDecorators[num_ground_decorators++] = {&tex::path,(float)x-0.5f,(float)y-0.5f,1.0f};
         }
     }
     water_angle = (GetRandomValue(0, 3) * PI / 2.0f);
@@ -1507,7 +1512,7 @@ int main() {
             prev_x = 0;
             prev_y = 0;
         }
-        if(isGrass && (type==5 || type==0 || type==4) && create_city) {
+        if(isGrass && (type==5 || type==0 || type==4) && (create_city || T.speed>1.0)) {
             // create a small city district here
             float large_offset = 4.0;
             float small_offset = 2.7;
@@ -2259,6 +2264,32 @@ int main() {
 
                 DrawTexture(*terrainGrid[y][x].texture, px, py, WHITE);
             }
+        EndShaderMode();
+
+        BeginShaderMode(terrainShader);
+        Color target_line_color = Fade(BLUE, 0.3f);
+        Color shadow_color = Fade(BLACK, 0.25f);
+        for (int i = 0; i < num_ground_decorators; i++) {
+            Decorator &d = groundDecorators[i];
+            int x = (int)(d.x-0.0f);
+            int y = (int)(d.y-0.0f);
+            if (x < xMin || x >= xMax) continue;
+            if (y < yMin || y >= yMax) continue;
+            if (!explored[y][x]) continue;
+            float px = d.x * TILE_SIZE;
+            float py = d.y * TILE_SIZE;
+            Texture2D* tex = d.texture;
+
+            Rectangle src = { 0, 0, (float)tex->width, (float)tex->height };
+            Rectangle dst = {
+                px,
+                py,
+                TILE_SIZE * d.size,
+                TILE_SIZE * d.size
+            };
+            Vector2 origin = { 0, 0 };
+            DrawTexturePro(*tex, src, dst, origin, 0.0f, WHITE);
+        }
 
         for (int y = yMin; y < yMax; y++)
             for (int x = xMin; x < xMax; x++) {
@@ -2462,13 +2493,11 @@ int main() {
         }
 
         // --- UNDER UNIT LAYER ---
-        Color target_line_color = Fade(BLUE, 0.3f);
-        Color shadow_color = Fade(BLACK, 0.25f);
         // draw blood and explosion remnants
         for (int i = 0; i < num_units; i++) {
             Unit &u = units[i];
-            int ux = (int)u.x;
-            int uy = (int)u.y;
+            int ux = (int)(u.x+0.0f);
+            int uy = (int)(u.y+0.0f);
             int range = (int)u.size + 1;
             if (ux < xMin-range || ux >= xMax+range) continue;
             if (uy < yMin-range || uy >= yMax+range) continue;
@@ -2693,7 +2722,7 @@ int main() {
         }
 
         EndShaderMode();
-        Color transparent = Fade(WHITE, 0.55f);
+        //Color transparent = Fade(WHITE, 0.55f);
         for (int i = 0; i < num_decorators; i++) {
             Decorator &d = decorators[i];
             int x = (int)d.x;
@@ -2713,7 +2742,7 @@ int main() {
                 TILE_SIZE * d.size
             };
             Vector2 origin = { 0, 0 };
-            DrawTexturePro(*tex, src, dst, origin, 0.0f, visible[y][x]?transparent:WHITE);
+            DrawTexturePro(*tex, src, dst, origin, 0.0f, WHITE);//visible[y][x]?transparent:WHITE);
         }
 
 

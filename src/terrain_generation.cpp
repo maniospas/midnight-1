@@ -372,21 +372,21 @@ static void GenerateMountainTrails(Terrain** terrainGrid) {
             Terrain &T = terrainGrid[y][x];
 
             // Only replace mountains and hills
-            if (!IsMountain(T.texture) && !IsHill(T.texture))
+            // if (!IsMountain(T.texture) && !IsHill(T.texture))
+            //     continue;
+            if (T.texture==&tex::water)// || T.texture==&tex::desert)
                 continue;
 
-            // Two smoothly varying noise fields
             float n1 = FractalNoise(x + 3000, y + 5000, 65.0f);
             float n2 = FractalNoise(x + 7000, y + 2000, 45.0f);
-
-            // Trails follow narrow contours of the noise field
             float trailValue = n1 * 0.7f + n2 * 0.3f;
-
-            // Narrow band around a contour
             if (fabsf(trailValue - 0.48f) < 0.012f) {
                 T.texture = &tex::grass;
-                T.speed = (_Float16)1.0f;
-                T.extra_sight = 0.0f;
+
+                if (fabsf(trailValue - 0.48f) < 0.005f) {
+                    T.speed = (_Float16)1.5f;
+                    T.extra_sight = -0.5f;
+                }
             }
         }
     }

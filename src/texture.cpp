@@ -114,6 +114,7 @@ namespace tex {
     static Texture2D retreat;
     static Texture2D villa;
     static Texture2D pyramis;
+    static Texture2D path;
 }
 
 
@@ -231,6 +232,7 @@ void load() {
     tex::retreat= LoadTexture("data/retreat.png");
     tex::villa= LoadTexture("data/villa.png");
     tex::pyramis= LoadTexture("data/pyramis.png");
+    tex::path= LoadTexture("data/path.png");
 
     sound::gun.Load("data/gun.ogg", 24);
     sound::boom.Load("data/boom.ogg", 5);

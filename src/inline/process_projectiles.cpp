@@ -46,8 +46,10 @@ for (int i = 0; i < num_units; i++) {
                 }
                 if (o.capturing && u.faction && u.faction->demolishing) 
                     u_damage *= 2.f;
-
-                if (oxi >= 0 && oyi >= 0 && oxi < GRID_SIZE && oyi < GRID_SIZE) skipChance -= terrainGrid[oyi][oxi].extra_sight/2.f;
+                
+                if (oxi >= 0 && oyi >= 0 && oxi < GRID_SIZE && oyi < GRID_SIZE) {
+                    if(terrainGrid[oyi][oxi].speed<=1.f) skipChance -= terrainGrid[oyi][oxi].extra_sight/2.f;
+                }
                 if(o.speed==0.f) skipChance = 0.f;
                 if(u.texture==&tex::kraken) skipChance = 0.f;
                 if(o.faction && (o.faction->technology&TECHNOLOGY_MECHA) && is_mecha(o)) skipChance += 0.5f;

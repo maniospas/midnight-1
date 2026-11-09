@@ -61,7 +61,7 @@ DrawText("Right click to move", px + 80, textY, DESC_FONT_SIZE, ORANGE);
 
     int moveBucket = (int)(hoveredTerrain->speed * 2.5f);
     int viewBucket = (int)((1.0f + hoveredTerrain->extra_sight) * 2.5f);
-    int dodgeBucket = (int)(-hoveredTerrain->extra_sight * 3.0f);
+    int dodgeBucket = (int)(hoveredTerrain->speed>1.0?0:-hoveredTerrain->extra_sight * 3.0f);
 
     moveBucket = moveBucket < 0 ? 0 : moveBucket > 4 ? 4 : moveBucket;
     viewBucket = viewBucket < 0 ? 0 : viewBucket > 4 ? 4 : viewBucket;
