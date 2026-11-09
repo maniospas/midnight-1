@@ -10,7 +10,7 @@ DrawTexturePro(tex::info, src, dst, origin, 0.0f, fc);
 float textY = py - 26;
 px -= 55;
 if(hoveredTerrain->texture==&tex::grass || hoveredTerrain->texture==&tex::grass2 || hoveredTerrain->texture==&tex::grass3 || hoveredTerrain->texture==&tex::grass4)
-    DrawText("Grass", px + 80, textY + 80, 42, WHITE);
+    DrawText(hoveredTerrain->speed>1.0?"Paved":"Grass", px + 80, textY + 80, 42, WHITE);
 if(hoveredTerrain->texture==&tex::hill || hoveredTerrain->texture==&tex::hill2 || hoveredTerrain->texture==&tex::hill3 || hoveredTerrain->texture==&tex::hill4)
     DrawText("Hill", px + 80, textY + 80, 42, WHITE);
 if(hoveredTerrain->texture==&tex::mountain) DrawText("Moutain", px + 80, textY + 80, 42, WHITE);
