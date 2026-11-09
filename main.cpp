@@ -483,6 +483,8 @@ int main() {
     float icon_sizes = 90.f;
     Rectangle techBtn = {GetScreenWidth() - 320.0f, GetScreenHeight() - 140.0f, 280.0f, icon_sizes};
     Rectangle demolishBtn = {GetScreenWidth() - 320.0f, GetScreenHeight() - 140.0f - icon_sizes - 28, 280.0f, icon_sizes};
+    // House construction sits directly above Demolish.
+    Rectangle houseBtn = {demolishBtn.x, demolishBtn.y - icon_sizes - 28.0f, demolishBtn.width, icon_sizes};
 
     static float fort_creation_px = 0;
     static float fort_creation_py = 0;
@@ -702,7 +704,7 @@ int main() {
                 terrainGrid[y + 1][x].texture == &tex::water ) || (
                 terrainGrid[y][x - 1].texture == &tex::water &&
                 terrainGrid[y][x + 1].texture == &tex::water);
-            if (surrounded) {
+            if (surrounded && T.speed <= 1.0f) {
                 T.texture     = &tex::water;
                 T.speed       = 0.15f;
                 T.extra_sight = -0.8f;
@@ -730,7 +732,7 @@ int main() {
             decorators[num_decorators++] = {&tex::tree,(float)x+ox-0.5f,(float)y+oy-0.5f,1.0f};
             T.extra_sight -= 0.7f;
             if(T.extra_sight<-0.7f) T.extra_sight = -0.7f;
-            T.speed = (_Float16)0.4f;
+            if(T.speed<=1.f) T.speed = (_Float16)0.4f;
         }
     }
     for (int y = 1; y < GRID_SIZE-1; y++)
@@ -1898,7 +1900,9 @@ int main() {
         bool has_any_selected = false;
 
 
-        float button_py = GetScreenHeight() - 140.0f - (icon_sizes+28)*2;
+        // Make room for Build House above Demolish only after COMMAND is unlocked.
+        float button_py = GetScreenHeight() - 140.0f - (icon_sizes+28) *
+            ((factions->technology & TECHNOLOGY_COMMAND) ? 3 : 2);
         float button_offset = icon_sizes+28;
         Rectangle fortBtn = {GetScreenWidth() - 320.f, button_py, 280.0f, icon_sizes};
         if(factions->technology&TECHNOLOGY_FORT) button_py -= button_offset;
@@ -1928,14 +1932,74 @@ int main() {
                 if(u.selected && u.health>3.1f && u.speed && !is_mecha(u))
                     turtle_creation_num++;
             }
-            fort_creation_px /= fort_creation_num;
-            fort_creation_py /= fort_creation_num;
+            if (fort_creation_num > 0) {
+                fort_creation_px /= fort_creation_num;
+                fort_creation_py /= fort_creation_num;
+            }
             for (int i = 0; i < num_units; i++) {
                 Unit &u = units[i];
                 if (u.health && !u.speed && (u.x-fort_creation_px)*(u.x-fort_creation_px)+(u.y-fort_creation_py)*(u.y-fort_creation_py)<25) {
                     fort_creation_has_nearby = true;
                     break;
                 }
+            }
+        }
+
+        // Build House uses half of the fort's 100 maximum-health construction cost.
+        // Unlike a fort, it may be built even inside the combined radii of nearby buildings.
+        constexpr float HOUSE_BUILD_COST = 50.f;
+        bool house_paved = false;
+        if (fort_creation_num > 0) {
+            int tileX = (int)fort_creation_px;
+            int tileY = (int)fort_creation_py;
+            if (tileX >= 0 && tileX < GRID_SIZE &&
+                tileY >= 0 && tileY < GRID_SIZE) {
+                house_paved = terrainGrid[tileY][tileX].speed > 1.0f;
+            }
+        }
+        bool houseUnavailable = !fort_creation_num ||
+                                fort_creation_has_nearby ||
+                                fort_creation_total_health < HOUSE_BUILD_COST ||
+                                !house_paved || num_units >= MAX_UNITS;
+
+        if (!settings_open && !showTechTree &&
+            (factions->technology & TECHNOLOGY_COMMAND) &&
+            CheckCollisionPointRec(GetMousePosition(), houseBtn)) {
+            mouseCapturedByUI = true;
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                if (!fort_creation_num) {
+                    last_message = "Select humans.";
+                } else if (fort_creation_total_health < HOUSE_BUILD_COST) {
+                    last_message = "Select more humans.";
+                } else if (!house_paved) {
+                    last_message = "Needs paved tile.";
+                } else if (num_units >= MAX_UNITS) {
+                    last_message = "Unit limit reached.";
+                } else {
+                    const float buildX = fort_creation_px;
+                    const float buildY = fort_creation_py;
+
+                    // Consume only the minimum selected units needed to reach
+                    // 50 total max-health, using the same eligibility as a fort.
+                    float consumed_health = 0.f;
+                    for (int i = 0; i < num_units && consumed_health < HOUSE_BUILD_COST; i++) {
+                        Unit &u = units[i];
+                        if (u.selected && u.health && u.speed &&
+                            (u.texture == &tex::cat ||
+                             u.texture == &tex::human ||
+                             u.texture == &tex::scout ||
+                             u.texture == &tex::hero)) {
+                            consumed_health += u.max_health;
+                            u.health = 0;
+                            u.texture = &tex::ghost;
+                            u.selected = false;
+                        }
+                    }
+                    CREATE_WALL(&factions[0], buildX, buildY);
+                    last_message = "Wall constructed";
+                    PlaySound(sound::success);
+                }
+                last_message_counter = 0.f;
             }
         }
 
@@ -2940,6 +3004,44 @@ int main() {
         if (showTechTree) {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.85f));
             DrawTechs(factions[0]);
+        }
+
+        // --------------------------------------------------
+        // BUILD HOUSE BUTTON
+        // --------------------------------------------------
+        if (!showTechTree && (factions->technology & TECHNOLOGY_COMMAND)) {
+            bool houseHover = CheckCollisionPointRec(GetMousePosition(), houseBtn);
+            static float houseZoom = houseBtn.height;
+            houseZoom += ((houseHover ? houseBtn.height + 20.f : houseBtn.height) - houseZoom) * 20.f * dt;
+            float houseX = houseBtn.x + houseBtn.width - houseBtn.height / 2.f;
+            float houseY = houseBtn.y + houseBtn.height / 2.f;
+            float radius = houseZoom / 2.f + 6.f;
+
+            const char* title = "";
+            if (houseHover) {
+                if (!fort_creation_num)                    title = "Select humans";
+                else if (fort_creation_total_health < HOUSE_BUILD_COST) title = "Select more humans";
+                else if (!house_paved)                     title = "Only on paved tiles";
+                else if (num_units >= MAX_UNITS)           title = "Unit limit reached";
+                else                                       title = "Build wall";
+            }
+            DrawTextOutlined(title, houseX - MeasureText(title, 30) - 70,
+                             houseY - 16, 32, Fade(WHITE, 1.f));
+            DrawCircle(houseX, houseY, radius,
+                       houseUnavailable ? Color{20,20,20,255} : Color{128,128,128,255});
+            DrawCircleLines(houseX, houseY, radius, {80,80,80,255});
+            DrawTextureEx(tex::wall,
+                          {houseX - houseZoom/2.f, houseY - houseZoom/2.f},
+                          0, houseZoom / (float)tex::wall.width,
+                          houseUnavailable ? Fade(WHITE, 0.5f) : WHITE);
+            if (houseUnavailable) {
+                float pad = radius * 0.35f;
+                DrawLineEx({houseX - pad, houseY - pad},
+                           {houseX + pad, houseY + pad}, 5.f, RED);
+                DrawLineEx({houseX + pad, houseY - pad},
+                           {houseX - pad, houseY + pad}, 5.f, RED);
+            }
+            if (houseHover) mouseCapturedByUI = true;
         }
 
         // --------------------------------------------------

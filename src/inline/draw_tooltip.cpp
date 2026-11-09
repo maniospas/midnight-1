@@ -77,6 +77,11 @@ if (hovered && hovered->health && !mouseCapturedByUI) {
         DrawText("May become rats", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
     }
+    else if(hovered->texture==&tex::wall) {
+        DrawText("-1 industry", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
+        DrawText("Tough.", px + 80, textY+DESC_FONT_SIZE+2, DESC_FONT_SIZE, WHITECOL);
+        //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);
+    }
     else if(hovered->texture==&tex::house) {
         DrawText("+half industry", px + 80, textY, DESC_FONT_SIZE, WHITECOL);
         //DrawTextSmall("capturable", px + 255, textY+125, 22, inv);

@@ -115,6 +115,7 @@ namespace tex {
     static Texture2D villa;
     static Texture2D pyramis;
     static Texture2D path;
+    static Texture2D wall;
 }
 
 
@@ -233,6 +234,7 @@ void load() {
     tex::villa= LoadTexture("data/villa.png");
     tex::pyramis= LoadTexture("data/pyramis.png");
     tex::path= LoadTexture("data/path.png");
+    tex::wall= LoadTexture("data/wall.png");
 
     sound::gun.Load("data/gun.ogg", 24);
     sound::boom.Load("data/boom.ogg", 5);
@@ -323,6 +325,8 @@ void unload() {
     UnloadTexture(tex::retreat);
     UnloadTexture(tex::villa);
     UnloadTexture(tex::pyramis);
+    UnloadTexture(tex::path);
+    UnloadTexture(tex::wall);
 
     UnloadTexture(tex::oil);
     UnloadTexture(tex::datacenter);

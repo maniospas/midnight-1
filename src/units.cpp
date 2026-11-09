@@ -613,8 +613,36 @@ struct Unit {
         terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)].extra_sight = -0.5f;\
         for(int ppy=-2;ppy<=2;ppy++) \
             for(int ppx=-2;ppx<=2;ppx++) {\
-                if((ppy*ppy)+(ppx*ppx)<=4) terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
-                groundDecorators[num_ground_decorators++] = {&tex::path,(int)_x+ppx,(int)_y+ppy,1.0f};}\
+                if((ppy*ppy)+(ppx*ppx)>4) continue;\
+                terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)]; \
+                groundDecorators[num_ground_decorators++] = {&tex::path,(int)(_x+0.5f)+ppx-0.5f,(int)(_y+0.5f)+ppy-0.5f,1.0f};}\
+    }
+
+#define CREATE_WALL(_faction, _x, _y) \
+    if (num_units < MAX_UNITS && terrainGrid[(int)(_y+0.5f)][(int)(_x+0.5f)].texture==&tex::grass) {\
+        units[num_units++] = Unit{ \
+            .texture = &tex::wall, \
+            .faction = (_faction), \
+            .name = "Wall", \
+            .speed = 0.0, \
+            .x = (float)(_x), \
+            .y = (float)(_y), \
+            .angle = GetRandomValue(0,3)*90.f, \
+            .attack_rate = static_cast<_Float16>(0.0), \
+            .range = static_cast<_Float16>(9.0), \
+            .damage = static_cast<_Float16>(0.0), \
+            .experience = static_cast<_Float16>(0.0), \
+            .size = static_cast<_Float16>(2.0), \
+            .health = static_cast<_Float16>(10.0), \
+            .max_health = static_cast<_Float16>(10.0), \
+            .extra_scale = static_cast<_Float16>(0.5), \
+            .capturing = nullptr \
+        };\
+        for(int ppy=-2;ppy<=2;ppy++) \
+            for(int ppx=-2;ppx<=2;ppx++) {\
+                if((ppy*ppy)+(ppx*ppx)>4) continue;\
+                terrainGrid[(int)(_y+0.5f)+ppy][(int)(_x+0.5f)+ppx] = { &tex::grass, 1.5, -0.5f }; \
+                groundDecorators[num_ground_decorators++] = {&tex::path,(int)(_x+0.5f)+ppx-0.5f,(int)(_y+0.5f)+ppy-0.5f,1.0f};}\
     }
 
 

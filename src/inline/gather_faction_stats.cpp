@@ -212,6 +212,10 @@ for (int i = 0; i < num_units; i++) {
             else { CREATE_FIELD(&factions[1], px, py); }
         }
     }
+    if(u.texture==&tex::wall) {
+        u.faction->industry -= 1.f;
+        continue;
+    }
     if(u.texture==&tex::field
         || u.texture==&tex::field_little 
         || u.texture==&tex::field_empty 

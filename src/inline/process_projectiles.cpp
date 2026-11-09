@@ -74,7 +74,7 @@ for (int i = 0; i < num_units; i++) {
                     }
                     else if(o.capturing) o.health -= (_Float16)(CAPTURE_RATE*u_damage*0.5f);
                     else {
-                        if(o.texture==&tex::kraken) {
+                        if(o.texture==&tex::kraken || o.texture==&tex::wall) {
                             u_damage *= 0.2f;
                             //if(is_mecha(o)) u_damage *= 0.2f;
                         }
