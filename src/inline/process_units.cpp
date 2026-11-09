@@ -585,8 +585,8 @@ for (int i = 0; i < num_units; i++) {
     }
 
     if (dist2 > 5.f * 5.f) {
-        const float short_lookahead = fminf(2.f, sqrtf(dist2) * 0.25f);
-        const float long_lookahead = fminf(30.f, sqrtf(dist2) * 0.75f);
+        const float short_lookahead = 0.5f+fminf(2.f, sqrtf(dist2) * 0.25f);
+        const float long_lookahead = 0.5f+fminf(30.f, sqrtf(dist2) * 0.75f);
         const int short_directions = 9;
         const int long_directions = 9;
 
@@ -658,7 +658,7 @@ for (int i = 0; i < num_units; i++) {
         if(u.faction!=factions) continue; // non-player factions stay and fight
     }
 
-    float cosine_similarity = (u_water_speed_x||u_water_speed_y)?(dx*u_water_speed_x+dy*u_water_speed_y)/sqrtf((dx*dx+dy*dy)):0;
+    float cosine_similarity = (u_water_speed_x||u_water_speed_y)?(dx*u_water_speed_x+dy*u_water_speed_y)/dist:0;
     if(cosine_similarity<0) cosine_similarity = 0;
     if(u.faction && (u.faction->technology & TECHNOLOGY_HYPERMAGNET)) u_speed *= 2;
     u_speed += cosine_similarity*5;
