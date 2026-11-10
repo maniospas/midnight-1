@@ -554,7 +554,7 @@ struct Unit {
             .size = static_cast<_Float16>(2.0), \
             .health = static_cast<_Float16>(50.0), \
             .max_health = static_cast<_Float16>(50.0), \
-            .extra_scale = static_cast<_Float16>(0.5), \
+            .extra_scale = static_cast<_Float16>(0.1), \
             .capturing = (_faction) \
         };\
         for(int ppy=-2;ppy<=2;ppy++) \
