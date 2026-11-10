@@ -66,7 +66,12 @@ for (int i = 0; i < num_units; i++) {
             u.health = u.max_health;
         }
         else if(u.texture==&tex::kraken){
-            std::cout << "kraken died\n";
+            //std::cout << "kraken died\n";f
+            last_message = "A kraken carcass polluted the water";
+            game_time += 60.f;
+            if(game_time>GAME_DURATION) game_time = GAME_DURATION;
+            last_message_counter = 0.f;
+            PlaySound(sound::siren);
             num_units--;
             u = units[num_units];
             i--;
@@ -397,8 +402,8 @@ for (int i = 0; i < num_units; i++) {
     if(terrainGrid[uy][ux].texture==&tex::water) {
         if(u.texture==&tex::hovercraft) u_speed = 1.5f;
         if(u.texture==&tex::kraken) u_speed = 1.f;
-        u_water_speed_x = cosf(water_angle+3.14159/4);
-        u_water_speed_y = sinf(water_angle+3.14159/4);
+        u_water_speed_x = 2.0*cosf(water_angle+3.14159/4);
+        u_water_speed_y = 2.0*sinf(water_angle+3.14159/4);
     }
     else {
         //if(u.texture==&tex::kraken) u_speed *= 0.2f;
@@ -587,8 +592,8 @@ for (int i = 0; i < num_units; i++) {
     if (dist2 > 5.f * 5.f) {
         const float short_lookahead = 0.5f+fminf(2.f, sqrtf(dist2) * 0.25f);
         const float long_lookahead = 0.5f+fminf(30.f, sqrtf(dist2) * 0.75f);
-        const int short_directions = 9;
-        const int long_directions = 9;
+        const int short_directions = 5;
+        const int long_directions = 5;
 
         float base_angle = atan2f(dy, dx);
         float best_cost = estimate_travel_time(terrainGrid, u.x, u.y, u.target_x, u.target_y, 32);
@@ -624,7 +629,7 @@ for (int i = 0; i < num_units; i++) {
     float desiredAngle = atan2f(dy, dx) * RAD2DEG;
 
     if((u.texture==&tex::human || u.texture==&tex::scout || u.texture==&tex::hero || u.texture==&tex::cat) && !u.stunned) {
-        desiredAngle += cos(t*10+u.speed*3.14159+i)*45;
+        desiredAngle += cos(t*10+u.speed*3.14159+i)*25;
     }
 
     // compute smallest signed difference

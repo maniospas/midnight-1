@@ -735,16 +735,6 @@ int main() {
             if(T.speed<=1.f) T.speed = (_Float16)0.4f;
         }
     }
-    for (int y = 1; y < GRID_SIZE-1; y++)
-    for (int x = 1; x < GRID_SIZE-1; x++) {
-        Terrain &T = terrainGrid[y][x];
-        if (T.texture == &tex::tree) 
-            T.texture = &tex::grass; // or whichever grass variant you want for paths
-        if(T.speed>1.0){
-            T.texture = &tex::grass;
-            groundDecorators[num_ground_decorators++] = {&tex::path,(float)x-0.5f,(float)y-0.5f,1.0f};
-        }
-    }
     water_angle = (GetRandomValue(0, 3) * PI / 2.0f);
 
     // minimap (used only for new game)
@@ -1799,6 +1789,19 @@ int main() {
         }
     }
 
+    // GROUND DECORATOR TILES
+
+    for (int y = 1; y < GRID_SIZE-1; y++)
+    for (int x = 1; x < GRID_SIZE-1; x++) {
+        Terrain &T = terrainGrid[y][x];
+        if (T.texture == &tex::tree) 
+            T.texture = &tex::grass; // or whichever grass variant you want for paths
+        if(T.speed>1.0){
+            T.texture = &tex::grass;
+            groundDecorators[num_ground_decorators++] = {&tex::path,(float)x-0.5f,(float)y-0.5f,1.0f};
+        }
+    }
+
 
     // setup scene
     bool selecting = false;
@@ -1950,15 +1953,14 @@ int main() {
         constexpr float HOUSE_BUILD_COST = 50.f;
         bool house_paved = false;
         if (fort_creation_num > 0) {
-            int tileX = (int)fort_creation_px;
-            int tileY = (int)fort_creation_py;
+            int tileX = (int)(fort_creation_px+0.5f);
+            int tileY = (int)(fort_creation_py+0.5f);
             if (tileX >= 0 && tileX < GRID_SIZE &&
                 tileY >= 0 && tileY < GRID_SIZE) {
                 house_paved = terrainGrid[tileY][tileX].speed > 1.0f;
             }
         }
         bool houseUnavailable = !fort_creation_num ||
-                                fort_creation_has_nearby ||
                                 fort_creation_total_health < HOUSE_BUILD_COST ||
                                 !house_paved || num_units >= MAX_UNITS;
 

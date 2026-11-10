@@ -90,7 +90,7 @@ for (int i = 0; i < num_units; i++) {
                 u.target_y = (_Float16)u.y;
             }
         }
-        else if(bestDist>u.range*u.range) {
+        else if(bestDist>u.range*u.range && (tx || ty)) {
             u.target_x = tx;
             u.target_y = ty;
         }
@@ -106,7 +106,7 @@ for (int i = 0; i < num_units; i++) {
     _Float16 tx = 0, ty = 0;
     bool found = false;
     // if we are far from target, stop only for stuff that is close to here
-    if(u.target_x && u.target_y && (u.target_x-u.x)*(u.target_x-u.x)+(u.target_y-u.y)*(u.target_y-u.y)>AI_ORDER_RADIUS*AI_ORDER_RADIUS) bestDist = 40.f;
+    if(u.target_x && u.target_y && (u.target_x-u.x)*(u.target_x-u.x)+(u.target_y-u.y)*(u.target_y-u.y)>AI_ORDER_RADIUS*AI_ORDER_RADIUS) bestDist = AI_ORDER_RADIUS * AI_ORDER_RADIUS;
     if(GetRandomValue(0, 100) > 40) {
         bool is_near_vp = false;
         for (int j = 0; j < num_units; j++) {
@@ -117,7 +117,7 @@ for (int i = 0; i < num_units; i++) {
             Unit &o = units[j];
             if (o.health <= 0) continue; 
             //if(o.speed && o.texture!=&tex::esper && o.faction && o.faction!=factions+1) continue;
-            if(!((o.faction==nullptr || o.faction==primary_target)) && GetRandomValue(0, 100)>25) continue;
+            if(!((o.faction==nullptr || o.faction==primary_target)) && GetRandomValue(0, 100)>5) continue;
             //if (!o.faction) continue;
             bool isEnemyCapturable =
                 (o.capturing != nullptr) &&
@@ -232,7 +232,9 @@ for (int i = 0; i < num_units; i++) {
             }
         }
     }
-    u.target_x = tx;
-    u.target_y = ty;
+    if(tx||ty) {
+        u.target_x = tx;
+        u.target_y = ty;
+    }
 }
 
